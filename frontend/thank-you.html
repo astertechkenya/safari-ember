@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank You — Safari Ember</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black:   #080705;
+      --ember:   #c8782a;
+      --cream:   #f5e8d0;
+      --warm-mid:#c4a882;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--black);
+      color: var(--cream);
+      font-family: 'Jost', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo img {
+      height: 52px;
+      width: 52px;
+      object-fit: contain;
+    }
+    .rule {
+      width: 36px;
+      height: 1px;
+      background: var(--ember);
+      margin: 0 auto 32px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+    h1 em { font-style: italic; color: var(--ember); }
+    p {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.9;
+      max-width: 480px;
+      margin: 0 auto 40px;
+    }
+    a {
+      display: inline-block;
+      background: var(--ember);
+      color: var(--black);
+      font-family: 'Jost', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 16px 36px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    a:hover { background: #e8954a; }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="Playfair.svg" alt="Safari Ember logo" style="height:52px;width:auto;object-fit:contain;" />
+  </div>
+
+  <div class="rule"></div>
+
+  <h1>Thank you for<br>your <em>enquiry</em></h1>
+
+  <p>
+    We've received your message and a member of our team
+    will be in touch within 24 hours. We look forward to
+    making your stay extraordinary.
+  </p>
+
+  <a href="index.html">Return</a>
+</body>
+</html>

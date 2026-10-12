@@ -1,0 +1,15 @@
+# Dependencies and secrets never go to GitHub.
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Python's cache from running server.py
+__pycache__/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

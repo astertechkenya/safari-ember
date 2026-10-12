@@ -1,0 +1,3441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO: descriptive title and meta description help search engines understand the page -->
+  <title>Safari Ember — Candlelit Luxury Hotel</title>
+  <meta name="description" content="Safari Ember is an intimate luxury hotel offering candlelit suites, fire-kissed dining, and bespoke experiences in the heart of the city." />
+
+  <!-- Google Fonts: Playfair Display for headings (editorial serif), Cormorant Garamond for accents -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- The hero video's first frame: shown at once, while the video itself loads. -->
+  <link rel="preload" as="image" href="compound-poster.webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="Elper.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:wght@400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES (design tokens)
+       Centralising all colours, fonts, and spacing here means
+       we only need to change one value to update the whole site.
+    ============================================================ */
+    :root {
+      --black:        #080705;
+      --black-mid:    #0f0c09;
+      --black-light:  #1f1710;
+      --ember:        #c8782a;       /* primary amber-orange accent */
+      --ember-dim:    #8a4f18;       /* darker ember for subtle elements */
+      --ember-glow:   #e8954a;       /* lighter ember for hover states */
+      --cream:        #f5e8d0;       /* warm off-white for headings */
+      --warm-mid:     #c4a882;       /* mid-tone warm text — lightened for readability */
+      --warm-dim:     #8a6e56;       /* muted warm text — was too dark, now legible */
+      --border:       rgba(200,120,42,0.15);  /* subtle amber border */
+      --border-mid:   rgba(200,120,42,0.3);
+
+      --font-serif:   'Playfair Display', Georgia, serif;
+      --font-accent:  'Cormorant Garamond', Georgia, serif;
+      --font-sans:    'Jost', system-ui, sans-serif;
+
+      --transition:   0.3s ease;
+      --section-pad:  100px 40px;
+    }
+
+    /* ============================================================
+       RESET & BASE STYLES
+       A minimal reset to ensure consistent rendering across browsers.
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      /* Smooth scrolling when nav links are clicked */
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--cream);
+      font-family: var(--font-sans);
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ============================================================
+       UTILITY CLASSES
+       Reusable patterns used across multiple sections.
+    ============================================================ */
+
+    /* Section label — small all-caps amber text above each heading */
+    .label {
+      display: block;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 14px;
+    }
+
+    /* Decorative horizontal rule in ember colour */
+    .rule {
+      width: 36px;
+      height: 1px;
+      background: var(--ember);
+      margin: 20px auto 48px;
+    }
+
+    .rule--left {
+      margin-left: 0;
+    }
+
+    /* Section heading in serif */
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 400;
+      color: var(--cream);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .section-title em { font-style: italic; color: var(--ember); }
+
+    /* Ember-coloured CTA button */
+    .btn-primary {
+      display: inline-block;
+      background: var(--ember);
+      color: var(--black);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 15px 36px;
+      cursor: pointer;
+      border: 1px solid transparent; /* matches btn-ghost border width so both buttons are identical height */
+      transition: background var(--transition);
+    }
+
+    .btn-primary:hover {
+      background: var(--ember-glow);
+    }
+
+    /* Ghost button — transparent with amber border */
+    .btn-ghost {
+      display: inline-block;
+      background: transparent;
+      color: var(--ember);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 15px 36px;
+      border: 1px solid var(--ember-dim);
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--ember);
+      color: var(--ember-glow);
+    }
+
+    /* ============================================================
+       NAVIGATION
+       Fixed to the top so it stays visible as the user scrolls.
+       Uses a semi-transparent blur background for depth.
+    ============================================================ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: rgba(8,7,5,0.92);
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease;
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    .nav__logo {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--ember);
+    }
+
+    .nav__links {
+      display: none;
+    }
+
+    .nav__links a {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      transition: color var(--transition);
+    }
+
+    .nav__links a:hover {
+      color: var(--cream);
+    }
+
+    /* Mobile hamburger — hidden on desktop, shown on mobile */
+    .nav__toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 3px;
+    }
+
+    .nav__toggle span {
+      display: block;
+      width: 22px;
+      height: 1px;
+      background: var(--ember);
+      transition: var(--transition);
+    }
+
+    /* ============================================================
+       HERO SECTION
+       Full-viewport-height opening. The background image would go
+       here in production — we use a rich dark texture for now.
+       Text is centred with a fade-in animation on load.
+    ============================================================ */
+    /* ── FULLSCREEN IMAGE HERO ───────────────────────── */
+    /* --hero-h: the hero's height. On phones, 100vh is the screen with the browser's toolbars
+       hidden, so on first load the bottom of the hero sat behind them. 100svh is the height with
+       the toolbars showing. Older browsers without svh keep 100vh. */
+    .hero { --hero-h: 100vh; }
+    @supports (height: 100svh) { .hero { --hero-h: 100svh; } }
+    .hero {
+      position: relative;
+      height: var(--hero-h);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero__video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 45%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;          /* the crossfade; FADE in the script matches it */
+    }
+    .hero__video.is-active { opacity: 1; }
+    /* Phones: a tall frame shows about a quarter of each video's width; the script sets, per
+       clip, which part to keep (e.g. 45% across keeps the giraffe's head in view). */
+
+    .hero__pause {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      z-index: 3;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(232, 168, 92, 0.45);
+      background: rgba(8, 7, 5, 0.45);
+      color: var(--ember);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity .2s, background .2s;
+    }
+    .hero__pause:hover, .hero__pause:focus-visible { opacity: 1; background: rgba(8, 7, 5, 0.75); }
+    .hero__pause:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+    .hero__play-icon { display: none; }
+    .hero__pause[aria-pressed="true"] .hero__pause-icon { display: none; }
+    .hero__pause[aria-pressed="true"] .hero__play-icon { display: block; }
+
+    .hero__overlay {
+      position: absolute;
+      inset: 0;
+      /* Bright top, dark bottom (Oct 2026). The top of the frame gets only a light dim; the shade
+         builds through the headline and deepens to solid black at the bottom, so the text sits on
+         darker film and the hero runs into the dark section below.
+         Why so many stops: a gradient fades in straight lines between its stops, and wherever the
+         rate of change jumps (a flat part meeting a ramp) the eye sees a line, worst on smooth sky.
+         These stops trace one smooth curve (a monotone spline through a handful of points), so the
+         darkening has no corners and reads as diffuse light. On phones the curve is pinned to the
+         headline itself (--hy, set by the fit script), since the headline's height varies there. */
+      background: linear-gradient(
+        to bottom,
+        rgba(8,7,5,0.060) 0%,
+        rgba(8,7,5,0.061) 4%,
+        rgba(8,7,5,0.063) 8%,
+        rgba(8,7,5,0.066) 12%,
+        rgba(8,7,5,0.070) 16%,
+        rgba(8,7,5,0.075) 20%,
+        rgba(8,7,5,0.083) 24%,
+        rgba(8,7,5,0.111) 28%,
+        rgba(8,7,5,0.161) 32%,
+        rgba(8,7,5,0.227) 36%,
+        rgba(8,7,5,0.299) 40%,
+        rgba(8,7,5,0.371) 44%,
+        rgba(8,7,5,0.436) 48%,
+        rgba(8,7,5,0.504) 52%,
+        rgba(8,7,5,0.567) 56%,
+        rgba(8,7,5,0.614) 60%,
+        rgba(8,7,5,0.652) 64%,
+        rgba(8,7,5,0.686) 68%,
+        rgba(8,7,5,0.719) 72%,
+        rgba(8,7,5,0.752) 76%,
+        rgba(8,7,5,0.790) 80%,
+        rgba(8,7,5,0.830) 84%,
+        rgba(8,7,5,0.871) 88%,
+        rgba(8,7,5,0.913) 92%,
+        rgba(8,7,5,0.956) 96%,
+        rgba(8,7,5,1.000) 100%
+      );
+    }
+    @media (max-width: 768px), (orientation: landscape) and (max-height: 500px) {
+      .hero__overlay {
+        background: linear-gradient(
+          to bottom,
+          rgba(8,7,5,0.060) calc(var(--hy, 49%) - 49%),
+          rgba(8,7,5,0.060) calc(var(--hy, 49%) - 45%),
+          rgba(8,7,5,0.062) calc(var(--hy, 49%) - 41%),
+          rgba(8,7,5,0.064) calc(var(--hy, 49%) - 37%),
+          rgba(8,7,5,0.067) calc(var(--hy, 49%) - 33%),
+          rgba(8,7,5,0.071) calc(var(--hy, 49%) - 29%),
+          rgba(8,7,5,0.076) calc(var(--hy, 49%) - 25%),
+          rgba(8,7,5,0.083) calc(var(--hy, 49%) - 21%),
+          rgba(8,7,5,0.115) calc(var(--hy, 49%) - 17%),
+          rgba(8,7,5,0.174) calc(var(--hy, 49%) - 13%),
+          rgba(8,7,5,0.250) calc(var(--hy, 49%) - 9%),
+          rgba(8,7,5,0.330) calc(var(--hy, 49%) - 5%),
+          rgba(8,7,5,0.404) calc(var(--hy, 49%) - 1%),
+          rgba(8,7,5,0.470) calc(var(--hy, 49%) + 3%),
+          rgba(8,7,5,0.538) calc(var(--hy, 49%) + 7%),
+          rgba(8,7,5,0.591) calc(var(--hy, 49%) + 11%),
+          rgba(8,7,5,0.631) calc(var(--hy, 49%) + 15%),
+          rgba(8,7,5,0.665) calc(var(--hy, 49%) + 19%),
+          rgba(8,7,5,0.696) calc(var(--hy, 49%) + 23%),
+          rgba(8,7,5,0.726) calc(var(--hy, 49%) + 27%),
+          rgba(8,7,5,0.761) calc(var(--hy, 49%) + 31%),
+          rgba(8,7,5,0.801) calc(var(--hy, 49%) + 35%),
+          rgba(8,7,5,0.846) calc(var(--hy, 49%) + 39%),
+          rgba(8,7,5,0.894) calc(var(--hy, 49%) + 43%),
+          rgba(8,7,5,0.946) calc(var(--hy, 49%) + 47%),
+          rgba(8,7,5,1.000) calc(var(--hy, 49%) + 51%)
+        );
+      }
+    }
+
+    .hero__logo-lockup {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .hero__logo-lockup img {
+      height: var(--logo-box);
+      width: var(--logo-box);
+      object-fit: contain;
+      filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6));
+    }
+
+    /* ── Hero logo settles (Oct 2026) ──
+       For 3 seconds the logo is big and centred; then it shrinks and glides up to sit just under
+       the nav bar, and the space below (.hero__stage) opens for content. One transform, so the
+       move is smooth (the graphics card does it; nothing on the page reflows).
+         --logo-box      the logo's square box at full size
+         --settle-scale  how big it ends up (0.42 = 42%)
+         --settle-top    where its box's top edge ends up, from the top of the hero (below the nav)
+       The lockup starts centred in the hero (--hero-h tall), so its centre is halfway down; it moves up by
+       the difference between that and where its smaller box's centre should end up. */
+    .hero {
+      --logo-box: 440px;
+      --settle-scale: 0.42;
+      --settle-top: max(64px, calc(30vh - 40px));       /* lower down the frame: more open film above it */
+      --settled-h: calc(var(--logo-box) * var(--settle-scale));
+    }
+    @media (max-width: 768px) {
+      .hero { --logo-box: 340px; --settle-scale: 0.5; --settle-top: max(60px, calc(40vh - 85px)); }   /* phones: lower. The fit script may raise it so the text clears the pause button */
+    }
+    .hero__logo-lockup {
+      transition: transform 1.4s cubic-bezier(.65, 0, .35, 1);
+      will-change: transform;
+    }
+    .hero.is-settled .hero__logo-lockup {
+      transform: translateY(calc(var(--settle-top) + var(--settled-h) / 2 - var(--hero-h) / 2)) scale(var(--settle-scale));
+    }
+    /* Once settled, only the elephant stays: the "SAFARI EMBER" wordmark fades out as the logo
+       shrinks. Elper.svg is one image, so CSS can't reach the wordmark inside it. Instead a mask
+       covers the image: fully visible above the line at --mark-end, and below it at --wordmark
+       strength (1 = shown, 0 = gone). Measured in Elper.svg: the elephant ends 57% of the way
+       down, the wordmark starts at 68%, so the line sits in the gap at 62%.
+       @property lets the browser animate --wordmark smoothly; in a browser without it the
+       wordmark just disappears at the settle instead of fading. */
+    @property --wordmark { syntax: '<number>'; inherits: false; initial-value: 1; }
+    .hero { --mark-end: 0.62; }
+    .hero__logo-lockup img {
+      --wordmark: 1;
+      -webkit-mask-image: linear-gradient(#000 0 calc(var(--mark-end) * 100%), rgb(0 0 0 / var(--wordmark)) 0);
+              mask-image: linear-gradient(#000 0 calc(var(--mark-end) * 100%), rgb(0 0 0 / var(--wordmark)) 0);
+      transition: --wordmark .7s ease;
+    }
+    .hero.is-settled .hero__logo-lockup img { --wordmark: 0; }
+    /* The space under the settled logo, for what comes next. Empty for now: it covers the rest of
+       the hero and centres whatever goes in it. It fades in as the logo arrives. */
+    .hero__stage {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(var(--settle-top) + var(--settled-h) * var(--mark-end));   /* just under the elephant */
+      bottom: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;          /* the text sits just under the elephant, as one group */
+      gap: 0;                               /* spacing comes from the intro classes' margins */
+      padding: clamp(24px, 6vh, 60px) 24px 88px;   /* top: the gap under the elephant; bottom: clear of the pause button */
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .9s ease .9s, visibility 0s 1.8s;
+    }
+    .hero.is-settled .hero__stage { opacity: 1; visibility: visible; transition: opacity .9s ease .9s, visibility 0s .9s; }
+    /* ── HERO TEXT SIZE DIALS ──────────────────────────────────────────────────────
+       Change a number, save, refresh. 1 = the current size, 1.1 = 10% bigger, 0.9 = 10% smaller.
+       Two separate sets, so desktop and phone can be tuned on their own:
+         DESKTOP  screens wider than 768px (laptops, desktops, big tablets)
+         PHONE    768px wide and under, plus phones turned sideways
+       In each set:
+         -text      everything at once (headline, paragraph and buttons)
+         -title     the headline only       (multiplies with -text)
+         -body      the paragraph only
+         -buttons   the button labels only
+       Each phone rule below (narrow, short, sideways) multiplies its own size by the PHONE set.
+       On phones the fit script measures the real text, so bigger text sits a little higher
+       instead of hitting the pause button. */
+    .hero__stage {
+      /* DESKTOP */
+      --desktop-text: 1;
+      --desktop-title: 1.1;
+      --desktop-body: 1.1;
+      --desktop-buttons: 1;
+
+      /* PHONE */
+      --phone-text: 1;
+      --phone-title: 1.2;
+      --phone-body: 1.1;
+      --phone-buttons: 1;
+
+      /* (the sizes actually used: desktop's by default, the phone set swaps in below) */
+      --t-title: calc(var(--desktop-text) * var(--desktop-title));
+      --t-body: calc(var(--desktop-text) * var(--desktop-body));
+      --t-buttons: calc(var(--desktop-text) * var(--desktop-buttons));
+    }
+    @media (max-width: 768px), (orientation: landscape) and (max-height: 500px) {
+      .hero__stage {
+        --t-title: calc(var(--phone-text) * var(--phone-title));
+        --t-body: calc(var(--phone-text) * var(--phone-body));
+        --t-buttons: calc(var(--phone-text) * var(--phone-buttons));
+      }
+    }
+    /* What's in the stage. The type comes from the intro section's classes (.hero-intro__*);
+       these fit it to the hero and apply the dials. Sizes here match the intro section's. */
+    .hero__stage .hero-intro__title { font-size: calc(clamp(32px, 5vw, 56px) * var(--t-title));
+                                      margin-bottom: 20px; text-shadow: 0 2px 24px rgba(0,0,0,.45); }
+    .hero__stage .hero-intro__desc  { font-size: calc(18px * var(--t-body));
+                                      max-width: calc(580px * var(--t-body));   /* grows with the text, so the lines break in the same places */
+                                      margin-bottom: 36px; color: var(--cream); opacity: .85;
+                                      text-shadow: 0 1px 12px rgba(0,0,0,.6); }   /* legible over moving film */
+    .hero__stage .btn-primary,
+    .hero__stage .btn-ghost         { font-size: calc(12px * var(--t-buttons)); }
+    /* Narrow phones (most Androids are 360px wide): at full size the headline wraps to two lines
+       and the paragraph to six, so the block is too tall to sit low. A touch smaller keeps the
+       headline on one line and lets the fit script place the group lower. */
+    @media (max-width: 380px) {
+      .hero__stage .hero-intro__title { font-size: calc(28px * var(--t-title)); margin-bottom: 14px; }
+      .hero__stage .hero-intro__desc  { font-size: calc(16px * var(--t-body)); line-height: 1.75; margin-bottom: 26px; }
+      .hero__stage .hero-intro__ctas  { gap: 12px; }
+    }
+    /* Short phones: the space under the logo is small, so tighten the type to keep it all on screen */
+    @media (max-height: 720px) and (max-width: 768px) {
+      .hero__stage { padding-bottom: 72px; }
+      .hero__stage .hero-intro__title { font-size: calc(28px * var(--t-title)); margin-bottom: 12px; }
+      .hero__stage .hero-intro__desc  { font-size: calc(15px * var(--t-body)); line-height: 1.7; margin-bottom: 22px; }
+      .hero__stage .hero-intro__ctas  { gap: 10px; }
+    }
+    /* Phones turned sideways: a wide but very short screen (as little as ~340px with Safari's
+       toolbar), and the nav bar takes 64px of it. The full-size logo and text can't fit, so:
+       a smaller logo that settles into a small mark under the nav, and tighter text. The buttons
+       sit side by side here, so the block is short. The fit script places it. */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .hero { --logo-box: 220px; --settle-scale: 0.45; --settle-top: 60px; }
+      .hero__stage { padding: 18px 24px 16px; }
+      .hero__stage .hero-intro__title { font-size: calc(26px * var(--t-title)); margin-bottom: 8px; }
+      .hero__stage .hero-intro__desc  { font-size: calc(15px * var(--t-body)); line-height: 1.6; margin-bottom: 16px; max-width: calc(620px * var(--t-body)); }
+      .hero__stage .hero-intro__ctas  { gap: 12px; }
+      .hero__stage .btn-primary,
+      .hero__stage .btn-ghost         { padding: 12px 30px; }
+    }
+    /* Entrance: once the logo settles, the title, text and buttons rise in one after another,
+       starting as the logo finishes its move (1.4 s). */
+    @media (prefers-reduced-motion: no-preference) {
+      .hero__stage > * { opacity: 0; transform: translateY(16px); transition: opacity .9s ease, transform .9s ease; }
+      .hero.is-settled .hero__stage > * { opacity: 1; transform: none; }
+      .hero.is-settled .hero__stage-title { transition-delay: 1.1s; }
+      .hero.is-settled .hero__stage-desc  { transition-delay: 1.35s; }
+      .hero.is-settled .hero__stage-ctas  { transition-delay: 1.6s; }
+    }
+    /* ── Opening (Oct 2026): the page opens on black, the film and the logo fade in together, and
+       the nav bar and pause button arrive as the logo settles. CSS only: if any script failed,
+       nothing could leave the page stuck on black. Each part is invisible only during its own
+       delay (animation-fill-mode: backwards) and returns to its normal styles after, so hover
+       effects and the nav's own hide-on-scroll keep working. Timeline:
+         0.0–1.0 s  black
+         1.0–2.4 s  the film and the logo fade in together
+         4.0 s      the logo starts to settle (--settle-at), and the nav bar and pause button fade in
+       --settle-at is the one place to change the settle time: the settle script waits for the
+       nav's fade to start, so the logo and the nav can't drift apart. */
+    :root { --settle-at: 3s; }            /* the big logo starts to settle at 3 s (it fades in from 1.0 s) */
+    .hero { background: var(--black); }
+    .hero__media { position: absolute; inset: 0; }
+    /* Phones: zoom the film out. The clips are wide (16:9) and a phone is tall, so filling the
+       whole screen means the video is enlarged until it's as tall as the screen, and only the
+       middle quarter of its width shows: zoomed in. Making the film shorter than the screen shows
+       more of its width. Its lower edge fades into the hero's black, behind the text and buttons,
+       where the overlay already darkens to black.
+         --phone-video-height   how much of the screen the film covers. 100% = fills it (as
+                                before); smaller = more zoomed out.
+       Only portrait phones: sideways, the screen is already wide, so the film shows nearly whole. */
+    @media (max-width: 768px) and (orientation: portrait) {
+      .hero { --phone-video-height: 80%; }
+      .hero__media {
+        bottom: auto;
+        height: var(--phone-video-height);
+        -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+                mask-image: linear-gradient(to bottom, #000 72%, transparent);
+      }
+    }
+    @keyframes introFade { from { opacity: 0; } }          /* to: whatever the element's opacity is */
+    @media (prefers-reduced-motion: no-preference) {
+      .hero__media,
+      .hero__logo-lockup img    { animation: introFade 1.4s ease-out 1s backwards; }
+      .nav, .hero__pause        { animation: introFade 1.2s ease-out var(--settle-at) backwards; }
+      /* Keyboard users can Tab into the nav or the pause button before they've faded in.
+         Show them at once rather than leave focus on something invisible. */
+      .nav:focus-within,
+      .hero__pause:focus-visible { animation: none; }
+    }
+
+    /* Less motion: no glide, no fade. The hero simply starts settled. */
+    @media (prefers-reduced-motion: reduce) {
+      .hero__logo-lockup, .hero__logo-lockup img, .hero__stage { transition: none; }
+    }
+
+    .hero__logo-name {
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 600;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: var(--ember);
+      text-shadow: 0 2px 16px rgba(0,0,0,0.7);
+    }
+
+    .hero__logo-rule {
+      width: 40px;
+      height: 1px;
+      background: var(--ember);
+    }
+
+    /* grain texture overlay */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* ── INTRO SECTION (formerly inside hero) ────────── */
+    .hero-intro {
+      background: var(--black);
+      padding: 80px 40px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-bottom: 1px solid rgba(200,120,42,0.2);
+    }
+
+    .hero-intro__eyebrow {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 20px;
+    }
+
+    .hero-intro__line {
+      width: 36px;
+      height: 1px;
+      background: var(--ember);
+      margin: 0 auto 28px;
+    }
+
+    .hero-intro__title {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .hero-intro__title em { font-style: italic; color: var(--ember); }
+
+    .hero-intro__desc {
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.9;
+      max-width: 580px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-intro__ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+
+
+    .hero__content {
+      position: relative; /* sits above the ::before overlay */
+      max-width: 700px;
+    }
+
+    /* Fade + slide up animation for the hero content */
+    .hero__content > * {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.9s ease forwards;
+    }
+
+    .hero__eyebrow { animation-delay: 0.1s; }
+    .hero__line    { animation-delay: 0.25s; }
+    .hero__title   { animation-delay: 0.35s; }
+    .hero__desc    { animation-delay: 0.55s; }
+    .hero__ctas    { animation-delay: 0.7s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero__eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 20px;
+    }
+
+    .hero__line {
+      width: 40px;
+      height: 1px;
+      background: var(--ember);
+      margin: 0 auto 28px;
+    }
+
+    .hero__title {
+      font-family: var(--font-serif);
+      font-size: clamp(38px, 7vw, 72px);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.1;
+      margin-bottom: 28px;
+    }
+
+    .hero__title em {
+      font-style: italic;
+      color: var(--ember);
+    }
+
+    .hero__desc {
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.9;
+      max-width: 460px;
+      margin: 0 auto 40px;
+      letter-spacing: 0.3px;
+    }
+
+    .hero__ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Scroll indicator at the bottom of the hero */
+    .hero__scroll {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 1s ease 1.2s forwards;
+    }
+
+    .hero__scroll span {
+      font-size: 8px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--warm-dim);
+    }
+
+    /* Animated scroll arrow */
+    .hero__scroll-arrow {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--ember-dim), transparent);
+      animation: scrollPulse 2s ease infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.1); }
+    }
+
+    /* ============================================================
+       SHARED SECTION LAYOUT
+    ============================================================ */
+    .section {
+      padding: var(--section-pad);
+      border-bottom: 1px solid rgba(200,120,42,0.2);
+    }
+
+    .section--alt {
+      background: var(--black-mid);
+    }
+
+    .section--deep {
+      background: var(--black);
+    }
+
+    .section__header {
+      text-align: center;
+      margin-bottom: 0;
+    }
+
+    /* ============================================================
+       ROOMS & SUITES
+    ============================================================ */
+    .rooms__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      margin-top: 0;
+    }
+
+    .room-card {
+      background: var(--black-mid);
+      transition: background var(--transition);
+      overflow: hidden;
+    }
+    .rooms__grid > .room-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, background var(--transition); }
+    .rooms__grid > .room-card.in-view { opacity: 1; transform: translateY(0); }
+    @media (max-width: 768px) {
+      .room-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; }
+      .room-card.in-view { opacity: 1; transform: translateY(0); }
+    }
+
+    .room-card:hover {
+      background: var(--black-light);
+    }
+
+    /* Placeholder for the room photo — replace src with real image in production */
+    .room-card__image {
+      width: 100%;
+      height: 220px;
+      background: var(--black-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Placeholder icon shown when no image is present */
+    .room-card__image-placeholder {
+      font-size: 48px;
+      opacity: 0.1;
+      color: var(--ember);
+      user-select: none;
+    }
+
+    /* Real image — hidden by default, shown when src is set */
+    .room-card__image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      animation: galleryZoom 12s ease-out infinite alternate;
+    }
+
+    .room-card__body {
+      padding: 28px;
+    }
+
+    .room-card__type {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 10px;
+    }
+
+    .room-card__name {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--cream);
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .room-card__desc {
+      font-size: 15px;
+      color: var(--warm-dim);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    .room-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .room-card__price {
+      font-family: var(--font-accent);
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--ember);
+      letter-spacing: 0.5px;
+    }
+
+    .room-card__link {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      transition: color var(--transition);
+    }
+
+    .room-card__link:hover {
+      color: var(--ember);
+    }
+
+    /* ============================================================
+       DINING
+    ============================================================ */
+    .dining__layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border);
+    }
+
+    .dining__visual {
+      background: var(--black-light);
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Atmospheric ember glow in the dining image placeholder */
+    .dining__visual::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: linear-gradient(to top, rgba(200,120,42,0.06), transparent);
+      pointer-events: none;
+    }
+
+    .dining__visual-icon {
+      font-size: 64px;
+      opacity: 0.08;
+      color: var(--ember);
+      user-select: none;
+    }
+
+    .dining__content {
+      padding: 56px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .dining__name {
+      font-family: var(--font-serif);
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .dining__desc {
+      font-size: 18px;
+      color: var(--warm-mid);
+      line-height: 1.9;
+      margin-bottom: 32px;
+    }
+
+    .dining__details {
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dining__detail-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 4px;
+    }
+
+    .dining__detail-val {
+      font-family: var(--font-accent);
+      font-size: 17px;
+      color: var(--cream);
+    }
+
+    /* ============================================================
+       AMENITIES
+    ============================================================ */
+    .amenities__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .amenity {
+      background: var(--black-mid);
+      padding: 36px 24px;
+      text-align: center;
+      transition: background var(--transition);
+    }
+
+    .amenity:hover {
+      background: var(--black-light);
+    }
+
+    .amenity__icon {
+      font-size: 28px;
+      color: var(--ember);
+      margin-bottom: 16px;
+      opacity: 0.8;
+      transition: opacity var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .amenity:hover .amenity__icon {
+      opacity: 1;
+    }
+
+    .amenity__name {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      font-weight: 400;
+      color: var(--cream);
+      margin-bottom: 10px;
+    }
+
+    .amenity__desc {
+      font-size: 16px;
+      color: var(--warm-dim);
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       GALLERY
+       Masonry-like grid using CSS grid areas for visual interest.
+    ============================================================ */
+    .gallery__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 260px 260px;
+      gap: 8px;
+    }
+
+    /* Large feature cell spans 2 rows on the left */
+    .gallery__cell--feature {
+      grid-row: span 2;
+    }
+
+    .gallery__cell {
+      background: var(--black-light);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .gallery__cell img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s ease;
+    }
+
+    .gallery__cell:hover img {
+      transform: scale(1.05);
+    }
+
+    /* Dark gradient at the bottom so the label is readable */
+    .gallery__cell::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(8,7,5,0.8), transparent);
+      pointer-events: none;
+    }
+
+    .gallery__label {
+      position: relative;
+      z-index: 1; /* above the ::after gradient */
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+    }
+
+    /* Placeholder icon shown when no image */
+    .gallery__placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      opacity: 0.07;
+      color: var(--ember);
+      user-select: none;
+    }
+
+    /* ============================================================
+       TESTIMONIALS
+    ============================================================ */
+    .testimonial-slider { position: relative; overflow: hidden; padding-bottom: 48px; }
+    .testimonial-slider__track { display: flex; transition: transform 0.5s ease; }
+    .testimonial-slider__controls { display: none; align-items: center; justify-content: center; gap: 24px; margin-top: 32px; }
+    .testimonial-slider__btn { background: none; border: 1px solid rgba(200,120,42,0.4); color: var(--ember); font-size: 20px; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+    @media (max-width: 768px) { .testimonial-slider__btn { display: none; } }
+    .testimonial-slider__btn:hover { background: var(--ember); color: var(--black); }
+    .testimonial-slider__dots { display: flex; gap: 8px; }
+    .testimonial-slider__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
+    .testimonial-slider__dot.active { background: var(--ember); }
+
+    .testimonial {
+      border: 1px solid var(--border);
+      padding: 36px 36px;
+      background: var(--black-mid);
+      position: relative;
+    }
+
+    /* Large decorative quotation mark */
+    .testimonial::before {
+      content: '"';
+      position: absolute;
+      top: 20px;
+      left: 32px;
+      font-family: var(--font-serif);
+      font-size: 80px;
+      color: var(--ember);
+      opacity: 0.15;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .testimonial__stars {
+      color: var(--ember);
+      font-size: 14px;
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+    }
+
+    .testimonial__text {
+      font-family: var(--font-accent);
+      font-size: 20px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--warm-mid);
+      line-height: 1.9;
+      margin-bottom: 24px;
+    }
+
+    .testimonial__author {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--ember);
+    }
+
+    /* ============================================================
+       BOOKING BAR
+       A prominent inquiry section with date fields.
+    ============================================================ */
+    .booking {
+      background: var(--black);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 40px;
+      text-align: center;
+    }
+
+    .booking__bar {
+      display: grid;
+      /* The last column (button) is fixed-width; others share space equally */
+      grid-template-columns: 1fr 1fr 1fr auto;
+      border: 1px solid var(--border-mid);
+      margin-top: 40px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .booking__field {
+      padding: 20px 24px;
+      border-right: 1px solid var(--border);
+      text-align: left;
+      background: var(--black-mid);
+      transition: background var(--transition);
+    }
+
+    .booking__field:hover {
+      background: var(--black-light);
+    }
+
+    .booking__field:last-of-type {
+      border-right: none;
+    }
+
+    .booking__field-label {
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* Actual date input — styled to blend with the dark theme */
+    .booking__field input[type="date"],
+    .booking__field select {
+      background: transparent;
+      border: none;
+      color: var(--cream);
+      font-family: var(--font-accent);
+      font-size: 17px;
+      width: 100%;
+      cursor: pointer;
+      outline: none;
+      /* Force light text in date picker on webkit browsers */
+      color-scheme: dark;
+    }
+
+    .booking__field select option {
+      background: var(--black-mid);
+    }
+
+    .booking__submit {
+      background: var(--ember);
+      border: none;
+      color: var(--black);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 20px 32px;
+      cursor: pointer;
+      transition: background var(--transition);
+      white-space: nowrap;
+    }
+
+    .booking__submit:hover {
+      background: var(--ember-glow);
+    }
+
+    /* ============================================================
+       LOCATION & CONTACT
+    ============================================================ */
+    .contact__layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border);
+      gap: 0;
+    }
+
+    /* Map placeholder — in production, embed a Google Map iframe here */
+    .contact__map {
+      background: var(--black-light);
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+
+    .contact__map-placeholder {
+      text-align: center;
+    }
+
+    .contact__map-icon {
+      font-size: 40px;
+      color: var(--ember);
+      opacity: 0.2;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .contact__map-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--warm-dim);
+    }
+
+    /* Clickable map facade — loads the real iframe only on interaction,
+       avoiding Google Maps' third-party scripts on initial page load.
+       Faux-map backdrop with a pin and ember CTA button. */
+    .contact__map-facade {
+      position: relative;
+      width: 100%;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--black-mid);
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .contact__map-facade:hover {
+      background: var(--black-light);
+    }
+
+    /* Faint grid lines suggesting streets */
+    .contact__map-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .contact__map-gridline {
+      position: absolute;
+      background: rgba(200,120,42,0.08);
+    }
+    .contact__map-gridline--h { left: 0; right: 0; height: 1px; }
+    .contact__map-gridline--v { top: 0; bottom: 0; width: 1px; }
+
+    .contact__map-pin {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+    .contact__map-dot {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 1px solid var(--border-mid);
+      background: rgba(200,120,42,0.08);
+      color: var(--ember-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .contact__map-facade:hover .contact__map-dot {
+      background: rgba(200,120,42,0.16);
+      border-color: var(--ember);
+    }
+    .contact__map-pin .contact__map-label {
+      display: block;
+      margin-bottom: 20px;
+      color: var(--warm-mid);
+    }
+    .contact__map-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ember);
+      color: var(--black);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 26px;
+      transition: background var(--transition);
+    }
+    .contact__map-facade:hover .contact__map-cta {
+      background: var(--ember-glow);
+    }
+
+    .contact__info {
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 28px;
+    }
+
+    .contact__item-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .contact__item-val {
+      font-family: var(--font-accent);
+      font-size: 20px;
+      color: var(--cream);
+    }
+
+    /* ============================================================
+       INQUIRY FORM
+       Simple contact form using Netlify Forms (zero backend needed).
+       Just add netlify attribute and deploy to Netlify — done.
+    ============================================================ */
+    .form-section {
+      padding: var(--section-pad);
+      background: var(--black);
+      border-bottom: 1px solid rgba(200,120,42,0.2);
+    }
+
+    .form {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form__row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form__group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form__label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+    }
+
+    /* All form inputs share the same dark styling */
+    .form__input,
+    .form__textarea {
+      background: var(--black-mid);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      font-family: var(--font-accent);
+      font-size: 17px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color var(--transition);
+      width: 100%;
+      resize: vertical;
+    }
+
+    .form__input:focus,
+    .form__textarea:focus {
+      border-color: var(--ember-dim);
+    }
+
+    .form__input::placeholder,
+    .form__textarea::placeholder {
+      color: var(--warm-dim);
+      font-style: italic;
+    }
+
+    .form__textarea {
+      min-height: 120px;
+    }
+
+    .form__submit {
+      align-self: flex-start;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer {
+      background: var(--black);
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+    }
+
+    .footer__logo {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+    }
+
+    .footer__copy {
+      font-size: 15px;
+      color: var(--warm-mid);
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    .footer__links {
+      display: flex;
+      gap: 24px;
+      justify-content: flex-end;
+      list-style: none;
+    }
+
+    .footer__links a {
+      font-size: 15px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      transition: color var(--transition);
+    }
+
+    .footer__links a:hover {
+      color: var(--ember);
+    }
+
+    /* ============================================================
+       MOBILE NAVIGATION MENU (off-canvas)
+    ============================================================ */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(8,7,5,0.85);
+      backdrop-filter: blur(8px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .mobile-menu.is-open {
+      display: flex;
+    }
+
+    .mobile-menu__links {
+      border: 1px solid rgba(200,120,42,0.8);
+      padding: 48px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+    .mobile-menu a {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 400;
+      font-style: normal;
+      color: var(--cream);
+      letter-spacing: 2px;
+      transition: color var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .mobile-menu a::after {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--ember);
+      opacity: 0.6;
+      transition: width var(--transition), opacity var(--transition);
+    }
+    .mobile-menu a:hover::after {
+      width: 48px;
+      opacity: 1;
+    }
+
+    .mobile-menu a:hover {
+      color: var(--ember);
+    }
+
+    .mobile-menu__close {
+      position: absolute;
+      top: 24px;
+      right: 40px;
+      background: none;
+      border: none;
+      color: var(--warm-mid);
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    /* ============================================================
+       RESPONSIVE BREAKPOINTS
+       Mobile-first adjustments for smaller screens.
+    ============================================================ */
+    @media (max-width: 900px) {
+      :root {
+        --section-pad: 60px 24px;
+      }
+
+      /* Shrink nav on mobile so it doesn't dominate the screen */
+      .nav {
+        height: 64px;
+        padding: 0 20px;
+      }
+
+      /* Scale logo image down so it fits the smaller nav */
+      .nav__logo img {
+        height: 44px !important;
+        width: 44px !important;
+      }
+
+      /* Slightly smaller logo text on mobile */
+      .nav__logo {
+        font-size: 18px;
+        letter-spacing: 3px;
+        gap: 8px;
+      }
+
+      /* Show hamburger, hide desktop links */
+
+
+      /* Stack room cards vertically */
+      /* rooms grid handled by carousel on mobile */
+
+      /* Stack dish cards vertically */
+      .cul-dishes__grid { grid-template-columns: 1fr; }
+
+      /* Stack dining layout */
+      .dining__layout { grid-template-columns: 1fr; }
+      .dining__visual { min-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+      .dining__content { padding: 36px 24px; }
+
+      /* 2-column amenities on tablet */
+      .amenities__grid { grid-template-columns: 1fr 1fr; }
+
+      /* Gallery: single column with proper tall cells so images aren't squashed */
+      .gallery__grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        gap: 8px;
+      }
+      .gallery__cell {
+        height: 240px; /* Fixed height ensures images are visible and square-ish */
+      }
+      .gallery__cell--feature {
+        grid-row: span 1;
+        height: 280px; /* Feature cell slightly taller */
+      }
+
+      /* Stack testimonials */
+      .testimonials__grid { grid-template-columns: 1fr; }
+
+      /* Stack booking bar */
+      .booking__bar { grid-template-columns: 1fr; }
+      .booking__field { border-right: none; border-bottom: 1px solid var(--border); }
+
+      /* Stack contact */
+      .contact__layout { grid-template-columns: 1fr; }
+      .contact__map { border-right: none; border-bottom: 1px solid var(--border); }
+
+      /* Stack form row */
+      .form__row { grid-template-columns: 1fr; }
+
+      /* Stack footer */
+      .footer {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+      }
+      .footer__links { justify-content: center; }
+    }
+
+    @media (max-width: 480px) {
+      .nav { height: 50px; }
+      .nav__logo { font-size: 16px; letter-spacing: 2px; }
+      .nav__logo img { height: 36px !important; width: 36px !important; }
+      .hero__ctas { flex-direction: column; align-items: center; }
+      .hero__ctas .btn-primary,
+      .hero__ctas .btn-ghost {
+        width: 220px;
+        text-align: center;
+      }
+      .hero-intro__ctas { flex-direction: column; align-items: center; }
+      .hero-intro__ctas .btn-primary,
+      .hero-intro__ctas .btn-ghost {
+        width: 260px;                 /* 220px made "Explore the Lodge" wrap onto two lines */
+        padding-left: 16px;
+        padding-right: 16px;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .amenities__grid { grid-template-columns: 1fr; }
+      /* On very small screens keep single column gallery with comfortable height */
+      .gallery__grid { grid-template-columns: 1fr; }
+      .gallery__cell { height: 200px; }
+      .gallery__cell--feature { height: 240px; }
+    }
+
+
+    /* ── VISUAL GALLERY ─────────────────────────────────────────── */
+    .vis-gallery { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .vis-gallery__header { text-align: center; padding: 0 40px 60px; }
+    .vis-gallery__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 16px; }
+    .vis-gallery__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; }
+    .vis-gallery__title em { font-style: italic; color: var(--ember); }
+    .vis-gallery__item { display: grid; grid-template-columns: 1fr 1fr; min-height: 480px; opacity: 0; transform: translateY(48px); transition: opacity 0.9s ease, transform 0.9s ease; }
+    .vis-gallery__item.in-view { opacity: 1; transform: translateY(0); }
+    .vis-gallery__item:nth-child(odd) .vis-gallery__img { order: 1; }
+    .vis-gallery__item:nth-child(odd) .vis-gallery__text { order: 2; }
+    .vis-gallery__item:nth-child(even) .vis-gallery__img { order: 2; }
+    .vis-gallery__item:nth-child(even) .vis-gallery__text { order: 1; }
+    .vis-gallery__img { overflow: hidden; position: relative; }
+    @keyframes galleryZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+    .vis-gallery__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: galleryZoom 12s ease-out infinite alternate; }
+    .vis-gallery__text { background: #0c0a08; padding: 60px 52px; display: flex; flex-direction: column; justify-content: center; }
+    .vis-gallery__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 16px; }
+    .vis-gallery__rule { width: 28px; height: 1px; background: var(--ember); margin-bottom: 20px; }
+    .vis-gallery__name { font-family: var(--font-serif); font-size: clamp(20px, 2.5vw, 28px); font-weight: 400; color: var(--cream); line-height: 1.3; margin-bottom: 20px; }
+    .vis-gallery__desc { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; }
+    @media (max-width: 768px) {
+      .vis-gallery__item { grid-template-columns: 1fr; min-height: auto; }
+      .vis-gallery__item:nth-child(even) .vis-gallery__img { order: 0; }
+      .vis-gallery__item:nth-child(even) .vis-gallery__text { order: 1; }
+      .vis-gallery__img { height: 260px; }
+      .vis-gallery__text { padding: 36px 28px; }
+    }
+
+
+    /* ── AMENITIES CARDS ─────────────────────────────────────────── */
+    .am-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .am-header { text-align: center; padding: 0 40px 56px; }
+    .am-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
+    .am-title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; }
+    .am-title em { font-style: italic; color: var(--ember); }
+    .am-rule { width: 36px; height: 1px; background: var(--ember); margin: 20px auto 0; }
+    .am-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 80px; max-width: 1000px; margin: 0 auto; padding: 0 40px; background: var(--black); }
+    .am-card {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #0c0a08;
+      transform: scale(0.9) translateZ(0);
+      transition: transform 0.8s ease;
+      will-change: transform;
+      backface-visibility: hidden;
+      border-radius: 2px;
+    }
+    .am-card.in-view { transform: scale(1) translateZ(0); }
+    .am-card__img-wrap { position: relative; overflow: hidden; height: 320px; border-radius: 2px; }
+    .am-card__body { background: #0c0a08; padding: 20px 24px; }
+    .am-card__img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .am-card__overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,5,0.92) 0%, rgba(8,7,5,0.3) 55%, rgba(8,7,5,0.05) 100%); }
+    .am-card__img-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px; }
+    .am-card__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .am-card__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
+    .am-card__name { font-family: var(--font-serif); font-size: 22px; font-weight: 400; color: var(--cream); line-height: 1.2; }
+    .am-card__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
+    @media (max-width: 768px) {
+      .am-grid { grid-template-columns: 1fr; }
+      .am-card__img-wrap { height: 240px; }
+    }
+
+    /* ── CULINARY SECTION ───────────────────────────────────────── */
+    .cul-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .cul-section__header { text-align: center; padding: 0 40px 64px; }
+    .cul-section__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
+    .cul-section__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
+    .cul-section__title em { font-style: italic; color: var(--ember); }
+    .cul-section__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
+    .cul-section__intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
+
+    /* Kitchen hero */
+    .cul-hero { position: relative; height: 520px; overflow: hidden; margin-bottom: 3px; }
+    @keyframes culZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+    .cul-hero img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 15%; display: block; animation: culZoom 10s ease-out infinite alternate; }
+    .cul-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(8,7,5,0.78) 0%, rgba(8,7,5,0.1) 65%), linear-gradient(to top, rgba(8,7,5,1) 0%, rgba(8,7,5,0) 40%); }
+    .cul-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 400px; }
+    .cul-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
+    .cul-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 14px; }
+    .cul-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); margin-bottom: 14px; line-height: 1.2; }
+    .cul-hero__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
+
+    /* Dish grid label */
+    .cul-dishes__header { text-align: center; padding: 56px 40px 32px; }
+    .cul-dishes__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .cul-dishes__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); }
+
+    /* Dish cards */
+    .cul-dishes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 3px; }
+    .cul-dish { background: var(--black-mid); overflow: hidden; transition: background var(--transition); opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, background var(--transition); }
+    .cul-dish.in-view { opacity: 1; transform: translateY(0); }
+    .cul-dish:hover { background: var(--black-light); }
+    .cul-dish__image { width: 100%; height: 220px; overflow: hidden; position: relative; border-bottom: 1px solid var(--border); }
+    .cul-dish__image img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: galleryZoom 12s ease-out infinite alternate; }
+    .cul-dish__body { padding: 28px; }
+    .cul-dish__tag { font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .cul-dish__rule { width: 16px; height: 1px; background: var(--ember); margin-bottom: 12px; }
+    .cul-dish__name { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 12px; line-height: 1.3; }
+    .cul-dish__desc { font-size: 15px; color: var(--warm-dim); line-height: 1.8; margin-bottom: 20px; }
+    .cul-dish__footer { display: flex; align-items: center; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); }
+    .cul-dish__link { font-size: 9px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--warm-mid); transition: color var(--transition); text-decoration: none; }
+    .cul-dish__link:hover { color: var(--ember); }
+
+    /* Quote */
+    .cul-quote { background: var(--black); padding: 68px 40px; text-align: center; }
+    .cul-quote__mark { font-family: var(--font-serif); font-size: 72px; color: var(--ember); line-height: 0.6; margin-bottom: 28px; opacity: 0.5; }
+    .cul-quote__text { font-family: var(--font-serif); font-size: clamp(18px, 2.5vw, 22px); font-weight: 400; font-style: italic; color: var(--cream); line-height: 1.7; max-width: 640px; margin: 0 auto 20px; }
+    .cul-quote__attr { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-dim, #8a4f18); }
+
+    /* Experience */
+    .cul-exp { display: grid; grid-template-columns: 1fr 1fr; min-height: 420px; margin-top: 3px; }
+    .cul-exp__img { position: relative; overflow: hidden; }
+    .cul-exp__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: culZoom 10s ease-out infinite alternate; }
+    .cul-exp__text { background: var(--black); padding: 60px 52px; display: flex; flex-direction: column; justify-content: center; }
+    .cul-exp__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
+    .cul-exp__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 18px; }
+    .cul-exp__name { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 30px); font-weight: 400; color: var(--cream); margin-bottom: 18px; line-height: 1.2; }
+    .cul-exp__desc { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; margin-bottom: 32px; }
+    .cul-exp__cta { font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); border: 1px solid rgba(200,120,42,0.6); padding: 8px 16px; display: inline-block; align-self: flex-start; text-decoration: none; transition: background 0.3s ease, color 0.3s ease; }
+    .cul-exp__cta:hover { background: var(--ember); color: var(--black); }
+
+    @media (max-width: 768px) {
+      .cul-dishes__grid { grid-template-columns: 1fr; }
+      .cul-hero { height: 360px; }
+      .cul-hero__text { left: 28px; bottom: 32px; }
+      .cul-exp { grid-template-columns: 1fr; }
+      .cul-exp__img { height: 280px; }
+      .cul-exp__text { padding: 36px 28px; }
+    }
+    /* ── SPIRIT OF AFRICA ───────────────────────────────────────── */
+    .saf-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .saf-section__header { text-align: center; padding: 0 40px 60px; }
+    .saf-section__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
+    .saf-section__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 42px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
+    .saf-section__title em { font-style: italic; color: var(--ember); }
+    .saf-section__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
+    .saf-section__intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
+
+    /* Atmospheric hero */
+    .saf-hero { position: relative; height: 440px; overflow: hidden; margin-bottom: 3px; }
+    .saf-hero img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: culZoom 10s ease-out infinite alternate; }
+    @media (max-width: 768px) { .saf-hero img { object-position: 20% center; } }
+    @media (max-width: 768px) { #attractTrack .vis-gallery__desc { font-size: 15px; } }
+    .saf-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(8,7,5,0.1) 0%, rgba(8,7,5,0.7) 60%, rgba(8,7,5,1) 100%); }
+    .saf-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 400px; text-align: left; }
+    @media (max-width: 768px) { .saf-hero__text { left: 24px; bottom: 7px; text-align: left; } }
+    .saf-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .saf-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
+    .saf-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); line-height: 1.2; }
+    .saf-hero__quote em { color: var(--ember); font-style: normal; }
+
+    /* Attractions sub-header */
+    .saf-attract__header { text-align: center; padding: 56px 40px 32px; }
+    .saf-attract__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .saf-attract__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); margin-bottom: 16px; }
+    .saf-attract__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto; }
+
+    /* Portrait cards */
+    .saf-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 3px; }
+    .saf-card { position: relative; height: 480px; overflow: hidden; }
+    .saf-cards > .saf-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; }
+    .saf-cards > .saf-card.in-view { opacity: 1; transform: translateY(0); }
+    @media (max-width: 768px) {
+      .saf-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; height: auto; }
+      .saf-card.in-view { opacity: 1; transform: translateY(0); }
+    }
+    .saf-card img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.6s ease; }
+    .saf-card:hover img { transform: scale(1.04); }
+    .saf-card__overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,5,0.95) 0%, rgba(8,7,5,0.2) 55%, rgba(8,7,5,0.0) 100%); }
+    .saf-card__body { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 28px; }
+    .saf-card__number { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; color: var(--ember); margin-bottom: 10px; }
+    .saf-card__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
+    .saf-card__name { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 10px; line-height: 1.2; }
+    .saf-card__desc { font-family: var(--font-sans); font-size: 14px; font-weight: 300; color: var(--warm-mid); line-height: 1.7; }
+
+    /* CTA bar */
+    .saf-cta { background: #0c0a08; padding: 64px 40px; text-align: center; border-top: 1px solid rgba(200,120,42,0.15); }
+    .saf-cta__title { font-family: var(--font-serif); font-size: clamp(20px, 3vw, 26px); font-weight: 400; color: var(--cream); margin-bottom: 12px; }
+    .saf-cta__title em { font-style: italic; color: var(--ember); }
+    .saf-cta__sub { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; max-width: 520px; margin: 0 auto 32px; }
+
+    @media (max-width: 768px) {
+      .saf-cards { grid-template-columns: 1fr; }
+      .saf-card { height: 320px; }
+      .saf-hero { height: 320px; }
+    }
+
+    /* ── ROOMS EXPANDED ─────────────────────────────────────────── */
+    .rooms-section-header { text-align: center; padding: 0 40px 60px; }
+    .section--alt#rooms { padding: 80px 0; background: var(--black); border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .rooms-section-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
+    .rooms-section-title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
+    .rooms-section-title em { font-style: italic; color: var(--ember); }
+    .rooms-section-rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
+    .rooms-section-intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 560px; margin: 0 auto; }
+    .rooms-hero { position: relative; height: 460px; overflow: hidden; margin-bottom: 3px; }
+    .rooms-hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; display: block; animation: culZoom 12s ease-out infinite alternate; }
+    .rooms-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(8,7,5,0.75) 0%, rgba(8,7,5,0.1) 65%), linear-gradient(to top, rgba(8,7,5,1) 0%, rgba(8,7,5,0) 40%); }
+    .rooms-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 420px; }
+    .rooms-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
+    .rooms-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 14px; }
+    .rooms-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 12px; }
+    .rooms-hero__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
+    .rooms-subheader { text-align: center; padding: 56px 40px 32px; }
+    .rooms-subheader__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
+    .rooms-subheader__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); margin-bottom: 14px; }
+    .rooms-subheader__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 16px; }
+    .rooms-subheader__tagline { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); font-style: italic; }
+    @media (max-width: 768px) {
+      .rooms-hero { height: 320px; }
+      .rooms-hero__text { left: 28px; bottom: 28px; }
+    }
+
+    /* ── AVAILABILITY POPUP ─────────────────────────────────────── */
+    .avail-popup-overlay { position: fixed; inset: 0; background: rgba(8,7,5,0.85); z-index: 600; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .avail-popup-overlay.open { display: flex; }
+    .avail-popup { background: #0c0a08; border: 1px solid rgba(200,120,42,0.8); max-width: 480px; width: 100%; padding: 56px 48px; text-align: center; position: relative; }
+    .avail-popup__close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: var(--warm-mid); font-size: 20px; cursor: pointer; line-height: 1; }
+    .avail-popup__close:hover { color: var(--cream); }
+    .avail-popup__icon { font-size: 32px; color: var(--ember); margin-bottom: 20px; opacity: 0.7; }
+    .avail-popup__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
+    .avail-popup__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 30px); font-weight: 400; color: var(--cream); margin-bottom: 16px; line-height: 1.3; }
+    .avail-popup__title em { font-style: italic; color: var(--ember); }
+    .avail-popup__text { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; margin-bottom: 32px; }
+    .avail-popup__btn { display: inline-block; font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--black); background: var(--ember); border: none; padding: 14px 32px; cursor: pointer; transition: background 0.3s ease; }
+    .avail-popup__btn:hover { background: #e8954a; }
+
+    .nav__reserve {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--ember);
+      background: transparent;
+      border: 1px solid var(--ember);
+      padding: 10px 20px;
+      text-decoration: none;
+      transition: background 0.3s ease, color 0.3s ease;
+      white-space: nowrap;
+    }
+    .nav__reserve:hover { background: var(--ember); color: var(--black); }
+    @media (max-width: 900px) { .nav__reserve { display: none; } }
+
+    /* ── HERO SCROLL ANIMATION ───────────────────────────────────── */
+    .cul-hero, .rooms-hero, .saf-hero {
+      transition: opacity 0.9s ease;
+    }
+    .cul-hero.in-view, .rooms-hero.in-view, .saf-hero.in-view {
+      opacity: 1;
+    }
+
+    /* ── MOBILE SWIPE CAROUSEL ───────────────────────────────────── */
+    @media (max-width: 768px) {
+      .mobile-carousel-wrap { position: relative; overflow: hidden; width: 100%; }
+      #dishTrack, #roomTrack, #attractTrack {
+        display: flex !important;
+        grid-template-columns: unset !important;
+        gap: 0 !important;
+        transition: transform 0.4s ease;
+        will-change: transform;
+      }
+      #dishTrack > .cul-dish,
+      #roomTrack > .room-card,
+      #attractTrack > .vis-gallery__item {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        grid-template-columns: 1fr !important;
+        background: #0c0a08;
+      }
+      #attractTrack > .vis-gallery__item .vis-gallery__img { height: 260px; }
+      .carousel-dots { display: flex; justify-content: center; gap: 8px; padding: 0 0 22px; }
+      .carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
+      .carousel-dot.active { background: var(--ember); }
+    }
+    @media (min-width: 769px) {
+      .carousel-dots { display: none; }
+      #tDots { display: none; }
+      .testimonial-slider__controls { display: flex; }
+      #attractCarousel { display: block; }
+      #attractTrack { display: block !important; }
+    }
+    .nav--hidden { transform: translateY(-100%); }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       NAVIGATION
+  ============================================================ -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="#" class="nav__logo" aria-label="Safari Ember — home" style="display:flex;align-items:center;gap:10px;">
+      <img src="sember.png" alt="Safari Ember logo" style="height:46px;width:auto;object-fit:contain;" />
+    </a>
+
+    <ul class="nav__links">
+      <li><a href="#rooms-suites">Rooms</a></li>
+      <li><a href="#signature-dishes">Dining</a></li>
+      <li><a href="#signature-attractions">Experiences</a></li>
+      <li><a href="#amenities">Amenities</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+
+    <div style="display:flex;align-items:center;gap:16px;">
+      <button class="nav__toggle" aria-label="Open menu" aria-expanded="false" id="menuToggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile full-screen menu -->
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation" aria-modal="true">
+    <button class="mobile-menu__close" id="menuClose" aria-label="Close menu">&times;</button>
+    <div class="mobile-menu__links">
+      <a href="#rooms-suites"       onclick="closeMobileMenu()">Rooms</a>
+      <a href="#signature-dishes"      onclick="closeMobileMenu()">Dining</a>
+      <a href="#signature-attractions" onclick="closeMobileMenu()">Experiences</a>
+      <a href="#amenities"   onclick="closeMobileMenu()">Amenities</a>
+      <a href="#contact"     onclick="closeMobileMenu()">Contact</a>
+      <a href="#booking"     onclick="closeMobileMenu()" style="color:var(--ember);font-style:italic;">Reserve</a>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ============================================================
+         HERO — fullscreen image with logo
+    ============================================================ -->
+    <section class="hero" aria-labelledby="hero-title">
+      <!-- Hero film (Oct 2026): five clips in a row, looping. The drive up to the entrance, giraffe,
+           the lounge, elephants at sunset, then a glass of wine. Two video layers take turns: while one plays, the
+           next clip loads into the other, and they crossfade over a second. Only the clip on screen
+           and the next one are ever downloaded. Each clip exists at 720p (phones) and 1080p, as
+           MP4 and WebM; the script picks. Without JavaScript, or when the visitor prefers less
+           motion or less data, the poster (the first frame) is all that shows.
+           Decorative, so hidden from screen readers; the page's heading says what this place is. -->
+      <div class="hero__media">
+        <video class="hero__video is-active" id="heroVideoA" muted playsinline preload="none"
+               poster="compound-poster.webp" aria-hidden="true" tabindex="-1"></video>
+        <video class="hero__video" id="heroVideoB" muted playsinline preload="none"
+               aria-hidden="true" tabindex="-1"></video>
+      </div>
+      <div class="hero__overlay"></div>
+      <!-- Moving content that plays for more than 5 seconds needs a way to stop it (WCAG 2.2.2). -->
+      <button type="button" class="hero__pause" id="heroPause" aria-label="Pause background video" aria-pressed="false">
+        <svg class="hero__pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        <svg class="hero__play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+      </button>
+      <div class="hero__logo-lockup">
+        <img src="Elper.svg" alt="Safari Ember" fetchpriority="high" decoding="async" />
+
+      </div>
+      <!-- Content under the logo once it settles (see .hero__stage). Add things here. -->
+      <div class="hero__stage" id="heroStage">
+        <!-- The page's main heading (h1). It reuses the intro section's classes so the type matches it
+             exactly; .hero__stage only adds the staggered entrance (see the CSS). -->
+        <h1 class="hero-intro__title hero__stage-title" id="hero-title">
+          A <em>private</em> world unto itself
+        </h1>
+        <p class="hero-intro__desc hero__stage-desc">
+          Welcome to Kenya's premier luxury safari retreat, where refined comfort meets the untamed
+          beauty of the African wildlands.
+        </p>
+        <div class="hero-intro__ctas hero__stage-ctas">
+          <a href="#booking" class="btn-primary">Reserve a Suite</a>
+          <a href="#explore" class="btn-ghost">Explore the Lodge</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         INTRO — headline text pushed below the hero
+    ============================================================ -->
+    <section class="hero-intro" aria-labelledby="hero-heading">
+      <p class="hero-intro__eyebrow">A Private World Unto Itself</p>
+      <div class="hero-intro__line" role="presentation"></div>
+      <h2 class="hero-intro__title" id="hero-heading">
+        Where <em>warmth</em><br>becomes an art form
+      </h2>
+      <p class="hero-intro__desc">
+        Welcome to Kenya's premier luxury safari retreat, where refined comfort meets the untamed beauty of the African wildlands. Nestled in the heart of the vibrant capital, Safari Ember offers an exclusive escape designed for discerning travelers seeking elegance, adventure, and authentic African hospitality.
+      </p>
+      <p class="hero-intro__desc">
+                 
+	</p>
+      <div class="hero-intro__ctas">
+        <a href="#booking" class="btn-primary">Reserve a Suite</a>
+        <a href="#explore" class="btn-ghost">Explore the Hotel</a>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         VISUAL GALLERY
+    ============================================================ -->
+    <section class="vis-gallery" id="explore" aria-label="Safari Ember spaces">
+
+      <div class="vis-gallery__header">
+        <p class="vis-gallery__eyebrow">The Safari Ember Experience</p>
+        <h2 class="vis-gallery__title">Every space tells a <em>story</em></h2>
+        <div style="width:36px;height:1px;background:var(--ember);margin:20px auto 0;"></div>
+      </div>
+
+      <div class="vis-gallery__item" data-gallery>
+        <div class="vis-gallery__img">
+          <img src="Ember_penthouse.webp" alt="Ember Penthouse suite" loading="lazy" />
+        </div>
+        <div class="vis-gallery__text">
+          <p class="vis-gallery__tag">Accommodation</p>
+          <div class="vis-gallery__rule"></div>
+          <h3 class="vis-gallery__name">The Ember Penthouse</h3>
+          <p class="vis-gallery__desc">Perched above the city with commanding views and unparalleled privacy, The Ember Penthouse is the pinnacle of luxury at Safari Ember. An elevated sanctuary for guests who seek the extraordinary.</p>
+        </div>
+      </div>
+
+      <div class="vis-gallery__item" data-gallery>
+        <div class="vis-gallery__img">
+          <img src="The_Cinder_restaurant.webp" alt="The Cinder Restaurant" loading="lazy" />
+        </div>
+        <div class="vis-gallery__text">
+          <p class="vis-gallery__tag">Dining</p>
+          <div class="vis-gallery__rule"></div>
+          <h3 class="vis-gallery__name">The Cinder Restaurant</h3>
+          <p class="vis-gallery__desc">Exceptional cuisine meets refined ambiance. Inspired by Kenya's rich culinary heritage and the finest international influences, every dish is crafted with precision and served with understated sophistication.</p>
+        </div>
+      </div>
+
+      <div class="vis-gallery__item" data-gallery>
+        <div class="vis-gallery__img">
+          <img src="Spa_and_wellness.webp" alt="Spa and Wellness" loading="lazy" />
+        </div>
+        <div class="vis-gallery__text">
+          <p class="vis-gallery__tag">Wellness</p>
+          <div class="vis-gallery__rule"></div>
+          <h3 class="vis-gallery__name">The Silt Spa</h3>
+          <p class="vis-gallery__desc">A haven of tranquility where wellness becomes an art form. Indulgent treatments, skilled therapists, and serene surroundings combine to create moments of profound relaxation and renewal.</p>
+        </div>
+      </div>
+
+      <div class="vis-gallery__item" data-gallery>
+        <div class="vis-gallery__img">
+          <img src="The_Ash_Bar.webp" alt="The Ash Bar rooftop" loading="lazy" />
+        </div>
+        <div class="vis-gallery__text">
+          <p class="vis-gallery__tag">Rooftop</p>
+          <div class="vis-gallery__rule"></div>
+          <h3 class="vis-gallery__name">The Ash Bar</h3>
+          <p class="vis-gallery__desc">Safari Ember's destination for refined social experiences. Expertly crafted cocktails, premium spirits, and impeccable service. The perfect setting for conversation and unforgettable evenings.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================
+         DINING — FIRE & FLAVOUR
+    ============================================================ -->
+    <section class="cul-section" id="dining" aria-labelledby="dining-heading">
+
+      <div class="cul-section__header">
+        <p class="cul-section__eyebrow">A Culinary Journey</p>
+        <h2 class="cul-section__title" id="dining-heading">Fire & <em>Flavour</em></h2>
+        <div class="cul-section__rule"></div>
+        <p class="cul-section__intro">Every meal at Safari Ember is a celebration of Kenya's rich culinary heritage. Crafted with the finest local ingredients, inspired by the continent, and elevated by world-class technique.</p>
+      </div>
+
+      <!-- Kitchen hero -->
+      <div class="cul-hero">
+        <img src="grill.webp" alt="Safari Ember kitchen — chef at the flame" loading="lazy" />
+        <div class="cul-hero__overlay"></div>
+        <div class="cul-hero__text">
+          <p class="cul-hero__tag">Behind the Flame</p>
+          <div class="cul-hero__rule"></div>
+          <h3 class="cul-hero__name">Where Every Dish Begins</h3>
+        </div>
+      </div>
+      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">Our kitchen is the heart of Safari Ember. A space where craftsmanship, fire, and the finest Kenyan produce come together in every plate we serve.</p>
+
+      <!-- Signature dishes -->
+      <div class="cul-dishes__header" id="signature-dishes">
+        <p class="cul-dishes__eyebrow">On the Menu</p>
+        <h3 class="cul-dishes__title">Signature Dishes</h3>
+        <div style="width:36px;height:1px;background:var(--ember);margin:16px auto 0;"></div>
+      </div>
+
+      <div class="carousel-dots" id="dishDots"></div>
+      <div class="mobile-carousel-wrap" id="dishCarousel">
+      <div class="cul-dishes__grid mobile-carousel-track" id="dishTrack">
+        <div class="cul-dish" data-dish>
+          <div class="cul-dish__image">
+            <img src="dish1.webp" alt="The Heritage Plate" loading="lazy" />
+          </div>
+          <div class="cul-dish__body">
+            <p class="cul-dish__tag">Kenyan Heritage</p>
+            <div class="cul-dish__rule"></div>
+            <h4 class="cul-dish__name">The Heritage Plate</h4>
+            <p class="cul-dish__desc">Slow-braised beef in a rich, aromatic tomato stew, served alongside hand-rolled ugali and freshly prepared sukuma wiki. A tribute to Kenya's most beloved culinary traditions, elevated with care.</p>
+            <div class="cul-dish__footer">
+              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            </div>
+          </div>
+        </div>
+        <div class="cul-dish" data-dish>
+          <div class="cul-dish__image">
+            <img src="dish2.webp" alt="The Safari Spread" loading="lazy" />
+          </div>
+          <div class="cul-dish__body">
+            <p class="cul-dish__tag">Sharing Platter</p>
+            <div class="cul-dish__rule"></div>
+            <h4 class="cul-dish__name">The Safari Spread</h4>
+            <p class="cul-dish__desc">A generous celebration of the table: flame-kissed skewers, spiced wraps, and golden sliders brought together for those who believe the finest meals are always shared.</p>
+            <div class="cul-dish__footer">
+              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            </div>
+          </div>
+        </div>
+        <div class="cul-dish" data-dish>
+          <div class="cul-dish__image">
+            <img src="dish3.webp" alt="The Northern Classic" loading="lazy" />
+          </div>
+          <div class="cul-dish__body">
+            <p class="cul-dish__tag">Continental</p>
+            <div class="cul-dish__rule"></div>
+            <h4 class="cul-dish__name">The Northern Classic</h4>
+            <p class="cul-dish__desc">Inspired by the spice routes of North Africa: tender fish with preserved lemon, roasted vegetables, and vibrant accompaniments that carry the warmth and complexity of the continent.</p>
+            <div class="cul-dish__footer">
+              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Chef quote -->
+      <div class="cul-quote">
+        <div class="cul-quote__mark">"</div>
+        <p class="cul-quote__text">We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.</p>
+        <p class="cul-quote__attr">— Executive Chef, Safari Ember</p>
+      </div>
+
+      <!-- Dining Under the Stars -->
+      <div class="cul-exp">
+        <div class="cul-exp__img">
+          <img src="nightsky.webp" alt="Dining Under the Stars at Safari Ember" loading="lazy" />
+        </div>
+        <div class="cul-exp__text">
+          <p class="cul-exp__tag">The Experience</p>
+          <div class="cul-exp__rule"></div>
+          <h3 class="cul-exp__name">Dining Under the Stars</h3>
+          <p class="cul-exp__desc">Step outside the ordinary. Our open-air dining experience offers private tables beneath the African sky, where candlelight flickers against the night and the only thing that matters is the moment in front of you.</p>
+          <div class="cul-dish__footer" style="margin-top:20px;">
+            <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================
+         SPIRIT OF AFRICA
+    ============================================================ -->
+    <section class="saf-section" id="experiences" aria-labelledby="saf-heading">
+
+      <div class="saf-section__header">
+        <p class="saf-section__eyebrow">Discover</p>
+        <h2 class="saf-section__title" id="saf-heading">The <em>Spirit</em> of Africa</h2>
+        <div class="saf-section__rule"></div>
+        <p class="saf-section__intro">Safari Ember sits at the threshold of two worlds: the vibrant pulse of Nairobi and the untamed beauty of the African wilderness. Step outside and let the continent begin.</p>
+      </div>
+
+      <!-- Atmospheric hero -->
+      <div class="saf-hero">
+        <img src="safarispirit.webp" alt="African wilderness at sunset" loading="lazy" />
+        <div class="saf-hero__overlay"></div>
+        <div class="saf-hero__text">
+          <p class="saf-hero__tag">In the Wild</p>
+          <div class="saf-hero__rule"></div>
+          <h3 class="saf-hero__name">Land of Untamed Beauty</h3>
+        </div>
+      </div>
+      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">Less than an hour from your suite, lions roam, giraffes graze, and the city disappears entirely. </p>
+
+      <!-- Attractions sub-header -->
+      <div class="saf-attract__header" id="signature-attractions">
+        <p class="saf-attract__eyebrow">Beyond the Hotel</p>
+        <h3 class="saf-attract__title">Signature Attractions</h3>
+        <div class="saf-attract__rule"></div>
+      </div>
+
+      <div class="carousel-dots" id="attractDots"></div>
+      <div class="mobile-carousel-wrap" id="attractCarousel">
+        <div class="attract-carousel-track" id="attractTrack">
+          <div class="vis-gallery__item" data-gallery>
+            <div class="vis-gallery__img">
+              <img src="nairobinat.webp" alt="Nairobi National Park" loading="lazy" />
+            </div>
+            <div class="vis-gallery__text">
+              <p class="vis-gallery__tag">Wildlife</p>
+              <div class="vis-gallery__rule"></div>
+              <h3 class="vis-gallery__name">Nairobi National Park</h3>
+              <p class="vis-gallery__desc">The only wildlife park in the world set against a city skyline. Lions, rhinos, buffalo, and hundreds of bird species roam freely. All within minutes of your suite at Safari Ember. A safari experience like no other, with the Nairobi skyline as your backdrop.</p>
+              <div class="cul-dish__footer" style="margin-top:20px;">
+                <a href="#booking" class="cul-dish__link">Book Safari</a>
+              </div>
+            </div>
+          </div>
+          <div class="vis-gallery__item" data-gallery>
+            <div class="vis-gallery__img">
+              <img src="giraffecent.webp" alt="Giraffe Centre" loading="lazy" />
+            </div>
+            <div class="vis-gallery__text">
+              <p class="vis-gallery__tag">Conservation</p>
+              <div class="vis-gallery__rule"></div>
+              <h3 class="vis-gallery__name">Giraffe Centre</h3>
+              <p class="vis-gallery__desc">A sanctuary for the endangered Rothschild giraffe, the Giraffe Centre offers a rare and intimate encounter with one of Africa's most magnificent creatures. Feed them by hand, learn their stories, and leave with a memory that lingers long after your stay.</p>
+              <div class="cul-dish__footer" style="margin-top:20px;">
+                <a href="#booking" class="cul-dish__link">Book Safari</a>
+              </div>
+            </div>
+          </div>
+          <div class="vis-gallery__item" data-gallery>
+            <div class="vis-gallery__img">
+              <img src="karenblixen.webp" alt="Karen Blixen Museum" loading="lazy" />
+            </div>
+            <div class="vis-gallery__text">
+              <p class="vis-gallery__tag">Heritage</p>
+              <div class="vis-gallery__rule"></div>
+              <h3 class="vis-gallery__name">Karen Blixen Museum</h3>
+              <p class="vis-gallery__desc">The former home of the celebrated author of Out of Africa, this beautifully preserved colonial farmhouse sits amid lush gardens at the foot of the Ngong Hills. A window into Kenya's storied past and the romantic era that inspired one of literature's greatest memoirs.</p>
+              <div class="cul-dish__footer" style="margin-top:20px;">
+                <a href="#booking" class="cul-dish__link">Book Safari</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA bar -->
+
+    </section>
+
+
+
+
+
+
+    <!-- ============================================================
+         ROOMS & SUITES
+    ============================================================ -->
+    <section class="section--alt" id="rooms" aria-labelledby="rooms-heading">
+
+      <!-- Section header -->
+      <div class="rooms-section-header">
+        <p class="rooms-section-eyebrow">Where to Rest</p>
+        <h2 class="rooms-section-title" id="rooms-heading">A Place Like <em>Home</em></h2>
+        <div class="rooms-section-rule"></div>
+        <p class="rooms-section-intro">Every room at Safari Ember is a sanctuary, designed to dissolve the boundary between the wild and the refined. Between adventure and deep, unhurried rest.</p>
+      </div>
+
+      <!-- Hero banner -->
+      <div class="rooms-hero">
+        <img src="roomhero.webp" alt="Safari Ember luxury room interior" loading="lazy" />
+        <div class="rooms-hero__overlay"></div>
+        <div class="rooms-hero__text">
+          <p class="rooms-hero__tag">Your Private Retreat</p>
+          <div class="rooms-hero__rule"></div>
+          <h3 class="rooms-hero__name">Crafted for the Discerning Traveller</h3>
+        </div>
+      </div>
+      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">From intimate rooms dressed in warm earth tones to sweeping penthouses above the Nairobi skyline. Each space is a world of its own.</p>
+
+      <!-- Sub header -->
+      <div class="rooms-subheader" id="rooms-suites">
+        <p class="rooms-subheader__eyebrow">Choose Your Space</p>
+        <h3 class="rooms-subheader__title">Rooms & Suites</h3>
+        <div class="rooms-subheader__rule"></div>
+
+      </div>
+
+      <div class="carousel-dots" id="roomDots"></div>
+      <div class="mobile-carousel-wrap" id="roomCarousel">
+      <div class="rooms__grid mobile-carousel-track" id="roomTrack">
+
+        <!-- Room 1 -->
+        <article class="room-card">
+          <div class="room-card__image">
+            <img src="Hearthside_room.webp" alt="Hearthside Room interior with king bed, safari wall art and warm candlelit sconces" loading="lazy" />
+          </div>
+          <div class="room-card__body">
+            <p class="room-card__type">Deluxe</p>
+            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <h3 class="room-card__name">Hearthside Room</h3>
+            <p class="room-card__desc">
+              Rich amber tones, king bed, and a private terrace with sweeping city views.
+              Handcrafted furniture, Italian linens, and a deep soaking tub.
+            </p>
+            <div class="cul-dish__footer" style="margin-top:20px;">
+              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Room 2 -->
+        <article class="room-card">
+          <div class="room-card__image">
+            <img src="coalbed_suite.webp" alt="Coalbed Suite with canopy bed, African decor and en-suite bathroom" loading="lazy" />
+          </div>
+          <div class="room-card__body">
+            <p class="room-card__type">Junior Suite</p>
+            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <h3 class="room-card__name">The Coalbed Suite</h3>
+            <p class="room-card__desc">
+              A split-level sanctuary dressed in velvet and warm oak. Features a freestanding
+              soaking tub, parlour lounge, and private butler service.
+            </p>
+            <div class="cul-dish__footer" style="margin-top:20px;">
+              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Room 3 -->
+        <article class="room-card">
+          <div class="room-card__image">
+            <img src="Ember_penthouse.webp" alt="Ember Penthouse exterior with infinity pool, sun loungers and ocean views at sunset" loading="lazy" />
+          </div>
+          <div class="room-card__body">
+            <p class="room-card__type">Penthouse</p>
+            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <h3 class="room-card__name">The Ember Penthouse</h3>
+            <p class="room-card__desc">
+              Our crown jewel. Panoramic floor-to-ceiling views, a dedicated private butler,
+              bespoke in-room dining, and a rooftop terrace for exclusive use.
+            </p>
+            <div class="cul-dish__footer" style="margin-top:20px;">
+              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         AMENITIES & EXPERIENCES
+    ============================================================ -->
+    <section class="am-section" id="amenities" aria-labelledby="amenities-heading">
+      <div class="am-header">
+        <p class="am-eyebrow">What awaits you</p>
+        <h2 class="am-title" id="amenities-heading">Signature <em>Amenities</em></h2>
+        <div class="am-rule"></div>
+      </div>
+
+      <div class="am-grid">
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="conci.webp" alt="Valet and Concierge" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Service</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Valet & Concierge</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">Round-the-clock personal service for every need, from curated itineraries to seamless arrivals and departures.</p>
+          </div>
+        </div>
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="infipool.webp" alt="Infinity Pool" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Recreation</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Infinity Pool</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">An elevated horizon pool overlooking the sweeping landscape. The perfect retreat from sunrise to sunset.</p>
+          </div>
+        </div>
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="wellness.webp" alt="Wellness Centre" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Wellness</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Wellness Centre</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">A serene sanctuary of restorative treatments, ancient rituals, and modern therapies designed to renew body and spirit.</p>
+          </div>
+        </div>
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="cuisine.webp" alt="Fine Dining" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Dining</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Fine Dining</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">Award-winning cuisine inspired by Kenyan heritage and the finest international influences, served with understated elegance.</p>
+          </div>
+        </div>
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="business.avif" alt="Business Facilities" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Work</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Business Facilities</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">State-of-the-art meeting rooms and private workspaces for the discerning professional, with seamless connectivity.</p>
+          </div>
+        </div>
+
+        <div class="am-card">
+          <div class="am-card__img-wrap">
+            <img class="am-card__img" src="event.avif" alt="Private Events" loading="lazy" />
+            <div class="am-card__overlay"></div>
+            <div class="am-card__img-body">
+              <p class="am-card__tag">Events</p>
+              <div class="am-card__rule"></div>
+              <h3 class="am-card__name">Private Events</h3>
+            </div>
+          </div>
+          <div class="am-card__body">
+            <p class="am-card__desc">Bespoke celebrations and gatherings in exclusive settings, tailored to every occasion with impeccable attention to detail.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TESTIMONIALS
+    ============================================================ -->
+    <section class="section" id="testimonials" aria-labelledby="testimonials-heading">
+      <div class="section__header">
+        <span class="label">Testimonials</span>
+        <h2 class="section-title" id="testimonials-heading">What Our <em>Guests</em> Say</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="testimonial-slider">
+        <div class="carousel-dots" id="tDots" style="padding: 0 0 22px;"></div>
+        <div class="testimonial-slider__track" id="testimonialTrack">
+
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial__text">
+              Safari Ember is unlike any hotel I have stayed in. The warmth of the staff, the extraordinary food, and waking up knowing Nairobi National Park is minutes away. It is a truly once-in-a-lifetime experience.
+            </p>
+            <footer class="testimonial__author">— Fatima A., Dubai</footer>
+          </blockquote>
+
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial__text">
+              The Cinder's tasting menu was the highlight of our anniversary trip. Each course felt deliberate, warm, and completely unforgettable. We've already booked to return next spring.
+            </p>
+            <footer class="testimonial__author">— James &amp; Priya T., London</footer>
+          </blockquote>
+
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial__text">
+              The atmosphere is genuinely intimate, like being a guest in someone's extraordinarily beautiful home. The staff remembered every preference without being asked twice.
+            </p>
+            <footer class="testimonial__author">— Amara S., Lagos</footer>
+          </blockquote>
+
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial__text">
+              We celebrated our anniversary at Safari Ember and could not have chosen better. The Ember Penthouse was breathtaking, the service impeccable, and the Ash Bar at sunset is something we will never forget.
+            </p>
+            <footer class="testimonial__author">— David &amp; Claire M., Nairobi</footer>
+          </blockquote>
+
+        </div>
+
+        <div class="testimonial-slider__controls">
+          <button class="testimonial-slider__btn" id="tPrev" aria-label="Previous testimonial">&#8592;</button>
+          <div class="testimonial-slider__dots" id="tDotsDesktop"></div>
+          <button class="testimonial-slider__btn" id="tNext" aria-label="Next testimonial">&#8594;</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         BOOKING / AVAILABILITY BAR
+    ============================================================ -->
+    <section class="booking" id="booking" aria-labelledby="booking-heading">
+      <span class="label" style="display:block;text-align:center">Availability</span>
+      <h2 class="section-title" id="booking-heading">Reserve Your <em>Stay</em></h2>
+      <div class="rule" style="margin-bottom:0"></div>
+
+      <!--
+        This form currently just validates and shows an alert.
+        In production: either integrate a booking API (e.g. Cloudbeds, Mews)
+        or connect to Netlify Forms by adding the `netlify` attribute to the form tag.
+      -->
+      <form class="booking__bar" id="bookingForm" novalidate aria-label="Booking enquiry form">
+        <div class="booking__field">
+          <label class="booking__field-label" for="checkin">Check In</label>
+          <input type="date" id="checkin" name="checkin" required aria-required="true" />
+        </div>
+        <div class="booking__field">
+          <label class="booking__field-label" for="checkout">Check Out</label>
+          <input type="date" id="checkout" name="checkout" required aria-required="true" />
+        </div>
+        <div class="booking__field">
+          <label class="booking__field-label" for="guests">Guests</label>
+          <select id="guests" name="guests" aria-label="Number of guests">
+            <option value="1">1 Adult</option>
+            <option value="2" selected>2 Adults</option>
+            <option value="3">3 Guests</option>
+            <option value="4">4 Guests</option>
+            <option value="5">5+ Guests</option>
+          </select>
+        </div>
+        <button type="submit" class="booking__submit">Check Availability</button>
+      </form>
+    </section>
+
+    <!-- ============================================================
+         CONTACT INQUIRY FORM
+         Uses Netlify Forms for zero-backend form handling.
+         Just add netlify attribute when you deploy to Netlify.
+    ============================================================ -->
+    <section class="form-section" id="inquiry" aria-labelledby="inquiry-heading">
+      <div class="section__header">
+        <span class="label">Enquire</span>
+        <h2 class="section-title" id="inquiry-heading">Get in <em>Touch</em></h2>
+        <div class="rule"></div>
+      </div>
+
+      <!--
+        NETLIFY FORMS SETUP:
+        When deploying to Netlify, add the following attributes to the <form> tag:
+          name="contact"
+          netlify
+          netlify-honeypot="bot-field"
+        Netlify will handle form submissions automatically — no backend needed.
+      -->
+      <form
+        class="form"
+        id="inquiryForm"
+        name="contact"
+        method="POST"
+        action="/thank-you.html"
+        netlify
+        netlify-honeypot="bot-field"
+        novalidate
+        aria-label="Contact inquiry form"
+      >
+        <!-- Honeypot field: hidden from humans, catches spam bots -->
+        <p style="display:none">
+          <label>Don't fill this out: <input name="bot-field" /></label>
+        </p>
+
+        <div class="form__row">
+          <div class="form__group">
+            <label class="form__label" for="first-name">First Name</label>
+            <input class="form__input" type="text" id="first-name" name="first-name"
+                   placeholder="James" required aria-required="true" autocomplete="given-name" />
+          </div>
+          <div class="form__group">
+            <label class="form__label" for="last-name">Last Name</label>
+            <input class="form__input" type="text" id="last-name" name="last-name"
+                   placeholder="Kanini" required aria-required="true" autocomplete="family-name" />
+          </div>
+        </div>
+
+        <div class="form__group">
+          <label class="form__label" for="email">Email Address</label>
+          <input class="form__input" type="email" id="email" name="email"
+                 placeholder="james@example.com" required aria-required="true" autocomplete="email" />
+        </div>
+
+        <div class="form__group">
+          <label class="form__label" for="subject">Subject</label>
+          <input class="form__input" type="text" id="subject" name="subject"
+                 placeholder="Room enquiry, special occasion, dining reservation…" />
+        </div>
+
+        <div class="form__group">
+          <label class="form__label" for="message">Message</label>
+          <textarea class="form__textarea" id="message" name="message"
+                    placeholder="Tell us how we can make your stay extraordinary…"
+                    required aria-required="true"></textarea>
+        </div>
+
+        <div class="form__submit">
+          <button type="submit" class="btn-primary">Send Enquiry</button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ============================================================
+         LOCATION & CONTACT
+    ============================================================ -->
+    <section class="section section--deep" id="contact" aria-labelledby="contact-heading">
+      <div class="section__header">
+        <span class="label">Find Us</span>
+        <h2 class="section-title" id="contact-heading">Location &amp; <em>Contact</em></h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="contact__layout">
+
+        <!--
+          MAP PLACEHOLDER
+          To embed a real Google Map, replace this entire div with:
+          <iframe
+            src="https://www.google.com/maps/embed?pb=YOUR_EMBED_CODE"
+            width="100%"
+            height="360"
+            style="border:0"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Safari Ember location map"
+          ></iframe>
+        -->
+        <div class="contact__map" style="padding:0;overflow:hidden;">
+          <button type="button" class="contact__map-facade" id="mapFacade"
+            data-map-src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4426.294020334565!2d37.0629147386458!3d-1.0093891984401901!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4c43e23bacd3%3A0x253ab50e30ae9ea5!2sBogoria%20Avenue!5e0!3m2!1sen!2ske!4v1780338140219!5m2!1sen!2ske"
+            aria-label="Load interactive map of Safari Ember, Bogoria Avenue, Thika">
+            <span class="contact__map-grid" aria-hidden="true">
+              <span class="contact__map-gridline contact__map-gridline--h" style="top:30%;"></span>
+              <span class="contact__map-gridline contact__map-gridline--h" style="top:58%;"></span>
+              <span class="contact__map-gridline contact__map-gridline--h" style="top:82%;"></span>
+              <span class="contact__map-gridline contact__map-gridline--v" style="left:28%;"></span>
+              <span class="contact__map-gridline contact__map-gridline--v" style="left:62%;"></span>
+              <span class="contact__map-gridline contact__map-gridline--v" style="left:84%;"></span>
+            </span>
+            <span class="contact__map-pin">
+              <span class="contact__map-dot" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21s-6-5.686-6-10a6 6 0 0 1 12 0c0 4.314-6 10-6 10z"/>
+                  <circle cx="12" cy="11" r="2"/>
+                </svg>
+              </span>
+              <span class="contact__map-label">Bogoria Avenue &middot; Thika</span>
+              <span class="contact__map-cta">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>
+                </svg>
+                View map
+              </span>
+            </span>
+          </button>
+        </div>
+
+        <address class="contact__info" style="font-style:normal">
+          <div>
+            <span class="contact__item-label">Address</span>
+            <p class="contact__item-val">13 Bogoria Lane, Thika</p>
+          </div>
+          <div>
+            <span class="contact__item-label">Reservations</span>
+            <a href="tel:+254705439631" class="contact__item-val">+254 705 439 631</a>
+          </div>
+          <div>
+            <span class="contact__item-label">Email</span>
+            <a href="mailto:stay@safariember.com" class="contact__item-val">stay@safariember.com</a>
+          </div>
+          <div>
+            <span class="contact__item-label">Concierge</span>
+            <p class="contact__item-val">Available 24 hours, 7 days a week</p>
+          </div>
+          <div>
+            <span class="contact__item-label">Follow</span>
+            <div style="display:flex;gap:16px;margin-top:4px">
+              <a href="#" class="contact__item-val" style="font-size: 15px" aria-label="Instagram">Instagram</a>
+              <a href="#" class="contact__item-val" style="font-size: 15px" aria-label="Facebook">Facebook</a>
+            </div>
+          </div>
+        </address>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer__logo" style="display:flex;align-items:center;gap:8px;">
+      <img src="sember.png" alt="Safari Ember logo" style="height:36px;width:auto;object-fit:contain;" />
+    </div>
+    <p class="footer__copy">&copy; 2026 Safari Ember. All rights reserved.</p>
+    <ul class="footer__links">
+      <li><a href="#">Privacy Policy</a></li>
+      <li><a href="#">Terms of Use</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </footer>
+  <p style="text-align:center;font-family:var(--font-sans);font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:#fff;padding:16px 0 20px;background:var(--black);margin:0;">Designed &amp; Developed by <span style="color:var(--ember);">ETHAN</span></p>
+
+  <!-- ============================================================
+       JAVASCRIPT
+       Kept minimal and vanilla — no frameworks needed for this.
+  ============================================================ -->
+  <script>
+    // ---- Mobile menu toggle ----------------------------------------
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuClose  = document.getElementById('menuClose');
+
+    function openMobileMenu() {
+      mobileMenu.classList.add('is-open');
+      // Prevent body scroll while menu is open
+      document.body.style.overflow = 'hidden';
+      menuToggle.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeMobileMenu() {
+      mobileMenu.classList.remove('is-open');
+      document.body.style.overflow = '';
+      menuToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    menuToggle.addEventListener('click', openMobileMenu);
+    menuClose.addEventListener('click', closeMobileMenu);
+
+    // Close mobile menu on Escape key — good for accessibility
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeMobileMenu();
+    });
+
+    // ---- Booking form validation ------------------------------------
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const checkin  = document.getElementById('checkin').value;
+      const checkout = document.getElementById('checkout').value;
+
+      if (!checkin || !checkout) {
+        alert('Please select your check-in and check-out dates.');
+        return;
+      }
+
+      // Ensure checkout is after checkin
+      if (new Date(checkout) <= new Date(checkin)) {
+        alert('Check-out date must be after check-in date.');
+        return;
+      }
+
+      // In production: replace this alert with a redirect to your
+      // booking engine, or an API call to your reservation system.
+      openAvailPopup();
+    });
+
+    // ---- Inquiry form validation ------------------------------------
+    document.getElementById('inquiryForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Please enter a valid email address.');
+        return;
+      }
+      // Reset form and show popup
+      this.reset();
+      document.querySelector('.avail-popup__title').innerHTML = 'Thank you for your <em>enquiry</em>';
+      document.querySelector('.avail-popup__text').style.display = '';
+      openAvailPopup();
+    });
+
+    // ---- Scroll-based nav background --------------------------------
+    // The nav starts nearly transparent and becomes more solid on scroll.
+    // This is already handled by the CSS backdrop-filter, but we can
+    // add a class for extra emphasis if needed.
+    window.addEventListener('scroll', function() {
+      const nav = document.querySelector('.nav');
+      if (window.scrollY > 80) {
+        nav.style.background = 'rgba(8,7,5,0.98)';
+      } else {
+        nav.style.background = 'rgba(8,7,5,0.92)';
+      }
+    }, { passive: true }); // passive: true improves scroll performance
+
+    // ---- Set minimum date to today on booking fields ----------------
+    // Prevents guests from selecting dates in the past.
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checkin').setAttribute('min', today);
+    document.getElementById('checkout').setAttribute('min', today);
+
+    // When checkin changes, push checkout minimum forward
+    document.getElementById('checkin').addEventListener('change', function() {
+      document.getElementById('checkout').setAttribute('min', this.value);
+    });
+  </script>
+
+  <script>
+    /* Phones (and phones turned sideways): place the logo and text as low as fits. The aim is about 40% down the screen minus
+       85px, but on a narrow phone the headline and paragraph wrap onto more lines and the block
+       would run into the pause button (or off the screen). So this measures the real text block,
+       lowers it to the aim if there's room, and otherwise stops where it still clears the button.
+       It also tells the overlay where the headline landed (--hy), so the shade sits behind it.
+       Runs on load, when the web font arrives (it changes the wrapping) and on resize/rotate.
+       Desktop is left entirely to the CSS. */
+    (function () {
+      var hero = document.querySelector('.hero');
+      var stage = document.getElementById('heroStage');
+      var title = document.querySelector('.hero__stage-title');
+      var ctas = document.querySelector('.hero__stage-ctas');
+      var pause = document.getElementById('heroPause');
+      if (!hero || !stage || !title || !ctas || !pause) return;
+      var phone = window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 500px)');
+
+      function fit() {
+        hero.style.removeProperty('--settle-top');
+        hero.style.removeProperty('--hy');
+        if (!phone.matches) return;
+        var h = hero.clientHeight;
+        // Measure with the logo at the very top (settle-top 0): where the stage starts, and where
+        // the text starts and ends inside it. offsetTop ignores the entrance animation's transform.
+        hero.style.setProperty('--settle-top', '0px');
+        var k = stage.offsetTop;
+        var textTop = title.offsetTop;
+        var textEnd = ctas.offsetTop + ctas.offsetHeight;
+        var aim = Math.max(60, 0.40 * h - 85);
+        // The lowest it can go: 16px above the pause button if the buttons are above it (a narrow
+        // portrait phone), otherwise 16px above the bottom of the hero (sideways, they're well apart).
+        var b = ctas.getBoundingClientRect(), pz = pause.getBoundingClientRect();
+        var under = b.right > pz.left - 8 && b.left < pz.right + 8;
+        var floor = under ? pause.offsetTop : h;
+        var room = floor - 16 - k - textEnd;
+        var top = Math.max(60, Math.min(aim, room));
+        hero.style.setProperty('--settle-top', top + 'px');
+        hero.style.setProperty('--hy', ((top + k + textTop) / h * 100).toFixed(2) + '%');
+      }
+
+      fit();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+      var queued = false;
+      window.addEventListener('resize', function () {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () { queued = false; fit(); });
+      });
+    })();
+
+    /* Hero logo: it fades in over the black opening (CSS, from 1.0 s, fully visible at 2.4 s), stays
+       big and centred, then settles at --settle-at (4.0 s; CSS does the move): 3 s on screen in all.
+       With "reduce motion" on, there's no opening and the hero starts settled. */
+    (function () {
+      var hero = document.querySelector('.hero');
+      if (!hero) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { hero.classList.add('is-settled'); return; }
+      // Settle exactly when the nav bar starts fading in. Both run off the CSS animation clock, so
+      // they stay in step even if the page loads slowly. A script timer would start on its own,
+      // earlier clock and could drift by a second or more. (animationstart fires when the nav's
+      // delay, --settle-at, runs out.)
+      function settle() { hero.classList.add('is-settled'); }
+      var nav = document.querySelector('.nav');
+      if (nav) nav.addEventListener('animationstart', settle, { once: true });
+      // Backup: settle anyway if that event never comes, e.g. a keyboard user tabbed into the nav
+      // early, which cancels its fade (see the Opening CSS).
+      var at = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--settle-at'));
+      setTimeout(settle, ((at > 0 ? at : 4) + 1.5) * 1000);
+    })();
+  </script>
+
+  <script>
+    /* Hero film: the six clips in order, looping, crossfading between two video layers.
+       It doesn't play (the poster frame stays) when the visitor has asked for less motion or for
+       less data (Data Saver / Lite mode). The button pauses and resumes it. It also pauses while
+       scrolled out of view, so it isn't decoding video nobody is looking at. */
+    (function () {
+      var a = document.getElementById('heroVideoA'), b = document.getElementById('heroVideoB');
+      var btn = document.getElementById('heroPause');
+      if (!a || !b || !btn) return;
+
+      // name → files <name>-720/1080.mp4/.webm. phone: which part of the frame a phone keeps.
+      var CLIPS = [
+        { name: 'compound', phone: '50% 50%' },   // first: the drive up to the lodge
+        { name: 'giraffe',  phone: '45% 50%' },
+        { name: 'hangout',  phone: '45% 50%' },
+        { name: 'sunset',   phone: '55% 50%' },   // keeps the sun in the tall frame
+        { name: 'winemom',  phone: '62% 50%' }    // the glass and her lips
+      ];
+      var FADE = 1;                                   // seconds; matches the CSS transition
+      var small = window.matchMedia('(max-width: 900px)').matches;
+      // MP4 (H.264) where it plays, which is nearly everywhere; WebM for builds without H.264.
+      var ext = a.canPlayType('video/mp4; codecs="avc1.640028"') ? 'mp4' : 'webm';
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var saveData = !!(navigator.connection && navigator.connection.saveData);
+      var paused = reduce || saveData;                // the visitor's wish, or their button press
+      var visible = true, switching = false, started = false;
+      var cur = a, next = b;
+
+      function load(el, i) {
+        el.dataset.i = i;
+        el.src = CLIPS[i].name + '-' + (small ? '720' : '1080') + '.' + ext;
+        el.style.objectPosition = small ? CLIPS[i].phone : '';
+        el.preload = 'auto';
+        el.load();
+      }
+      function play(el) { var p = el.play(); if (p && p.catch) p.catch(function () {}); }   // refused autoplay: the poster stays
+      function running() { return !paused && visible; }
+
+      // Crossfade to the other layer. If its clip isn't ready yet, the current one holds its
+      // last frame and the fade happens as soon as the next one can play.
+      function swap() {
+        if (switching) return;
+        if (next.readyState < 3) { next.addEventListener('canplay', swap, { once: true }); return; }
+        switching = true;
+        if (running()) play(next);
+        next.classList.add('is-active');
+        cur.classList.remove('is-active');
+        var old = cur; cur = next; next = old;
+        setTimeout(function () {                       // once it has faded out, load the clip after
+          old.pause();
+          load(old, (+cur.dataset.i + 1) % CLIPS.length);
+          switching = false;
+        }, FADE * 1000 + 50);
+      }
+      [a, b].forEach(function (el) {
+        el.addEventListener('timeupdate', function () {
+          if (el === cur && !switching && el.duration && el.duration - el.currentTime <= FADE) swap();
+        });
+        el.addEventListener('ended', function () { if (el === cur) swap(); });
+      });
+
+      function start() {
+        if (started) return;
+        started = true;
+        load(a, 0);
+        // The second clip starts loading once the first is playing, not alongside it.
+        a.addEventListener('playing', function () { setTimeout(function () { load(b, 1); }, 1500); }, { once: true });
+      }
+      function sync() {
+        btn.setAttribute('aria-pressed', String(paused));
+        btn.setAttribute('aria-label', paused ? 'Play background video' : 'Pause background video');
+        if (running()) { start(); play(cur); if (switching) play(next); }
+        else { a.pause(); b.pause(); }
+      }
+      btn.addEventListener('click', function () { paused = !paused; sync(); });
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; sync(); }, { threshold: 0.1 }).observe(a);
+      }
+      sync();
+    })();
+  </script>
+
+  <script>
+    // Hide heroes immediately before paint to prevent flicker
+    (function() {
+      var style = document.createElement('style');
+      style.textContent = '.cul-hero, .rooms-hero, .saf-hero { opacity: 0; }';
+      document.head.appendChild(style);
+    })();
+    (function() {
+      var heroes = document.querySelectorAll('.cul-hero, .rooms-hero, .saf-hero');
+      if (heroes.length) {
+        var heroObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+              heroObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.05 });
+        heroes.forEach(function(el) { heroObserver.observe(el); });
+      }
+    })();
+    (function() {
+      var amCards = document.querySelectorAll('.am-card');
+      if (amCards.length) {
+        var amObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+            } else {
+              entry.target.classList.remove('in-view');
+            }
+          });
+        }, { threshold: 0.12 });
+        amCards.forEach(function(el) { amObserver.observe(el); });
+      }
+    })();
+    (function() {
+      // Desktop reveal for rooms + attractions grid cards.
+      // Mobile uses the carousel script instead, so only run above the breakpoint.
+      if (window.matchMedia('(max-width: 768px)').matches) return;
+      var cards = document.querySelectorAll('.rooms__grid > .room-card, .saf-cards > .saf-card');
+      if (!cards.length) return;
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      cards.forEach(function(el) { obs.observe(el); });
+    })();
+    (function() {
+      var dishes = document.querySelectorAll('[data-dish]');
+      if (dishes.length) {
+        var dishObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+            } else {
+              entry.target.classList.remove('in-view');
+            }
+          });
+        }, { threshold: 0.15 });
+        dishes.forEach(function(el) { dishObserver.observe(el); });
+      }
+    })();
+    (function() {
+      var items = document.querySelectorAll('[data-gallery]');
+      if (!items.length) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      items.forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+  <script>
+    (function() {
+      var track = document.getElementById('testimonialTrack');
+      var dotsContainer = document.getElementById('tDots');
+      if (!track) return;
+
+      var slides = Array.prototype.slice.call(track.querySelectorAll('.testimonial'));
+      var current = 0;
+      var startX = 0;
+
+      function getPerView() { return 1; }
+
+      function setup(resetPosition) {
+        var perView = getPerView();
+        var containerW = track.parentElement.offsetWidth;
+        var slideW = containerW / perView;
+        slides.forEach(function(s) {
+          s.style.width = slideW + 'px';
+          s.style.flexShrink = '0';
+          s.style.boxSizing = 'border-box';
+          s.style.paddingLeft = '12px';
+          s.style.paddingRight = '12px';
+        });
+        track.style.width = (slideW * slides.length) + 'px';
+        goTo(resetPosition ? 0 : current);
+      }
+
+      function total() { return Math.ceil(slides.length / getPerView()); }
+
+      function goTo(idx) {
+        current = (idx + total()) % total();
+        var perView = getPerView();
+        var slideW = track.parentElement.offsetWidth / perView;
+        track.style.transform = 'translateX(-' + (current * slideW * perView) + 'px)';
+        [dotsContainer, document.getElementById('tDotsDesktop')].forEach(function(container) {
+          if (!container) return;
+          container.querySelectorAll('button').forEach(function(d, i) {
+            d.classList.toggle('active', i === current);
+          });
+        });
+      }
+
+      function buildDots() {
+        var configs = [
+          { container: document.getElementById('tDots'), cls: 'carousel-dot' },
+          { container: document.getElementById('tDotsDesktop'), cls: 'testimonial-slider__dot' }
+        ];
+        configs.forEach(function(cfg) {
+          if (!cfg.container) return;
+          cfg.container.innerHTML = '';
+          for (var i = 0; i < total(); i++) {
+            var dot = document.createElement('button');
+            dot.className = cfg.cls + (i === 0 ? ' active' : '');
+            dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+            (function(idx) { dot.addEventListener('click', function() { goTo(idx); }); })(i);
+            cfg.container.appendChild(dot);
+          }
+        });
+      }
+
+      document.getElementById('tPrev').addEventListener('click', function() { goTo(current - 1); });
+      document.getElementById('tNext').addEventListener('click', function() { goTo(current + 1); });
+
+      var startY = 0;
+      track.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive:true});
+      track.addEventListener('touchend', function(e) {
+        var diffX = startX - e.changedTouches[0].clientX;
+        var diffY = startY - e.changedTouches[0].clientY;
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) goTo(diffX > 0 ? current + 1 : current - 1);
+      }, {passive:true});
+
+      window.addEventListener('resize', function() { setup(false); });
+      buildDots();
+      setup(true);
+    })();
+  </script>
+
+  <!-- Availability Confirmation Popup -->
+  <div class="avail-popup-overlay" id="availPopup" role="dialog" aria-modal="true">
+    <div class="avail-popup">
+      <div class="avail-popup__icon">&#10022;</div>
+      <div class="avail-popup__rule"></div>
+      <h2 class="avail-popup__title">We'll be in <em>touch</em></h2>
+      <p class="avail-popup__text">Thank you for your interest in Safari Ember. A member of our reservations team will reach out within 24 hours to confirm your availability and guide you through the next steps.</p>
+      <button class="avail-popup__btn" onclick="closeAvailPopup()">Close</button>
+    </div>
+  </div>
+  <script>
+    window.openAvailPopup = function() {
+      document.querySelector('.avail-popup__title').innerHTML = "We'll be in <em>touch</em>";
+      document.querySelector('.avail-popup__text').style.display = '';
+      document.getElementById('availPopup').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    };
+    window.closeAvailPopup = function() {
+      document.getElementById('availPopup').classList.remove('open');
+      document.body.style.overflow = '';
+    };
+    window.openAvailMessage = function(msg) {
+      document.querySelector('.avail-popup__title').innerHTML = msg;
+      document.querySelector('.avail-popup__text').style.display = 'none';
+      openAvailPopup();
+    };
+    document.getElementById('availPopup').addEventListener('click', function(e) {
+      if (e.target === this) closeAvailPopup();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeAvailPopup();
+    });
+  </script>
+  <script>
+    (function() {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+      function initCarousel(trackId, dotsId) {
+        var track = document.getElementById(trackId);
+        var dotsContainer = document.getElementById(dotsId);
+        if (!track || !dotsContainer) return;
+
+        var slides = Array.prototype.slice.call(track.children);
+        var total = slides.length;
+        if (total === 0) return;
+
+        var current = 0;
+        var startX = 0;
+        var startY = 0;
+        var locked = false;
+
+        // Simple percentage approach — each slide is 100% of visible wrap
+        slides.forEach(function(s) {
+          s.style.minWidth = '100%';
+          s.style.flexShrink = '0';
+        });
+
+        // Clone first for seamless forward loop (guard against double-append)
+        if (!track.querySelector('[data-carousel-clone]')) {
+          var clone = slides[0].cloneNode(true);
+          clone.setAttribute('data-carousel-clone', '');
+          clone.style.minWidth = '100%';
+          clone.style.flexShrink = '0';
+          track.appendChild(clone);
+        }
+
+        // Build dots — total real slides only
+        dotsContainer.innerHTML = '';
+        for (var i = 0; i < total; i++) {
+          (function(idx) {
+            var dot = document.createElement('button');
+            dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+            dot.addEventListener('click', function() {
+              if (!locked) { current = idx; moveTo(current, true); }
+            });
+            dotsContainer.appendChild(dot);
+          })(i);
+        }
+
+        function updateDots() {
+          var realIdx = current % total;
+          dotsContainer.querySelectorAll('.carousel-dot').forEach(function(d, i) {
+            d.classList.toggle('active', i === realIdx);
+          });
+        }
+
+        function moveTo(idx, animated) {
+          track.style.transition = animated ? 'transform 0.4s ease' : 'none';
+          track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+          updateDots();
+        }
+
+        track.addEventListener('transitionend', function(e) {
+          if (e.target !== track) return; // ignore bubbled events from child cards
+          if (current >= total) {
+            current = 0;
+            moveTo(current, false);
+          }
+          locked = false;
+        });
+
+        track.addEventListener('touchstart', function(e) {
+          if (locked) return;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        }, {passive:true});
+
+        track.addEventListener('touchend', function(e) {
+          if (locked) return;
+          var diffX = startX - e.changedTouches[0].clientX;
+          var diffY = startY - e.changedTouches[0].clientY;
+          // Only swipe if horizontal movement is greater than vertical
+          if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+            locked = true;
+            current = diffX > 0 ? current + 1 : Math.max(0, current - 1);
+            if (current < total || diffX > 0) {
+              moveTo(current, true);
+              setTimeout(function() { locked = false; }, 600);
+            } else {
+              locked = false;
+            }
+          }
+        }, {passive:true});
+
+        moveTo(0, false);
+      }
+
+      initCarousel('dishTrack', 'dishDots');
+      initCarousel('roomTrack', 'roomDots');
+      initCarousel('attractTrack', 'attractDots');
+
+      // Animate first card on section entry — kept separate from carousel to avoid dot glitches
+      if (window.IntersectionObserver) {
+        ['dishTrack', 'roomTrack', 'attractTrack'].forEach(function(trackId) {
+          var t = document.getElementById(trackId);
+          if (!t || !t.children[0]) return;
+          var firstCard = t.children[0];
+          var wrap = t.parentElement;
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting) {
+                firstCard.classList.add('in-view');
+                setTimeout(function() {
+                  Array.prototype.forEach.call(t.children, function(s) {
+                    s.style.opacity = '1';
+                    s.style.transform = 'translateY(0)';
+                  });
+                }, 900);
+                obs.unobserve(wrap);
+              }
+            });
+          }, { threshold: 0.05 });
+          obs.observe(wrap);
+        });
+      }
+    })();
+  </script>
+  <script>
+    (function() {
+      var nav = document.querySelector('.nav');
+      var lastY = 0;
+      var ticking = false;
+      var threshold = 12;
+
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          requestAnimationFrame(function() {
+            var currentY = window.scrollY;
+            var menuOpen = document.querySelector('.mobile-menu.is-open');
+            var delta = currentY - lastY;
+            var isDesktop = window.innerWidth > 768;
+
+            if (menuOpen) {
+              // Never hide while menu is open
+            } else if (currentY <= 80) {
+              nav.classList.remove('nav--hidden');
+            } else if (isDesktop) {
+              // Desktop: require threshold to avoid mouse wheel jitter
+              if (delta > threshold) {
+                nav.classList.add('nav--hidden');
+              } else if (delta < -threshold) {
+                nav.classList.remove('nav--hidden');
+              }
+            } else {
+              // Mobile: original behaviour, any direction change triggers
+              if (delta > 0) {
+                nav.classList.add('nav--hidden');
+              } else {
+                nav.classList.remove('nav--hidden');
+              }
+            }
+
+            lastY = currentY;
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+    })();
+  </script>
+  <script>
+    (function() {
+      var facade = document.getElementById('mapFacade');
+      if (!facade) return;
+      facade.addEventListener('click', function() {
+        var src = facade.getAttribute('data-map-src');
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.width = '100%';
+        iframe.height = '100%';
+        iframe.style.cssText = 'border:0;display:block;min-height:360px;';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('loading', 'lazy');
+        iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+        iframe.setAttribute('title', 'Safari Ember location — Bogoria Avenue, Thika');
+        facade.replaceWith(iframe);
+      });
+    })();
+  </script>
+</body>
+</html>
