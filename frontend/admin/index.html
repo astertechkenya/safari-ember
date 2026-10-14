@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- The admin area must never show up in search results. (The real protection is the sign-in on
+       the server; this only keeps it out of Google.) -->
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Safari Ember · Admin</title>
+  <link rel="icon" href="mark.webp" type="image/webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Same fonts as the public site: Playfair for headings, Jost for everything you read and click -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       SAFARI EMBER ADMIN · DESIGN PROTOTYPE
+       The lodge's back office: the same warm black and ember as the site, but calmer and denser,
+       because staff scan it all day. Plain sans-serif for data, serif only for page titles,
+       no decorative motion, and every colour checked for contrast.
+
+       Everything below runs on SAMPLE DATA (the DATA block in the script). When the API exists
+       (Phase 5), the screens stay the same and only the data source changes.
+    ========================================================================== */
+    :root {
+      /* Surfaces, darkest to lightest */
+      --bg:        #0b0907;
+      --panel:     #13100c;
+      --panel-2:   #1a150f;
+      --panel-3:   #241c14;
+      --line:      rgba(200, 120, 42, .16);
+      --line-2:    rgba(200, 120, 42, .32);
+
+      /* Text: all at least 4.5:1 on --panel */
+      --text:      #f5e8d0;
+      --muted:     #c4a882;
+      --dim:       #a99379;
+
+      /* Brand */
+      --ember:     #c8782a;
+      --ember-hi:  #e8954a;
+
+      /* Status colours. Never colour alone: every status also has a word. */
+      --st-held:      #f0b070;  --st-held-bg:      rgba(232, 149, 74, .14);
+      --st-ok:        #9fd3a0;  --st-ok-bg:        rgba(120, 190, 120, .13);
+      --st-inhouse:   #9cc8ea;  --st-inhouse-bg:   rgba(120, 170, 220, .13);
+      --st-done:      #c2b5a5;  --st-done-bg:      rgba(255, 255, 255, .06);
+      --st-bad:       #f0a090;  --st-bad-bg:       rgba(220, 90, 70, .14);
+
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans:  'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+      --radius: 6px;
+      --side-w: 232px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-size: 15px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--ember-hi); }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    h1, h2, h3 { margin: 0; font-weight: 400; }
+    /* One clear focus ring everywhere, for keyboard users */
+    :focus-visible { outline: 2px solid var(--ember-hi); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .num { font-variant-numeric: tabular-nums; }     /* figures line up in columns */
+
+    /* ── Buttons ──────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 40px; padding: 0 16px; border-radius: var(--radius);
+      border: 1px solid var(--line-2); background: transparent; color: var(--text);
+      font-weight: 500; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--ember); background: var(--panel-2); }
+    .btn--primary { background: var(--ember); border-color: var(--ember); color: #120c06; }
+    .btn--primary:hover { background: var(--ember-hi); border-color: var(--ember-hi); }
+    .btn--danger { border-color: rgba(240, 160, 144, .45); color: var(--st-bad); }
+    .btn--danger:hover { background: var(--st-bad-bg); border-color: var(--st-bad); }
+    .btn--small { min-height: 32px; padding: 0 12px; font-size: 13px; }
+    .btn--ghost { border-color: transparent; color: var(--muted); }
+    .btn--ghost:hover { color: var(--text); }
+    .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+    /* ── Status chips ─────────────────────────────────────────────────────── */
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
+            font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+    .chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .chip--HELD      { color: var(--st-held);    background: var(--st-held-bg); }
+    .chip--CONFIRMED { color: var(--st-ok);      background: var(--st-ok-bg); }
+    .chip--INHOUSE   { color: var(--st-inhouse); background: var(--st-inhouse-bg); }
+    .chip--COMPLETED { color: var(--st-done);    background: var(--st-done-bg); }
+    .chip--EXPIRED   { color: var(--st-done);    background: var(--st-done-bg); }
+    .chip--CANCELLED { color: var(--st-bad);     background: var(--st-bad-bg); }
+    .chip--NEW       { color: var(--st-held);    background: var(--st-held-bg); }
+    .chip--HANDLED   { color: var(--st-done);    background: var(--st-done-bg); }
+
+    /* ── Forms ────────────────────────────────────────────────────────────── */
+    .field { display: grid; gap: 6px; }
+    .field label, .label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .input, select.input, textarea.input {
+      width: 100%; min-height: 42px; padding: 9px 12px; border-radius: var(--radius);
+      background: var(--bg); border: 1px solid var(--line-2); color: var(--text);
+    }
+    .input:focus { border-color: var(--ember-hi); outline: none; box-shadow: 0 0 0 3px rgba(232, 149, 74, .25); }
+    .hint { font-size: 13px; color: var(--dim); }
+
+    /* ==========================================================================
+       SIGN-IN (before the app shell)
+    ========================================================================== */
+    .auth { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px; }
+    .auth__card { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line);
+                  border-radius: 10px; padding: 36px 32px; }
+    .auth__brand { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; text-align: center; }
+    .auth__brand img { width: 64px; height: 64px; }
+    .auth__brand h1 { font-family: var(--serif); font-size: 26px; }
+    .auth__brand p { margin: 0; color: var(--muted); font-size: 14px; }
+    .auth form { display: grid; gap: 18px; }
+    .code-input { letter-spacing: .5em; text-align: center; font-size: 22px; font-variant-numeric: tabular-nums; }
+    .auth__foot { margin-top: 20px; text-align: center; font-size: 13px; color: var(--dim); }
+    .auth__foot button { background: none; border: 0; color: var(--ember-hi); cursor: pointer; text-decoration: underline; padding: 4px; }
+
+    /* ==========================================================================
+       APP SHELL: sidebar + main. On phones the sidebar becomes a drawer.
+    ========================================================================== */
+    .shell { display: grid; grid-template-columns: var(--side-w) 1fr; min-height: 100vh; }
+    .side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+            background: var(--panel); border-right: 1px solid var(--line); padding: 20px 14px; }
+    .side__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; text-decoration: none; color: var(--text); }
+    .side__brand img { width: 34px; height: 34px; }
+    .side__brand b { display: block; font-family: var(--serif); font-weight: 400; font-size: 17px; line-height: 1.1; }
+    .side__brand small { color: var(--dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+    .nav { display: grid; gap: 2px; }
+    .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius);
+             color: var(--muted); text-decoration: none; font-weight: 500; }
+    .nav a:hover { background: var(--panel-2); color: var(--text); }
+    .nav a[aria-current="page"] { background: var(--panel-3); color: var(--text); box-shadow: inset 2px 0 0 var(--ember); }
+    .nav svg { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .nav .count { margin-left: auto; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--ember); color: #120c06;
+                  font-size: 12px; font-weight: 600; text-align: center; }
+    .side__foot { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 8px 0; display: grid; gap: 10px; }
+    .who { display: flex; align-items: center; gap: 10px; }
+    .who__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--panel-3); display: grid; place-items: center;
+                   color: var(--ember-hi); font-weight: 600; font-size: 13px; }
+    .who b { display: block; font-weight: 500; font-size: 14px; }
+    .who small { color: var(--dim); font-size: 12.5px; }
+    .proto-note { font-size: 12px; color: var(--dim); line-height: 1.4; }
+
+    .main { min-width: 0; }
+    .topbar { display: none; }
+    .page { padding: 32px 36px 64px; max-width: 1240px; }
+    .page__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .page__title { font-family: var(--serif); font-size: 30px; line-height: 1.15; }
+    .page__sub { margin: 6px 0 0; color: var(--muted); }
+    .crumb { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); text-decoration: none; font-size: 14px; margin-bottom: 10px; }
+    .crumb:hover { color: var(--text); }
+
+    /* ── Panels and lists ─────────────────────────────────────────────────── */
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+    .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+    .panel__head h2 { font-size: 16px; font-weight: 500; font-family: var(--sans); }
+    .panel__head .hint { margin: 0; }
+    .panel__body { padding: 18px; }
+    .empty { padding: 22px 18px; color: var(--dim); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .stack { display: grid; gap: 20px; }
+
+    /* Today's stat tiles */
+    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+    .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; text-decoration: none; color: inherit; }
+    a.tile:hover { border-color: var(--line-2); }
+    .tile__label { font-size: 13px; color: var(--muted); }
+    .tile__value { font-size: 30px; font-weight: 500; margin-top: 4px; line-height: 1.1; }
+    .tile__note { font-size: 12.5px; color: var(--dim); margin-top: 4px; }
+    .meter { height: 6px; border-radius: 99px; background: var(--panel-3); margin-top: 10px; overflow: hidden; }
+    .meter span { display: block; height: 100%; background: var(--ember); border-radius: inherit; }
+
+    /* A row in a "today" list: who, what, action */
+    .rows { list-style: none; margin: 0; padding: 0; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+    .row:first-child { border-top: 0; }
+    .row__name { font-weight: 500; }
+    .row__name a { color: var(--text); text-decoration: none; }
+    .row__name a:hover { color: var(--ember-hi); text-decoration: underline; }
+    .row__meta { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+    .row__actions { display: flex; gap: 8px; align-items: center; }
+    .timer { font-variant-numeric: tabular-nums; color: var(--st-held); font-weight: 500; font-size: 14px; }
+
+    /* ── Tables ───────────────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    caption { text-align: left; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: 12.5px; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+    td.right, th.right { text-align: right; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr.clickable { cursor: pointer; }
+    tbody tr.clickable:hover { background: var(--panel-2); }
+    .ref { font-variant-numeric: tabular-nums; letter-spacing: .03em; font-weight: 500; white-space: nowrap; }   /* SE-XXXXXX never splits */
+    td a.ref { color: var(--text); text-decoration: none; }
+    td a.ref:hover { color: var(--ember-hi); text-decoration: underline; }
+    .sub { display: block; font-size: 13px; color: var(--dim); }
+
+    /* Filters bar above the bookings table */
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .filters .input { width: auto; min-height: 38px; }
+    .filters .search { flex: 1 1 240px; }
+    .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; flex-wrap: wrap; }
+    .seg button { background: none; border: 0; padding: 8px 12px; color: var(--muted); cursor: pointer; font-size: 13.5px; font-weight: 500; }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button[aria-pressed="true"] { background: var(--panel-3); color: var(--text); }
+
+    /* ── Booking detail ───────────────────────────────────────────────────── */
+    .detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; margin: 0; }
+    .kv dt { color: var(--muted); font-size: 14px; }
+    .kv dd { margin: 0; }
+    .money { display: grid; gap: 8px; }
+    .money div { display: flex; justify-content: space-between; gap: 12px; }
+    .money .total { border-top: 1px solid var(--line-2); padding-top: 10px; margin-top: 4px; font-weight: 500; }
+    .money .due { color: var(--ember-hi); font-weight: 600; font-size: 17px; }
+    .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    .timeline li { display: grid; grid-template-columns: 12px 1fr; gap: 12px; }
+    .timeline li::before { content: ''; width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; background: var(--ember); }
+    .timeline small { display: block; color: var(--dim); font-size: 13px; }
+    .actions { display: grid; gap: 10px; }
+    .note { background: var(--panel-2); border-left: 2px solid var(--ember); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; color: var(--muted); font-size: 14px; }
+
+    /* ── Calendar ─────────────────────────────────────────────────────────── */
+    .cal-wrap { overflow-x: auto; }
+    .cal { border-collapse: separate; border-spacing: 0; min-width: 100%; }
+    .cal th, .cal td { border-bottom: 1px solid var(--line); padding: 0; text-align: center; }
+    .cal thead th { padding: 10px 4px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+    .cal thead th b { display: block; font-size: 15px; color: var(--text); font-weight: 500; }
+    .cal thead th.today b { color: var(--ember-hi); }
+    .cal thead th.weekend { background: rgba(255, 255, 255, .02); }
+    .cal .season-row th { padding: 6px 4px; font-size: 11.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; border-bottom: 0; text-align: left; }
+    .cal .season-row th.season { background: rgba(200, 120, 42, .10); color: var(--ember-hi); border-left: 1px solid var(--line-2); }
+    .cal .room { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 12px 16px; min-width: 190px; border-right: 1px solid var(--line); }
+    .cal .room b { display: block; font-weight: 500; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 14px; }
+    .cal .room span { color: var(--dim); font-size: 12.5px; text-transform: none; letter-spacing: 0; font-weight: 400; }
+    .cell { display: grid; place-items: center; min-width: 52px; height: 58px; margin: 3px; border-radius: 5px; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: pointer; border: 1px solid transparent; background: none; width: calc(100% - 6px); color: var(--text); }
+    .cell:hover { border-color: var(--line-2); }
+    .cell small { display: block; font-size: 11px; color: var(--dim); }
+    /* fullness: more booked = more ember */
+    .cell[data-level="0"] { background: rgba(255, 255, 255, .025); }
+    .cell[data-level="1"] { background: rgba(200, 120, 42, .12); }
+    .cell[data-level="2"] { background: rgba(200, 120, 42, .26); }
+    .cell[data-level="3"] { background: rgba(200, 120, 42, .45); }
+    .cell[data-level="full"] { background: var(--ember); color: #120c06; }
+    .cell[data-level="full"] small { color: #3a2410; }
+    .cell.closed { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 4px, transparent 4px 9px); }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 14px 18px; border-top: 1px solid var(--line); }
+    .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+
+    /* ── Rooms & rates ────────────────────────────────────────────────────── */
+    .room-card { display: grid; gap: 14px; }
+    .room-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .room-card h3 { font-family: var(--serif); font-size: 20px; }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .fact { background: var(--panel-2); border-radius: var(--radius); padding: 10px 12px; }
+    .fact span { display: block; font-size: 12.5px; color: var(--muted); }
+    .fact b { font-weight: 500; font-size: 17px; }
+    .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+    .toggle input { width: 18px; height: 18px; accent-color: var(--ember); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; align-items: end; }
+
+    /* ── Enquiries ────────────────────────────────────────────────────────── */
+    .inbox { display: grid; grid-template-columns: 360px 1fr; min-height: 520px; }
+    .inbox__list { border-right: 1px solid var(--line); list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+    .inbox__item { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 14px 18px; cursor: pointer; color: inherit; }
+    .inbox__item:hover { background: var(--panel-2); }
+    .inbox__item[aria-current="true"] { background: var(--panel-3); box-shadow: inset 2px 0 0 var(--ember); }
+    .inbox__top { display: flex; justify-content: space-between; gap: 10px; }
+    .inbox__item b { font-weight: 500; }
+    .inbox__item.unread b::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ember-hi); margin-right: 8px; vertical-align: 2px; }
+    .inbox__item small { color: var(--dim); font-size: 12.5px; white-space: nowrap; }
+    .inbox__item p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .inbox__read { padding: 24px 28px; }
+    .inbox__read h2 { font-family: var(--serif); font-size: 22px; margin-bottom: 4px; }
+    .message { white-space: pre-wrap; line-height: 1.7; margin: 20px 0; max-width: 640px; }
+
+    /* ── Dialog and toast ─────────────────────────────────────────────────── */
+    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; width: min(460px, calc(100vw - 32px)); }
+    dialog::backdrop { background: rgba(0, 0, 0, .65); }
+    .dlg { padding: 24px; display: grid; gap: 16px; }
+    .dlg h2 { font-family: var(--serif); font-size: 22px; }
+    .dlg p { margin: 0; color: var(--muted); }
+    .dlg__actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel-3); border: 1px solid var(--line-2);
+             padding: 12px 18px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100vw - 32px); z-index: 50; }
+    .toast[hidden] { display: none; }
+
+    /* ==========================================================================
+       RESPONSIVE: desktop first; tablets lose columns; phones get a drawer and cards
+    ========================================================================== */
+    @media (max-width: 1180px) {
+      .tiles { grid-template-columns: repeat(3, 1fr); }
+      .detail { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { position: fixed; inset: 0 auto 0 0; width: 270px; z-index: 40; transform: translateX(-100%); transition: transform .25s ease; }
+      .shell.nav-open .side { transform: none; box-shadow: 0 0 60px rgba(0,0,0,.7); }
+      .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 30; }
+      .topbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 20; padding: 10px 14px;
+                background: var(--panel); border-bottom: 1px solid var(--line); }
+      .topbar img { width: 28px; height: 28px; }
+      .topbar b { font-family: var(--serif); font-weight: 400; font-size: 17px; }
+      .burger { background: none; border: 1px solid var(--line-2); border-radius: var(--radius); width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; }
+      .burger svg { width: 20px; height: 20px; stroke: var(--text); }
+      .page { padding: 22px 16px 56px; }
+      .page__title { font-size: 25px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .inbox { grid-template-columns: 1fr; }
+      .inbox__list { border-right: 0; max-height: none; }
+      .inbox.reading .inbox__list { display: none; }
+      .inbox:not(.reading) .inbox__read { display: none; }
+      .inbox__read { padding: 18px; }
+    }
+    @media (min-width: 901px) { .back-to-list { display: none; } }
+    @media (max-width: 640px) {
+      .tiles { grid-template-columns: 1fr 1fr; }
+      .tile__value { font-size: 26px; }
+      .row { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: 1fr; gap: 2px 0; }
+      .kv dd { margin-bottom: 10px; }
+      .facts { grid-template-columns: 1fr 1fr 1fr; }
+      /* Bookings table becomes a list of cards: each cell shows its column name from data-label */
+      .table--cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .table--cards tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+      .table--cards td { border: 0; padding: 0; }
+      .table--cards td[data-label]::before { content: attr(data-label) ' · '; color: var(--dim); font-size: 12.5px; }
+      .table--cards td.c-ref { grid-column: 1; }
+      .table--cards td.c-status { grid-column: 2; grid-row: 1; justify-self: end; }
+      .table--cards td.c-guest, .table--cards td.c-stay, .table--cards td.c-money { grid-column: 1 / -1; }
+      .table--cards td.c-hide, .table--cards .sub.c-hide { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="dlg"></dialog>
+
+  <script>
+  /* ============================================================================================
+     SAFARI EMBER ADMIN · PROTOTYPE SCRIPT
+     How it's built, so the backend can slot in later:
+       DATA    sample records shaped exactly like the database tables in docs/BLUEPRINT.md
+       RULES   the same booking rules as the API (nights, prices, what takes a unit)
+       VIEWS   one function per screen; each returns HTML built ONLY through esc() for any value
+               that came from a guest or staff member (see the warning on esc)
+       ROUTER  the address after # decides the screen: #/today, #/bookings, #/booking/SE-…, …
+     In Phase 5 the DATA block is replaced by fetch('/api/admin/…') calls; the views stay.
+  ============================================================================================ */
+  (function () {
+    'use strict';
+
+    /* ── Helpers ─────────────────────────────────────────────────────────────────────────── */
+
+    // SECURITY: guest names, requests and enquiry messages are typed by the public. Putting them
+    // into HTML unescaped would let someone "book" under a name that contains a script tag and
+    // run code in the manager's browser (stored XSS). (Never write a closing script tag inside
+    // this script, even in a comment: the browser would end the script right there.) Every value from data goes through esc() before it is
+    // placed in a template. Numbers and our own labels don't need it, but it never hurts.
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    var KES = new Intl.NumberFormat('en-KE');
+    function money(n) { return 'KES ' + KES.format(n); }
+
+    // Dates are plain YYYY-MM-DD strings in Nairobi time, like the database `date` columns.
+    // Doing the maths in UTC on those strings means no time zone can shift a day.
+    function todayNairobi() {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+    }
+    function addDays(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+    function daysBetween(a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5); }
+    function fmtDate(iso, opts) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short', timeZone: 'UTC' }, opts || {})); }
+    function fmtLong(iso) { return fmtDate(iso, { weekday: 'long', day: 'numeric', month: 'long' }); }
+    function fmtDateTime(ms) { return new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Nairobi' }); }
+    function stayLabel(b) { return fmtDate(b.checkIn) + ' – ' + fmtDate(b.checkOut, { year: daysBetween(TODAY, b.checkOut) > 300 ? 'numeric' : undefined }); }
+    function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+
+    var TODAY = todayNairobi();
+    var NOW = Date.now();
+
+    /* ── DATA: sample records (replace with the API in Phase 5) ──────────────────────────── */
+
+    var ROOM_TYPES = [
+      { id: 1, slug: 'hearthside-room', name: 'Hearthside Room',     kind: 'Deluxe',       sleeps: 2, units: 12, baseRateKes: 28000,  active: true },
+      { id: 2, slug: 'coalbed-suite',   name: 'The Coalbed Suite',   kind: 'Junior suite', sleeps: 3, units: 6,  baseRateKes: 45000,  active: true },
+      { id: 3, slug: 'ember-penthouse', name: 'The Ember Penthouse', kind: 'Penthouse',    sleeps: 4, units: 1,  baseRateKes: 120000, active: true },
+    ];
+    function roomType(id) { return ROOM_TYPES.find(function (r) { return r.id === id; }); }
+
+    // Seasons as in api/src/db/seed.js: a percentage of each room's base rate, rounded to 500
+    var SEASONS = [];
+    (function () {
+      var y = Number(TODAY.slice(0, 4)), id = 1;
+      var defs = [['Long rains', '04-01', '06-01', 85], ['Migration season', '07-01', '11-01', 125], ['Festive season', '12-20', '01-04', 135]];
+      [y - 1, y, y + 1].forEach(function (yr) {
+        defs.forEach(function (d) {
+          ROOM_TYPES.forEach(function (rt) {
+            SEASONS.push({ id: id++, roomTypeId: rt.id, label: d[0], startsOn: yr + '-' + d[1],
+              endsOn: d[2] < d[1] ? (yr + 1) + '-' + d[2] : yr + '-' + d[2],
+              nightlyRateKes: Math.round(rt.baseRateKes * d[3] / 100 / 500) * 500 });
+          });
+        });
+      });
+    })();
+    function rateFor(rtId, night) {
+      var s = SEASONS.find(function (s) { return s.roomTypeId === rtId && s.startsOn <= night && night < s.endsOn; });
+      return s ? s.nightlyRateKes : roomType(rtId).baseRateKes;
+    }
+
+    // Booking references: no 0/O or 1/I, as in the API
+    var REF_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', refSeed = 7;
+    function nextRef() { var r = 'SE-'; for (var i = 0; i < 6; i++) { refSeed = (refSeed * 9301 + 49297) % 233280; r += REF_ABC[refSeed % REF_ABC.length]; } return r; }
+
+    // [first, last, room, check-in offset from today, nights, guests, status, extras]
+    var GUESTS = [
+      ['Amani', 'Wanjiru', 1, 0, 3, 2, 'CONFIRMED', { requests: 'Arriving late, around 9pm. Please keep dinner.' }],
+      ['James', 'Thornton', 2, 0, 4, 3, 'CONFIRMED', {}],
+      ['Fatima', 'Al-Sayed', 3, 0, 2, 2, 'CONFIRMED', { requests: 'Anniversary: a bottle of champagne in the room if possible.' }],
+      ['David', 'Mwangi', 1, -3, 3, 2, 'INHOUSE', {}],
+      ['Claire', 'Dubois', 1, -2, 2, 1, 'INHOUSE', {}],
+      ['Kofi', 'Mensah', 2, -1, 5, 2, 'INHOUSE', { requests: 'Vegetarian meals for both guests.' }],
+      ['Priya', 'Nair', 1, -1, 4, 2, 'INHOUSE', {}],
+      ['Lena', 'Hoffmann', 1, -4, 4, 2, 'INHOUSE', {}],
+      ['Samuel', 'Otieno', 2, -2, 2, 3, 'INHOUSE', {}],
+      ['Grace', 'Achieng', 1, 0, 2, 2, 'HELD', { holdMin: 6 }],
+      ['Tom', 'Becker', 2, 3, 3, 2, 'HELD', { holdMin: 11 }],
+      ['Aisha', 'Bello', 1, 1, 3, 2, 'CONFIRMED', {}],
+      ['Marco', 'Rossi', 2, 2, 4, 3, 'CONFIRMED', {}],
+      ['Wanjiku', 'Kamau', 1, 2, 2, 1, 'CONFIRMED', {}],
+      ['Olivia', 'Brown', 3, 5, 3, 4, 'CONFIRMED', { requests: 'Travelling with two children (8 and 11).' }],
+      ['Hiroshi', 'Tanaka', 1, 6, 5, 2, 'CONFIRMED', {}],
+      ['Nia', 'Kariuki', 2, 8, 2, 2, 'CONFIRMED', {}],
+      ['Ethan', 'Cole', 1, 12, 3, 2, 'CONFIRMED', {}],
+      ['Sofia', 'Garcia', 1, 4, 3, 2, 'CANCELLED', { reason: 'Guest changed travel plans' }],
+      ['Brian', 'Kiprop', 1, 2, 2, 2, 'EXPIRED', {}],
+      ['Elena', 'Petrova', 2, 9, 3, 2, 'EXPIRED', {}],
+      ['Mark', 'Ellis', 1, -9, 3, 2, 'COMPLETED', {}],
+      ['Zawadi', 'Njeri', 2, -12, 4, 3, 'COMPLETED', {}],
+      ['Ahmed', 'Hassan', 3, -15, 2, 2, 'COMPLETED', {}],
+    ];
+    var BOOKINGS = GUESTS.map(function (g, i) {
+      var checkIn = addDays(TODAY, g[3]), checkOut = addDays(checkIn, g[4]);
+      var nights = []; for (var d = 0; d < g[4]; d++) { var n = addDays(checkIn, d); nights.push({ night: n, rateKes: rateFor(g[2], n) }); }
+      var total = nights.reduce(function (s, n) { return s + n.rateKes; }, 0);
+      var deposit = Math.ceil(total * 0.30);
+      var created = NOW - (Math.abs(g[3]) + 6 + i) * 864e5;
+      var status = g[6], ex = g[7];
+      var b = {
+        ref: nextRef(), roomTypeId: g[2], checkIn: checkIn, checkOut: checkOut, nights: g[4], guests: g[5],
+        status: status === 'INHOUSE' ? 'CONFIRMED' : status,
+        // checkedInAt: not in the Phase 1 schema yet. See the note at the end of this file.
+        checkedInAt: status === 'INHOUSE' ? NOW - (Math.abs(g[3]) * 864e5) + 3 * 36e5 : null,
+        holdExpiresAt: status === 'HELD' ? NOW + ex.holdMin * 6e4 : null,
+        firstName: g[0], lastName: g[1],
+        email: (g[0] + '.' + g[1]).toLowerCase().replace(/[^a-z.]/g, '') + '@example.com',
+        phone: '+254 7' + String(10000000 + i * 7919713 % 89999999).slice(0, 2) + ' ' + String(100000 + i * 48271 % 899999).slice(0, 3) + ' ' + String(100 + i * 37 % 899),
+        requests: ex.requests || '', nightly: nights, totalKes: total, depositKes: deposit,
+        createdAt: status === 'HELD' ? NOW - (15 - ex.holdMin) * 6e4 : created,
+        confirmedAt: (status === 'CONFIRMED' || status === 'INHOUSE' || status === 'COMPLETED' || status === 'CANCELLED') ? created + 9 * 6e4 : null,
+        cancelledAt: status === 'CANCELLED' ? created + 3 * 864e5 : null,
+        cancelReason: ex.reason || '',
+        payments: [],
+      };
+      if (b.confirmedAt) b.payments.push({ provider: i % 3 === 1 ? 'Card (Paystack)' : 'M-Pesa', ref: i % 3 === 1 ? 'PSK_' + b.ref.slice(3).toLowerCase() + 'x2' : 'S' + b.ref.slice(3) + 'K' + (i % 9), amountKes: deposit, at: b.confirmedAt });
+      return b;
+    });
+    function byRef(ref) { return BOOKINGS.find(function (b) { return b.ref === ref; }); }
+
+    var CLOSURES = [
+      { id: 1, roomTypeId: 2, startsOn: addDays(TODAY, 6), endsOn: addDays(TODAY, 10), units: 1, reason: 'Bathroom refit, suite 4' },
+      { id: 2, roomTypeId: null, startsOn: addDays(TODAY, 40), endsOn: addDays(TODAY, 42), units: null, reason: 'Private wedding: whole lodge' },
+    ];
+    var closureSeq = 3;
+
+    var ENQUIRIES = [
+      { id: 1, firstName: 'Rachel', lastName: 'Kimani', email: 'rachel.kimani@example.com', phone: '+254 722 418 503', subject: 'Group booking', checkIn: addDays(TODAY, 30), checkOut: addDays(TODAY, 33), guests: 9, status: 'NEW', createdAt: NOW - 2 * 36e5,
+        message: 'Hello,\n\nWe are planning a 40th birthday trip for nine friends next month. Could we take three Coalbed Suites, and is there a private dinner option on the rooftop?\n\nThank you,\nRachel' },
+      { id: 2, firstName: 'Daniel', lastName: 'Okafor', email: 'd.okafor@example.com', phone: '', subject: 'Airport transfer', checkIn: addDays(TODAY, 5), checkOut: addDays(TODAY, 8), guests: 2, status: 'NEW', createdAt: NOW - 7 * 36e5,
+        message: 'Do you arrange transfers from JKIA? Our flight lands at 06:40 on the morning of check-in.' },
+      { id: 3, firstName: 'Ingrid', lastName: 'Larsen', email: 'ingrid.larsen@example.com', phone: '+47 912 44 018', subject: 'Dietary needs', checkIn: null, checkOut: null, guests: null, status: 'NEW', createdAt: NOW - 26 * 36e5,
+        message: 'I have a severe nut allergy. Can the Cinder Café prepare meals safely for me?' },
+      { id: 4, firstName: 'Peter', lastName: 'Ndegwa', email: 'peter.ndegwa@example.com', phone: '+254 711 902 334', subject: 'Corporate retreat', checkIn: addDays(TODAY, 60), checkOut: addDays(TODAY, 62), guests: 14, status: 'HANDLED', createdAt: NOW - 4 * 864e5,
+        message: 'We would like a quote for a two-night leadership retreat with meeting room hire for 14 people.' },
+      { id: 5, firstName: 'Maya', lastName: 'Chen', email: 'maya.chen@example.com', phone: '', subject: 'Spa booking', checkIn: null, checkOut: null, guests: null, status: 'HANDLED', createdAt: NOW - 6 * 864e5,
+        message: 'Can I book a 90-minute treatment at the Silt Spa without staying overnight?' },
+    ];
+
+    /* ── RULES (mirror the API) ──────────────────────────────────────────────────────────── */
+
+    // A booking takes a unit while HELD (hold not run out) or CONFIRMED, for check_in ≤ night < check_out
+    function takesUnit(b, night) {
+      var live = b.status === 'CONFIRMED' || (b.status === 'HELD' && b.holdExpiresAt > Date.now());
+      return live && b.checkIn <= night && night < b.checkOut;
+    }
+    function closedUnits(rt, night) {
+      return CLOSURES.reduce(function (n, c) {
+        if ((c.roomTypeId === null || c.roomTypeId === rt.id) && c.startsOn <= night && night < c.endsOn) return n + (c.units == null ? rt.units : c.units);
+        return n;
+      }, 0);
+    }
+    function occupancy(rt, night) {
+      var taken = BOOKINGS.filter(function (b) { return b.roomTypeId === rt.id && takesUnit(b, night); }).length;
+      var closed = Math.min(rt.units, closedUnits(rt, night));
+      return { taken: taken, closed: closed, free: Math.max(0, rt.units - taken - closed) };
+    }
+    // What staff see as the status: a confirmed guest who has checked in is "In house"
+    function shownStatus(b) {
+      if (b.status === 'HELD' && b.holdExpiresAt <= Date.now()) return 'EXPIRED';
+      if (b.status === 'CONFIRMED' && b.checkedInAt) return 'INHOUSE';
+      return b.status;
+    }
+    var STATUS_WORD = { HELD: 'Held', CONFIRMED: 'Confirmed', INHOUSE: 'In house', COMPLETED: 'Completed', EXPIRED: 'Expired', CANCELLED: 'Cancelled', NEW: 'New', HANDLED: 'Handled' };
+    function chip(st) { return '<span class="chip chip--' + st + '">' + STATUS_WORD[st] + '</span>'; }
+    function guestName(b) { return esc(b.firstName + ' ' + b.lastName); }
+    function balance(b) { return b.totalKes - (b.payments.reduce(function (s, p) { return s + p.amountKes; }, 0)); }
+
+    /* ── UI bits ─────────────────────────────────────────────────────────────────────────── */
+
+    var ICONS = {
+      today: '<path d="M4 6h16v14H4z"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+      bookings: '<path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+      calendar: '<path d="M4 5h16v15H4z"/><path d="M4 10h16M10 10v10M15 10v10"/>',
+      rooms: '<path d="M3 18V8l9-4 9 4v10"/><path d="M3 18h18M8 18v-5h8v5"/>',
+      closures: '<circle cx="12" cy="12" r="8"/><path d="M6.5 6.5l11 11"/>',
+      enquiries: '<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>',
+    };
+    function icon(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>'; }
+
+    var toastTimer;
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.hidden = false;
+      clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 4200);
+    }
+
+    // A confirm dialog built on <dialog>: focus is trapped and Esc closes it, for free
+    function confirmDialog(opts) {
+      var d = document.getElementById('dlg');
+      d.innerHTML = '<form method="dialog" class="dlg">' +
+        '<h2>' + esc(opts.title) + '</h2><p>' + esc(opts.body) + '</p>' +
+        (opts.field ? '<div class="field"><label for="dlg-field">' + esc(opts.field) + '</label><textarea class="input" id="dlg-field" rows="3" required></textarea></div>' : '') +
+        '<div class="dlg__actions"><button class="btn" value="cancel" formnovalidate>Keep it</button>' +
+        '<button class="btn ' + (opts.danger ? 'btn--danger' : 'btn--primary') + '" value="ok">' + esc(opts.ok) + '</button></div></form>';
+      d.onclose = function () {
+        if (d.returnValue === 'ok') opts.onOk(opts.field ? d.querySelector('#dlg-field').value.trim() : null);
+      };
+      d.showModal();
+    }
+
+    /* ── VIEWS ───────────────────────────────────────────────────────────────────────────── */
+
+    var S = { signedIn: false, stage: 'password', bookingsFilter: 'upcoming', bookingsRoom: 'all', bookingsQ: '', calStart: TODAY, enquiry: 1 };
+    try { S.signedIn = sessionStorage.getItem('se-admin-proto') === '1'; } catch (e) {}
+
+    function viewLogin() {
+      var two = S.stage === 'code';
+      return '<main class="auth"><div class="auth__card">' +
+        '<div class="auth__brand"><img src="mark.webp" alt="" /><h1>Safari Ember</h1><p>Staff sign-in</p></div>' +
+        (two
+          ? '<form id="f-code" novalidate>' +
+              '<div class="field"><label for="code">6-digit code from your authenticator app</label>' +
+              '<input class="input code-input" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required /></div>' +
+              '<button class="btn btn--primary">Verify and sign in</button>' +
+              '<p class="hint" style="margin:0">Codes change every 30 seconds.</p>' +
+            '</form>' +
+            '<div class="auth__foot">Lost your phone? <button type="button" id="backup">Use a backup code</button><br />' +
+              '<button type="button" id="restart">Back to email and password</button></div>'
+          : '<form id="f-login" novalidate>' +
+              '<div class="field"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="username" required /></div>' +
+              '<div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" required /></div>' +
+              '<button class="btn btn--primary">Continue</button>' +
+            '</form>' +
+            '<div class="auth__foot">Prototype: any email and password work.<br />Forgotten your password? Ask the lodge manager to reset it.</div>') +
+        '</div></main>';
+    }
+
+    function shell(active, inner) {
+      var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
+      var items = [['today', '#/today', 'Today'], ['bookings', '#/bookings', 'Bookings'], ['calendar', '#/calendar', 'Calendar'],
+                   ['rooms', '#/rooms', 'Rooms & rates'], ['closures', '#/closures', 'Closures'], ['enquiries', '#/enquiries', 'Enquiries']];
+      return '<div class="shell" id="shell">' +
+        '<aside class="side" id="side" aria-label="Admin">' +
+          '<a class="side__brand" href="#/today"><img src="mark.webp" alt="" /><span><b>Safari Ember</b><small>Admin</small></span></a>' +
+          '<nav class="nav">' + items.map(function (it) {
+            return '<a href="' + it[1] + '"' + (active === it[0] ? ' aria-current="page"' : '') + '>' + icon(it[0]) + '<span>' + it[2] + '</span>' +
+              (it[0] === 'enquiries' && newEnq ? '<span class="count" aria-label="' + newEnq + ' new">' + newEnq + '</span>' : '') + '</a>';
+          }).join('') + '</nav>' +
+          '<div class="side__foot">' +
+            '<div class="who"><div class="who__avatar" aria-hidden="true">EK</div><div><b>Ethan K.</b><small>Lodge manager</small></div></div>' +
+            '<button class="btn btn--small btn--ghost" id="signout" style="justify-content:flex-start;padding:0">Sign out</button>' +
+            '<p class="proto-note">Design prototype · sample data. Nothing you do here is saved.</p>' +
+          '</div>' +
+        '</aside>' +
+        '<div class="main">' +
+          '<header class="topbar"><button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="side">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>' +
+            '<img src="mark.webp" alt="" /><b>Safari Ember</b></header>' +
+          '<main class="page" id="main" tabindex="-1">' + inner + '</main>' +
+        '</div></div>';
+    }
+
+    /* Today: what reception needs at 7am. Arrivals and departures with one-tap actions,
+       who's in house, holds about to expire, and how full tonight is. */
+    function viewToday() {
+      var arrivals = BOOKINGS.filter(function (b) { return b.checkIn === TODAY && b.status === 'CONFIRMED'; });
+      var departures = BOOKINGS.filter(function (b) { return b.checkOut === TODAY && shownStatus(b) === 'INHOUSE'; });
+      var inHouse = BOOKINGS.filter(function (b) { return shownStatus(b) === 'INHOUSE'; });
+      var holds = BOOKINGS.filter(function (b) { return shownStatus(b) === 'HELD'; }).sort(function (a, b) { return a.holdExpiresAt - b.holdExpiresAt; });
+      var total = 0, taken = 0;
+      ROOM_TYPES.forEach(function (rt) { var o = occupancy(rt, TODAY); total += rt.units - o.closed; taken += o.taken; });
+      var pct = total ? Math.round(taken / total * 100) : 0;
+      var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
+      var arrivedDone = arrivals.filter(function (b) { return b.checkedInAt; }).length;
+
+      function arrivalRow(b) {
+        var rt = roomType(b.roomTypeId);
+        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a> ' + (b.checkedInAt ? chip('INHOUSE') : '') + '</div>' +
+          '<div class="row__meta">' + esc(rt.name) + ' · ' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + ' · <span class="ref">' + b.ref + '</span>' +
+          (balance(b) > 0 ? ' · Balance due <span class="num">' + money(balance(b)) + '</span>' : '') + '</div>' +
+          (b.requests ? '<div class="row__meta" style="color:var(--text)">“' + esc(b.requests) + '”</div>' : '') + '</div>' +
+          '<div class="row__actions">' + (b.checkedInAt ? '' : '<button class="btn btn--primary btn--small" data-act="checkin" data-ref="' + b.ref + '">Check in</button>') + '</div></li>';
+      }
+      function departureRow(b) {
+        var rt = roomType(b.roomTypeId);
+        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
+          '<div class="row__meta">' + esc(rt.name) + ' · ' + stayLabel(b) + ' · Balance due <span class="num">' + money(balance(b)) + '</span></div></div>' +
+          '<div class="row__actions"><button class="btn btn--small" data-act="checkout" data-ref="' + b.ref + '">Check out</button></div></li>';
+      }
+      function holdRow(b) {
+        var rt = roomType(b.roomTypeId);
+        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
+          '<div class="row__meta">' + esc(rt.name) + ' · ' + stayLabel(b) + ' · Deposit <span class="num">' + money(b.depositKes) + '</span></div></div>' +
+          '<div class="row__actions"><span class="timer" data-expires="' + b.holdExpiresAt + '">–:–</span></div></li>';
+      }
+
+      return '<div class="page__head"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(TODAY) + '</p></div>' +
+          '<a class="btn" href="#/bookings">All bookings</a></div>' +
+        '<div class="tiles">' +
+          '<a class="tile" href="#arrivals"><div class="tile__label">Arrivals</div><div class="tile__value num">' + arrivals.length + '</div><div class="tile__note">' + arrivedDone + ' checked in</div></a>' +
+          '<a class="tile" href="#departures"><div class="tile__label">Departures</div><div class="tile__value num">' + departures.length + '</div><div class="tile__note">Check-out by 11:00</div></a>' +
+          '<div class="tile"><div class="tile__label">In house</div><div class="tile__value num">' + inHouse.length + '</div><div class="tile__note">' + plural(inHouse.reduce(function (s, b) { return s + b.guests; }, 0), 'guest') + '</div></div>' +
+          '<a class="tile" href="#/calendar"><div class="tile__label">Tonight</div><div class="tile__value num">' + pct + '%</div><div class="meter" role="img" aria-label="' + taken + ' of ' + total + ' rooms taken"><span style="width:' + pct + '%"></span></div><div class="tile__note">' + taken + ' of ' + total + ' rooms</div></a>' +
+          '<a class="tile" href="#/enquiries"><div class="tile__label">New enquiries</div><div class="tile__value num">' + newEnq + '</div><div class="tile__note">Reply within a day</div></a>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<section class="panel" id="arrivals" aria-labelledby="h-arr"><div class="panel__head"><h2 id="h-arr">Arrivals</h2><p class="hint">Check-in from 14:00</p></div>' +
+            (arrivals.length ? '<ul class="rows">' + arrivals.map(arrivalRow).join('') + '</ul>' : '<p class="empty">No arrivals today.</p>') + '</section>' +
+          '<div class="stack">' +
+            '<section class="panel" id="departures" aria-labelledby="h-dep"><div class="panel__head"><h2 id="h-dep">Departures</h2></div>' +
+              (departures.length ? '<ul class="rows">' + departures.map(departureRow).join('') + '</ul>' : '<p class="empty">No departures today.</p>') + '</section>' +
+            '<section class="panel" aria-labelledby="h-hold"><div class="panel__head"><h2 id="h-hold">Holds waiting for payment</h2><p class="hint">Released automatically</p></div>' +
+              (holds.length ? '<ul class="rows">' + holds.map(holdRow).join('') + '</ul>' : '<p class="empty">No open holds.</p>') + '</section>' +
+          '</div>' +
+        '</div>';
+    }
+
+    /* Bookings: everything, searchable. Default view = what's coming up. */
+    var FILTERS = [['upcoming', 'Upcoming'], ['inhouse', 'In house'], ['held', 'Held'], ['past', 'Past'], ['cancelled', 'Cancelled & expired'], ['all', 'All']];
+    function filterBookings() {
+      var q = S.bookingsQ.toLowerCase();
+      return BOOKINGS.filter(function (b) {
+        var st = shownStatus(b);
+        var keep = {
+          upcoming: (st === 'CONFIRMED' || st === 'HELD') && b.checkOut > TODAY,
+          inhouse: st === 'INHOUSE', held: st === 'HELD', past: st === 'COMPLETED',
+          cancelled: st === 'CANCELLED' || st === 'EXPIRED', all: true,
+        }[S.bookingsFilter];
+        if (!keep) return false;
+        if (S.bookingsRoom !== 'all' && String(b.roomTypeId) !== S.bookingsRoom) return false;
+        if (q && (b.ref + ' ' + b.firstName + ' ' + b.lastName + ' ' + b.email + ' ' + b.phone).toLowerCase().indexOf(q) === -1) return false;
+        return true;
+      }).sort(function (a, b) { return S.bookingsFilter === 'past' ? (a.checkIn < b.checkIn ? 1 : -1) : (a.checkIn > b.checkIn ? 1 : a.checkIn < b.checkIn ? -1 : 0); });
+    }
+    function bookingRowsHtml() {
+      var list = filterBookings();
+      if (!list.length) return '<tr><td colspan="7" class="empty">No bookings match.</td></tr>';
+      return list.map(function (b) {
+        var rt = roomType(b.roomTypeId), st = shownStatus(b), paid = b.payments.length;
+        return '<tr class="clickable" data-href="#/booking/' + b.ref + '">' +
+          '<td class="c-ref"><a class="ref" href="#/booking/' + b.ref + '">' + b.ref + '</a></td>' +
+          '<td class="c-guest" data-label="Guest">' + guestName(b) + '<span class="sub c-hide">' + esc(b.email) + '</span></td>' +
+          '<td class="c-hide">' + esc(rt.name) + '<span class="sub">' + plural(b.guests, 'guest') + '</span></td>' +
+          '<td class="c-stay num" data-label="Stay">' + stayLabel(b) + '<span class="sub c-hide">' + plural(b.nights, 'night') + '</span></td>' +
+          '<td class="right num c-money" data-label="Total">' + money(b.totalKes) + '<span class="sub">' + (paid ? 'Deposit paid' : 'No deposit yet') + '</span></td>' +
+          '<td class="c-status">' + chip(st) + '</td></tr>';
+      }).join('');
+    }
+    function viewBookings() {
+      return '<div class="page__head"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone.</p></div></div>' +
+        '<section class="panel">' +
+          '<div class="filters">' +
+            '<label class="sr-only" for="q">Search bookings</label><input class="input search" id="q" type="search" placeholder="Search…" value="' + esc(S.bookingsQ) + '" />' +
+            '<label class="sr-only" for="room">Room type</label><select class="input" id="room"><option value="all">All rooms</option>' +
+              ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '"' + (S.bookingsRoom === String(rt.id) ? ' selected' : '') + '>' + esc(rt.name) + '</option>'; }).join('') + '</select>' +
+            '<div class="seg" role="group" aria-label="Show">' + FILTERS.map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+          '</div>' +
+          '<div class="table-wrap"><table class="table--cards"><caption class="sr-only">Bookings</caption>' +
+            '<thead><tr><th scope="col">Ref</th><th scope="col">Guest</th><th scope="col">Room</th><th scope="col">Stay</th><th scope="col" class="right">Total</th><th scope="col">Status</th></tr></thead>' +
+            '<tbody id="rows">' + bookingRowsHtml() + '</tbody></table></div>' +
+        '</section>';
+    }
+
+    /* One booking: everything about the stay, the money, and what can be done next */
+    function viewBooking(ref) {
+      var b = byRef(ref);
+      if (!b) return '<a class="crumb" href="#/bookings">← Bookings</a><h1 class="page__title">Booking not found</h1><p class="page__sub">No booking has the reference ' + esc(ref) + '.</p>';
+      var rt = roomType(b.roomTypeId), st = shownStatus(b), bal = balance(b);
+      var canCheckIn = st === 'CONFIRMED' && b.checkIn <= TODAY && b.checkOut > TODAY;
+      var canCheckOut = st === 'INHOUSE';
+      var canCancel = st === 'CONFIRMED' || st === 'HELD';
+
+      var events = [['Booked online', b.createdAt]];
+      if (b.status === 'HELD') events.push(['Hold runs out', b.holdExpiresAt]);
+      b.payments.forEach(function (p) { events.push(['Deposit paid · ' + p.provider, p.at]); });
+      if (b.checkedInAt) events.push(['Checked in', b.checkedInAt]);
+      if (b.status === 'COMPLETED') events.push(['Checked out', new Date(b.checkOut + 'T08:00:00Z').getTime()]);
+      if (b.cancelledAt) events.push(['Cancelled · ' + (b.cancelReason || 'no reason given'), b.cancelledAt]);
+      if (st === 'EXPIRED') events.push(['Hold ran out unpaid', b.createdAt + 15 * 6e4]);
+
+      return '<a class="crumb" href="#/bookings">← Bookings</a>' +
+        '<div class="page__head"><div><h1 class="page__title">' + guestName(b) + '</h1>' +
+          '<p class="page__sub"><span class="ref">' + b.ref + '</span> · ' + chip(st) + '</p></div>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+            (canCheckIn ? '<button class="btn btn--primary" data-act="checkin" data-ref="' + b.ref + '">Check in</button>' : '') +
+            (canCheckOut ? '<button class="btn btn--primary" data-act="checkout" data-ref="' + b.ref + '">Check out</button>' : '') +
+          '</div></div>' +
+        (b.requests ? '<p class="note" style="margin:0 0 20px"><b style="color:var(--text)">Guest request:</b> ' + esc(b.requests) + '</p>' : '') +
+        '<div class="detail">' +
+          '<div class="stack">' +
+            '<section class="panel"><div class="panel__head"><h2>Stay</h2></div><div class="panel__body"><dl class="kv">' +
+              '<dt>Room</dt><dd>' + esc(rt.name) + ' <span class="hint">(' + esc(rt.kind) + ')</span></dd>' +
+              '<dt>Check-in</dt><dd>' + fmtLong(b.checkIn) + ', from 14:00</dd>' +
+              '<dt>Check-out</dt><dd>' + fmtLong(b.checkOut) + ', by 11:00</dd>' +
+              '<dt>Length</dt><dd>' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</dd>' +
+            '</dl></div></section>' +
+            '<section class="panel"><div class="panel__head"><h2>Guest</h2></div><div class="panel__body"><dl class="kv">' +
+              '<dt>Name</dt><dd>' + guestName(b) + '</dd>' +
+              '<dt>Email</dt><dd><a href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a></dd>' +
+              '<dt>Phone</dt><dd><a href="tel:' + esc(b.phone.replace(/\s/g, '')) + '">' + esc(b.phone) + '</a></dd>' +
+            '</dl></div></section>' +
+            '<section class="panel"><div class="panel__head"><h2>Price, night by night</h2><p class="hint">Frozen when the guest booked</p></div>' +
+              '<div class="table-wrap"><table><thead><tr><th scope="col">Night</th><th scope="col" class="right">Rate</th></tr></thead><tbody>' +
+              b.nightly.map(function (n) { return '<tr><td>' + fmtDate(n.night, { weekday: 'short' }) + '</td><td class="right num">' + money(n.rateKes) + '</td></tr>'; }).join('') +
+              '</tbody></table></div></section>' +
+          '</div>' +
+          '<div class="stack">' +
+            '<section class="panel"><div class="panel__head"><h2>Payment</h2></div><div class="panel__body money num">' +
+              '<div><span>Total</span><span>' + money(b.totalKes) + '</span></div>' +
+              '<div><span>Deposit (30%)</span><span>' + money(b.depositKes) + '</span></div>' +
+              b.payments.map(function (p) { return '<div class="hint"><span>' + esc(p.provider) + ' · ' + esc(p.ref) + '</span><span>− ' + money(p.amountKes) + '</span></div>'; }).join('') +
+              '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(bal)) + '</span></div>' +
+            '</div></section>' +
+            '<section class="panel"><div class="panel__head"><h2>History</h2></div><div class="panel__body"><ol class="timeline">' +
+              events.sort(function (a, c) { return a[1] - c[1]; }).map(function (e) { return '<li><div>' + esc(e[0]) + '<small>' + fmtDateTime(e[1]) + '</small></div></li>'; }).join('') +
+            '</ol></div></section>' +
+            '<section class="panel"><div class="panel__head"><h2>Actions</h2></div><div class="panel__body actions">' +
+              '<button class="btn" data-act="resend" data-ref="' + b.ref + '"' + (b.payments.length ? '' : ' disabled') + '>Resend confirmation email</button>' +
+              '<button class="btn" data-act="copylink" data-ref="' + b.ref + '">Copy the guest\'s booking link</button>' +
+              (canCancel ? '<button class="btn btn--danger" data-act="cancel" data-ref="' + b.ref + '">Cancel booking</button>' : '') +
+            '</div></section>' +
+          '</div>' +
+        '</div>';
+    }
+
+    /* Calendar: rooms free per night for three weeks. Rows = room types, columns = nights. */
+    function viewCalendar() {
+      var DAYS = 21, start = S.calStart, nights = [];
+      for (var i = 0; i < DAYS; i++) nights.push(addDays(start, i));
+      // Season band above the dates (taken from the first room type; all types share season dates)
+      var bands = [], cur = null;
+      nights.forEach(function (n) {
+        var s = SEASONS.find(function (x) { return x.roomTypeId === 1 && x.startsOn <= n && n < x.endsOn; });
+        var label = s ? s.label : 'Standard rates';
+        if (cur && cur.label === label) cur.span++; else { cur = { label: label, span: 1, season: !!s }; bands.push(cur); }
+      });
+      function level(o, rt) {
+        var open = rt.units - o.closed; if (o.free === 0) return 'full';
+        var r = 1 - o.free / Math.max(1, open); return r < .25 ? 0 : r < .5 ? 1 : r < .8 ? 2 : 3;
+      }
+      return '<div class="page__head"><div><h1 class="page__title">Calendar</h1><p class="page__sub">Rooms free each night. Select a night to see who is staying.</p></div>' +
+          '<div style="display:flex;gap:8px"><button class="btn" data-cal="-21" aria-label="Previous three weeks">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="21" aria-label="Next three weeks">→</button></div></div>' +
+        '<section class="panel"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[DAYS - 1]) + '</caption><thead>' +
+          '<tr class="season-row"><th class="room" scope="col">Season</th>' + bands.map(function (b) { return '<th colspan="' + b.span + '" class="' + (b.season ? 'season' : '') + '">' + esc(b.label) + '</th>'; }).join('') + '</tr>' +
+          '<tr><th class="room" scope="col">Room type</th>' + nights.map(function (n) {
+            var d = new Date(n + 'T12:00:00Z'), dow = d.getUTCDay();
+            return '<th scope="col" class="' + (n === TODAY ? 'today ' : '') + (dow === 0 || dow === 6 ? 'weekend' : '') + '">' + d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + '<b>' + d.getUTCDate() + '</b></th>';
+          }).join('') + '</tr></thead><tbody>' +
+          ROOM_TYPES.map(function (rt) {
+            return '<tr><th class="room" scope="row"><b>' + esc(rt.name) + '</b><span>' + plural(rt.units, 'unit') + '</span></th>' + nights.map(function (n) {
+              var o = occupancy(rt, n);
+              var label = rt.name + ', ' + fmtLong(n) + ': ' + o.free + ' of ' + rt.units + ' free' + (o.closed ? ', ' + o.closed + ' closed' : '');
+              return '<td><button class="cell' + (o.closed ? ' closed' : '') + '" data-level="' + level(o, rt) + '" data-night="' + n + '" data-room="' + rt.id + '" aria-label="' + esc(label) + '">' +
+                o.free + '<small>free</small></button></td>';
+            }).join('') + '</tr>';
+          }).join('') +
+        '</tbody></table></div>' +
+        '<div class="legend"><span><i style="background:rgba(255,255,255,.06)"></i>Mostly free</span><span><i style="background:rgba(200,120,42,.26)"></i>Filling up</span>' +
+          '<span><i style="background:rgba(200,120,42,.45)"></i>Nearly full</span><span><i style="background:var(--ember)"></i>Full</span>' +
+          '<span><i style="background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.25) 0 3px,transparent 3px 7px)"></i>Some rooms closed</span></div></section>' +
+        '<section class="panel" style="margin-top:20px" id="night-panel" aria-live="polite"><div class="panel__head"><h2>Select a night above</h2></div><p class="empty">The guests staying that night will show here.</p></section>';
+    }
+    function nightPanel(night, rtId) {
+      var rt = roomType(rtId), o = occupancy(rt, night);
+      var list = BOOKINGS.filter(function (b) { return b.roomTypeId === rtId && takesUnit(b, night); });
+      var cl = CLOSURES.filter(function (c) { return (c.roomTypeId === null || c.roomTypeId === rtId) && c.startsOn <= night && night < c.endsOn; });
+      return '<div class="panel__head"><h2>' + esc(rt.name) + ' · ' + fmtLong(night) + '</h2><p class="hint">' + o.free + ' of ' + rt.units + ' free</p></div>' +
+        (list.length || cl.length ? '<ul class="rows">' + list.map(function (b) {
+          return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a> ' + chip(shownStatus(b)) + '</div><div class="row__meta">' + stayLabel(b) + ' · <span class="ref">' + b.ref + '</span></div></div></li>';
+        }).join('') + cl.map(function (c) {
+          return '<li class="row"><div><div class="row__name">Closed: ' + esc(c.reason) + '</div><div class="row__meta">' + (c.units == null ? 'All units' : plural(c.units, 'unit')) + ' · ' + fmtDate(c.startsOn) + ' – ' + fmtDate(c.endsOn) + '</div></div></li>';
+        }).join('') + '</ul>' : '<p class="empty">Nobody is staying in this room type that night.</p>');
+    }
+
+    /* Rooms & rates: base prices, units, on/off; seasonal prices below */
+    function viewRooms() {
+      var y = TODAY.slice(0, 4);
+      var seasons = SEASONS.filter(function (s) { return s.endsOn > TODAY; }).sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : a.startsOn > b.startsOn ? 1 : a.roomTypeId - b.roomTypeId; });
+      return '<div class="page__head"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">Changes apply to new bookings only. Guests who have already booked keep the price they were shown.</p></div></div>' +
+        '<div class="grid-3">' + ROOM_TYPES.map(function (rt) {
+          return '<section class="panel"><form class="panel__body room-card" data-room-form="' + rt.id + '">' +
+            '<div class="room-card__top"><div><h3>' + esc(rt.name) + '</h3><span class="hint">' + esc(rt.kind) + '</span></div>' +
+              '<label class="toggle"><input type="checkbox" name="active"' + (rt.active ? ' checked' : '') + ' /> Bookable</label></div>' +
+            '<div class="facts"><div class="fact"><span>Sleeps</span><b class="num">' + rt.sleeps + '</b></div><div class="fact"><span>Units</span><b class="num">' + rt.units + '</b></div>' +
+              '<div class="fact"><span>Tonight</span><b class="num">' + occupancy(rt, TODAY).free + ' free</b></div></div>' +
+            '<div class="form-grid">' +
+              '<div class="field"><label for="base-' + rt.id + '">Base rate (KES / night)</label><input class="input num" id="base-' + rt.id + '" name="base" inputmode="numeric" value="' + rt.baseRateKes + '" /></div>' +
+              '<div class="field"><label for="units-' + rt.id + '">Units</label><input class="input num" id="units-' + rt.id + '" name="units" type="number" min="0" max="99" value="' + rt.units + '" /></div>' +
+            '</div><button class="btn btn--primary">Save changes</button></form></section>';
+        }).join('') + '</div>' +
+        '<section class="panel" style="margin-top:20px"><div class="panel__head"><h2>Seasonal rates</h2><p class="hint">A season replaces the base rate for the nights it covers</p></div>' +
+          '<div class="table-wrap"><table><thead><tr><th scope="col">Season</th><th scope="col">Room</th><th scope="col">From</th><th scope="col">Until (not included)</th><th scope="col" class="right">KES / night</th><th scope="col" class="right">vs base</th></tr></thead><tbody>' +
+          seasons.slice(0, 12).map(function (s) {
+            var rt = roomType(s.roomTypeId), diff = Math.round((s.nightlyRateKes / rt.baseRateKes - 1) * 100);
+            var on = s.startsOn <= TODAY && TODAY < s.endsOn;
+            return '<tr><td>' + esc(s.label) + (on ? ' <span class="chip chip--CONFIRMED">Now</span>' : '') + '</td><td>' + esc(rt.name) + '</td><td class="num">' + fmtDate(s.startsOn, { year: 'numeric' }) + '</td><td class="num">' + fmtDate(s.endsOn, { year: 'numeric' }) + '</td>' +
+              '<td class="right num">' + KES.format(s.nightlyRateKes) + '</td><td class="right num" style="color:' + (diff > 0 ? 'var(--ember-hi)' : 'var(--st-ok)') + '">' + (diff > 0 ? '+' : '') + diff + '%</td></tr>';
+          }).join('') + '</tbody></table></div>' +
+          '<div class="panel__body" style="border-top:1px solid var(--line)"><form class="form-grid" id="f-season">' +
+            '<div class="field"><label for="s-label">New season</label><input class="input" id="s-label" placeholder="e.g. Easter" required /></div>' +
+            '<div class="field"><label for="s-room">Room</label><select class="input" id="s-room">' + ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'; }).join('') + '</select></div>' +
+            '<div class="field"><label for="s-from">From</label><input class="input" id="s-from" type="date" required /></div>' +
+            '<div class="field"><label for="s-to">Until</label><input class="input" id="s-to" type="date" required /></div>' +
+            '<div class="field"><label for="s-rate">KES / night</label><input class="input num" id="s-rate" inputmode="numeric" required /></div>' +
+            '<button class="btn">Add season</button></form></div></section>';
+    }
+
+    /* Closures: take units out of sale (maintenance, private events) */
+    function viewClosures() {
+      var list = CLOSURES.slice().sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : 1; });
+      return '<div class="page__head"><div><h1 class="page__title">Closures</h1><p class="page__sub">Closed rooms can\'t be booked online. Closing never cancels existing bookings.</p></div></div>' +
+        '<div class="detail">' +
+          '<section class="panel"><div class="panel__head"><h2>Upcoming closures</h2></div>' +
+            (list.length ? '<ul class="rows">' + list.map(function (c) {
+              var rt = c.roomTypeId ? roomType(c.roomTypeId) : null;
+              var clash = BOOKINGS.filter(function (b) { return (!rt || b.roomTypeId === rt.id) && (b.status === 'CONFIRMED') && b.checkIn < c.endsOn && c.startsOn < b.checkOut; }).length;
+              return '<li class="row"><div><div class="row__name">' + esc(c.reason) + '</div>' +
+                '<div class="row__meta">' + (rt ? esc(rt.name) : 'Whole lodge') + ' · ' + (c.units == null ? 'all units' : plural(c.units, 'unit')) + ' · ' + fmtDate(c.startsOn) + ' – ' + fmtDate(c.endsOn) + ' (' + plural(daysBetween(c.startsOn, c.endsOn), 'night') + ')</div>' +
+                (clash ? '<div class="row__meta" style="color:var(--st-held)">⚠ ' + plural(clash, 'confirmed booking') + ' overlap these dates. They stay booked: contact the guests if needed.</div>' : '') +
+                '</div><div class="row__actions"><button class="btn btn--small btn--danger" data-act="reopen" data-id="' + c.id + '">Reopen</button></div></li>';
+            }).join('') + '</ul>' : '<p class="empty">Nothing is closed.</p>') + '</section>' +
+          '<section class="panel"><div class="panel__head"><h2>Close rooms</h2></div><form class="panel__body stack" id="f-closure" style="gap:14px">' +
+            '<div class="field"><label for="c-room">Which rooms</label><select class="input" id="c-room"><option value="">Whole lodge</option>' + ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'; }).join('') + '</select></div>' +
+            '<div class="grid-2" style="gap:14px"><div class="field"><label for="c-from">First night</label><input class="input" id="c-from" type="date" required min="' + TODAY + '" /></div>' +
+              '<div class="field"><label for="c-to">Open again on</label><input class="input" id="c-to" type="date" required min="' + addDays(TODAY, 1) + '" /></div></div>' +
+            '<div class="field"><label for="c-units">How many units</label><input class="input num" id="c-units" type="number" min="1" placeholder="All" /><span class="hint">Leave empty to close every unit.</span></div>' +
+            '<div class="field"><label for="c-reason">Reason (staff only)</label><input class="input" id="c-reason" maxlength="120" required placeholder="e.g. Painting, suites 1–2" /></div>' +
+            '<button class="btn btn--primary">Close these dates</button></form></section>' +
+        '</div>';
+    }
+
+    /* Enquiries: the "Get in touch" form's inbox */
+    function viewEnquiries() {
+      var list = ENQUIRIES.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
+      var cur = ENQUIRIES.find(function (e) { return e.id === S.enquiry; }) || list[0];
+      function ago(ms) { var h = Math.round((Date.now() - ms) / 36e5); return h < 1 ? 'Just now' : h < 24 ? h + ' h ago' : fmtDateTime(ms).split(',')[0]; }
+      return '<div class="page__head"><div><h1 class="page__title">Enquiries</h1><p class="page__sub">Messages from the website\'s "Get in touch" form.</p></div></div>' +
+        '<section class="panel inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
+          return '<li><button class="inbox__item' + (e.status === 'NEW' ? ' unread' : '') + '" data-enq="' + e.id + '" aria-current="' + (cur && e.id === cur.id) + '">' +
+            '<div class="inbox__top"><b>' + esc(e.firstName + ' ' + e.lastName) + '</b><small>' + ago(e.createdAt) + '</small></div>' +
+            '<p>' + esc(e.subject) + ' · ' + esc(e.message) + '</p></button></li>';
+        }).join('') + '</ul>' +
+        (cur ? '<article class="inbox__read" aria-live="polite">' +
+          '<button class="btn btn--small btn--ghost back-to-list" data-back="1" style="padding:0;margin-bottom:12px">← All enquiries</button>' +
+          '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>' + esc(cur.subject) + '</h2>' +
+            '<p class="page__sub" style="margin:0">' + esc(cur.firstName + ' ' + cur.lastName) + ' · ' + fmtDateTime(cur.createdAt) + '</p></div><div>' + chip(cur.status) + '</div></div>' +
+          '<dl class="kv" style="margin-top:20px">' +
+            '<dt>Email</dt><dd><a href="mailto:' + esc(cur.email) + '">' + esc(cur.email) + '</a></dd>' +
+            (cur.phone ? '<dt>Phone</dt><dd><a href="tel:' + esc(cur.phone.replace(/\s/g, '')) + '">' + esc(cur.phone) + '</a></dd>' : '') +
+            (cur.checkIn ? '<dt>Dates</dt><dd>' + fmtDate(cur.checkIn) + ' – ' + fmtDate(cur.checkOut) + ' (' + plural(daysBetween(cur.checkIn, cur.checkOut), 'night') + ')</dd>' : '') +
+            (cur.guests ? '<dt>Guests</dt><dd>' + cur.guests + '</dd>' : '') +
+          '</dl>' +
+          '<div class="message">' + esc(cur.message) + '</div>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+            '<a class="btn btn--primary" href="mailto:' + esc(cur.email) + '?subject=' + encodeURIComponent('Re: ' + cur.subject + ' · Safari Ember') + '">Reply by email</a>' +
+            (cur.status === 'NEW' ? '<button class="btn" data-act="handled" data-id="' + cur.id + '">Mark as handled</button>' : '<button class="btn" data-act="reopen-enq" data-id="' + cur.id + '">Mark as new</button>') +
+          '</div></article>' : '<p class="empty">No enquiries yet.</p>') + '</section>';
+    }
+
+    /* ── ROUTER ───────────────────────────────────────────────────────────────────────────── */
+
+    var app = document.getElementById('app');
+    var holdTick;
+    function render() {
+      var hash = location.hash.replace(/^#\/?/, '') || 'today';
+      var parts = hash.split('/');
+      if (!S.signedIn && parts[0] !== 'login') { location.replace('#/login'); return; }
+      if (S.signedIn && parts[0] === 'login') { location.replace('#/today'); return; }
+      clearInterval(holdTick);
+
+      var titleMap = { today: 'Today', bookings: 'Bookings', booking: 'Booking', calendar: 'Calendar', rooms: 'Rooms & rates', closures: 'Closures', enquiries: 'Enquiries', login: 'Sign in' };
+      document.title = (titleMap[parts[0]] || 'Admin') + ' · Safari Ember Admin';
+
+      if (parts[0] === 'login') { app.innerHTML = viewLogin(); bindLogin(); return; }
+      var views = { today: viewToday, bookings: viewBookings, calendar: viewCalendar, rooms: viewRooms, closures: viewClosures, enquiries: viewEnquiries };
+      var active = parts[0] === 'booking' ? 'bookings' : parts[0];
+      var html = parts[0] === 'booking' ? viewBooking(decodeURIComponent(parts[1] || '')) : (views[parts[0]] || viewToday)();
+      var hadFocusInMain = false;
+      app.innerHTML = shell(active, html);
+      bindShell();
+      // Move focus to the new page for keyboard and screen-reader users, like a page load would
+      if (window.__routed) document.getElementById('main').focus({ preventScroll: true });
+      window.__routed = true;
+      window.scrollTo(0, 0);
+      tickHolds(); holdTick = setInterval(tickHolds, 1000);
+    }
+
+    function tickHolds() {
+      document.querySelectorAll('.timer[data-expires]').forEach(function (el) {
+        var left = Math.max(0, Number(el.dataset.expires) - Date.now());
+        var m = Math.floor(left / 6e4), s = Math.floor(left % 6e4 / 1000);
+        el.textContent = left ? m + ':' + String(s).padStart(2, '0') + ' left' : 'Released';
+      });
+    }
+
+    /* ── EVENTS ───────────────────────────────────────────────────────────────────────────── */
+
+    function bindLogin() {
+      var f = document.getElementById('f-login'), c = document.getElementById('f-code');
+      if (f) { document.getElementById('email').focus();
+        f.addEventListener('submit', function (e) { e.preventDefault(); S.stage = 'code'; render(); document.getElementById('code').focus(); }); }
+      if (c) {
+        c.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var v = document.getElementById('code').value.trim();
+          if (!/^\d{6}$/.test(v)) { toast('Enter the 6 digits from your authenticator app.'); return; }
+          S.signedIn = true; S.stage = 'password';
+          try { sessionStorage.setItem('se-admin-proto', '1'); } catch (err) {}
+          location.hash = '#/today';
+        });
+        document.getElementById('restart').onclick = function () { S.stage = 'password'; render(); };
+        document.getElementById('backup').onclick = function () { toast('Backup codes: 10 one-time codes given to each manager when they set up two-factor.'); };
+      }
+    }
+
+    function bindShell() {
+      var shellEl = document.getElementById('shell'), burger = document.getElementById('burger');
+      function setNav(open) {
+        shellEl.classList.toggle('nav-open', open); burger.setAttribute('aria-expanded', open);
+        var scrim = document.querySelector('.scrim');
+        if (open && !scrim) { scrim = document.createElement('div'); scrim.className = 'scrim'; scrim.onclick = function () { setNav(false); }; shellEl.appendChild(scrim); }
+        if (!open && scrim) scrim.remove();
+        if (open) document.querySelector('.nav a').focus();
+      }
+      burger.onclick = function () { setNav(!shellEl.classList.contains('nav-open')); };
+      // Esc closes the phone menu. Assigned (not added), so re-rendering never stacks up listeners.
+      document.onkeydown = function (e) { if (e.key === 'Escape' && shellEl.classList.contains('nav-open')) { setNav(false); burger.focus(); } };
+      document.getElementById('signout').onclick = function () {
+        S.signedIn = false; try { sessionStorage.removeItem('se-admin-proto'); } catch (e) {}
+        location.hash = '#/login';
+      };
+
+      // Bookings table: search, filters, whole-row click
+      var q = document.getElementById('q');
+      if (q) {
+        q.addEventListener('input', function () { S.bookingsQ = q.value; document.getElementById('rows').innerHTML = bookingRowsHtml(); });
+        document.getElementById('room').onchange = function (e) { S.bookingsRoom = e.target.value; document.getElementById('rows').innerHTML = bookingRowsHtml(); };
+        document.querySelectorAll('[data-filter]').forEach(function (b) {
+          b.onclick = function () { S.bookingsFilter = b.dataset.filter;
+            document.querySelectorAll('[data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+            document.getElementById('rows').innerHTML = bookingRowsHtml(); };
+        });
+        document.getElementById('rows').addEventListener('click', function (e) {
+          var tr = e.target.closest('tr[data-href]'); if (tr && !e.target.closest('a')) location.hash = tr.dataset.href;
+        });
+      }
+
+      // Calendar
+      document.querySelectorAll('[data-cal]').forEach(function (b) {
+        b.onclick = function () { var n = Number(b.dataset.cal); S.calStart = n ? addDays(S.calStart, n) : TODAY; render(); };
+      });
+      document.querySelectorAll('.cell').forEach(function (c) {
+        c.onclick = function () { document.getElementById('night-panel').innerHTML = nightPanel(c.dataset.night, Number(c.dataset.room)); };
+      });
+
+      // Enquiries
+      document.querySelectorAll('[data-enq]').forEach(function (b) {
+        b.onclick = function () { S.enquiry = Number(b.dataset.enq); S.reading = true; render(); };
+      });
+      var back = document.querySelector('[data-back]'); if (back) back.onclick = function () { S.reading = false; render(); };
+
+      // Forms (prototype: they update the sample data in memory)
+      document.querySelectorAll('[data-room-form]').forEach(function (f) {
+        f.onsubmit = function (e) {
+          e.preventDefault(); var rt = roomType(Number(f.dataset.roomForm));
+          var base = Number(String(f.base.value).replace(/[^\d]/g, '')), units = Number(f.units.value);
+          if (!(base >= 1000)) { toast('The base rate should be at least KES 1,000.'); f.base.focus(); return; }
+          rt.baseRateKes = base; rt.units = units; rt.active = f.active.checked;
+          toast(rt.name + ' saved (prototype: not stored).'); render();
+        };
+      });
+      var fs = document.getElementById('f-season');
+      if (fs) fs.onsubmit = function (e) {
+        e.preventDefault();
+        var from = document.getElementById('s-from').value, to = document.getElementById('s-to').value;
+        if (to <= from) { toast('"Until" must be after "From".'); return; }
+        SEASONS.push({ id: SEASONS.length + 1, roomTypeId: Number(document.getElementById('s-room').value), label: document.getElementById('s-label').value.trim(),
+          startsOn: from, endsOn: to, nightlyRateKes: Number(document.getElementById('s-rate').value.replace(/[^\d]/g, '')) });
+        toast('Season added (prototype: not stored).'); render();
+      };
+      var fc = document.getElementById('f-closure');
+      if (fc) fc.onsubmit = function (e) {
+        e.preventDefault();
+        var from = document.getElementById('c-from').value, to = document.getElementById('c-to').value;
+        if (!from || !to || to <= from) { toast('"Open again on" must be after the first night.'); return; }
+        var u = document.getElementById('c-units').value;
+        CLOSURES.push({ id: closureSeq++, roomTypeId: document.getElementById('c-room').value ? Number(document.getElementById('c-room').value) : null,
+          startsOn: from, endsOn: to, units: u ? Number(u) : null, reason: document.getElementById('c-reason').value.trim() });
+        toast('Dates closed (prototype: not stored).'); render();
+      };
+
+      // Buttons with data-act, anywhere on the page
+      document.getElementById('main').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-act]'); if (!b) return;
+        var bk = b.dataset.ref && byRef(b.dataset.ref);
+        switch (b.dataset.act) {
+          case 'checkin':
+            bk.checkedInAt = Date.now(); toast(bk.firstName + ' ' + bk.lastName + ' checked in. Balance due ' + money(balance(bk)) + '.'); render(); break;
+          case 'checkout':
+            confirmDialog({ title: 'Check out ' + bk.firstName + ' ' + bk.lastName + '?', body: 'Make sure the balance of ' + money(balance(bk)) + ' has been paid at the desk.', ok: 'Check out',
+              onOk: function () { bk.status = 'COMPLETED'; bk.checkedInAt = bk.checkedInAt || Date.now(); toast('Checked out. Room ready for housekeeping.'); render(); } }); break;
+          case 'cancel':
+            confirmDialog({ title: 'Cancel ' + bk.ref + '?', danger: true, ok: 'Cancel booking', field: 'Reason (the guest will see this in their email)',
+              body: bk.payments.length ? 'The room is released straight away. The deposit of ' + money(bk.depositKes) + ' is not refunded automatically: refund it from M-Pesa or Paystack if your policy allows.' : 'The hold is released straight away. No payment was taken.',
+              onOk: function (reason) { bk.status = 'CANCELLED'; bk.cancelledAt = Date.now(); bk.cancelReason = reason; toast(bk.ref + ' cancelled.'); render(); } }); break;
+          case 'resend': toast('Confirmation email sent again to ' + bk.email + ' (prototype).'); break;
+          case 'copylink':
+            var link = location.origin + '/booking.html?ref=' + bk.ref + '&sig=…';
+            (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { toast('Guest link copied.'); }, function () { toast(link); }); break;
+          case 'reopen':
+            var c = CLOSURES.find(function (x) { return x.id === Number(b.dataset.id); });
+            confirmDialog({ title: 'Reopen these dates?', body: c.reason + ': the rooms go back on sale immediately.', ok: 'Reopen',
+              onOk: function () { CLOSURES.splice(CLOSURES.indexOf(c), 1); toast('Rooms back on sale.'); render(); } }); break;
+          case 'handled': case 'reopen-enq':
+            var en = ENQUIRIES.find(function (x) { return x.id === Number(b.dataset.id); });
+            en.status = b.dataset.act === 'handled' ? 'HANDLED' : 'NEW'; render(); break;
+        }
+      });
+    }
+
+    window.addEventListener('hashchange', render);
+    render();
+
+    /* ── NOTES FOR THE BACKEND (Phase 5) ──────────────────────────────────────────────────────
+       1. Check-in needs a column the Phase 1 schema doesn't have: bookings.checked_in_at
+          (timestamp, null until the guest arrives). "In house" = CONFIRMED + checked_in_at set.
+          Check-out sets status COMPLETED. Add both in the Phase 5 migration.
+       2. Every /api/admin/* route must require a signed-in admin session (with two-factor done).
+          This page's sign-in is only a design: it lets anyone in.
+       3. Enquiries need status (NEW / HANDLED), already in the blueprint's table.
+    ─────────────────────────────────────────────────────────────────────────────────────────── */
+  })();
+  </script>
+</body>
+</html>

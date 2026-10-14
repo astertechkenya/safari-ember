@@ -176,10 +176,11 @@
       height: 60px;
       background: rgba(8,7,5,0.92);
       backdrop-filter: blur(12px);
-      transition: transform 0.3s ease;
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      transition: background var(--transition);
+      /* One transition list: a second "transition:" line would replace this one, not add to it
+         (that's why the hide-on-scroll used to snap instead of slide). */
+      transition: transform 0.3s ease, background var(--transition);
     }
 
     .nav__logo {
@@ -516,26 +517,32 @@
       .hero__stage .btn-primary,
       .hero__stage .btn-ghost         { padding: 12px 30px; }
     }
-    /* Entrance: once the logo settles, the title, text and buttons rise in one after another,
-       starting as the logo finishes its move (1.4 s). */
+    /* Entrance, in order: once the logo has finished shrinking (its move takes 1.4 s), the headline
+       rises in, then the body text, then the buttons. Each starts 0.5 s after the one before, so
+       you see three separate arrivals rather than one block. Times count from the settle. */
     @media (prefers-reduced-motion: no-preference) {
-      .hero__stage > * { opacity: 0; transform: translateY(16px); transition: opacity .9s ease, transform .9s ease; }
+      .hero__stage > * { opacity: 0; transform: translateY(16px); transition: opacity .8s ease, transform .8s ease; }
       .hero.is-settled .hero__stage > * { opacity: 1; transform: none; }
-      .hero.is-settled .hero__stage-title { transition-delay: 1.1s; }
-      .hero.is-settled .hero__stage-desc  { transition-delay: 1.35s; }
-      .hero.is-settled .hero__stage-ctas  { transition-delay: 1.6s; }
+      .hero.is-settled .hero__stage-title { transition-delay: 1.4s; }   /* headline: as the logo lands */
+      .hero.is-settled .hero__stage-desc  { transition-delay: 1.9s; }   /* then the body */
+      .hero.is-settled .hero__stage-ctas  { transition-delay: 2.4s; }   /* then the buttons */
+      /* The body text normally sits at opacity .85 (see the size dials), and that rule outranks the
+         plain "start hidden" above, so the body used to show before the headline. These two rules
+         are specific enough to win: hidden first, then fade up to its usual .85. */
+      .hero__stage > .hero__stage-desc { opacity: 0; }
+      .hero.is-settled .hero__stage > .hero__stage-desc { opacity: .85; }
     }
     /* ── Opening (Oct 2026): the page opens on black, the film and the logo fade in together, and
        the nav bar and pause button arrive as the logo settles. CSS only: if any script failed,
        nothing could leave the page stuck on black. Each part is invisible only during its own
        delay (animation-fill-mode: backwards) and returns to its normal styles after, so hover
        effects and the nav's own hide-on-scroll keep working. Timeline:
-         0.0–1.0 s  black
-         1.0–2.4 s  the film and the logo fade in together
-         4.0 s      the logo starts to settle (--settle-at), and the nav bar and pause button fade in
+         0.0–0.3 s  black
+         0.3–1.2 s  the film and the logo fade in together
+         2.0 s      the logo starts to settle (--settle-at), and the nav bar and pause button fade in
        --settle-at is the one place to change the settle time: the settle script waits for the
        nav's fade to start, so the logo and the nav can't drift apart. */
-    :root { --settle-at: 3s; }            /* the big logo starts to settle at 3 s (it fades in from 1.0 s) */
+    :root { --settle-at: 2s; }            /* the opening lasts 2 s: the big logo starts to settle at 2 s (it fades in from 0.3 s) */
     .hero { background: var(--black); }
     .hero__media { position: absolute; inset: 0; }
     /* Phones: zoom the film out. The clips are wide (16:9) and a phone is tall, so filling the
@@ -558,7 +565,7 @@
     @keyframes introFade { from { opacity: 0; } }          /* to: whatever the element's opacity is */
     @media (prefers-reduced-motion: no-preference) {
       .hero__media,
-      .hero__logo-lockup img    { animation: introFade 1.4s ease-out 1s backwards; }
+      .hero__logo-lockup img    { animation: introFade .9s ease-out .3s backwards; }
       .nav, .hero__pause        { animation: introFade 1.2s ease-out var(--settle-at) backwards; }
       /* Keyboard users can Tab into the nav or the pause button before they've faded in.
          Show them at once rather than leave focus on something invisible. */
@@ -785,30 +792,21 @@
     .rooms__grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 3px;
-      margin-top: 0;
+      gap: 32px;
+      max-width: 1100px; margin: 0 auto; padding: 0 24px;
     }
 
-    .room-card {
-      background: var(--black-mid);
-      transition: background var(--transition);
-      overflow: hidden;
-    }
-    .rooms__grid > .room-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, background var(--transition); }
+    .rooms__grid > .room-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, border-color .4s ease; }
     .rooms__grid > .room-card.in-view { opacity: 1; transform: translateY(0); }
     @media (max-width: 768px) {
       .room-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; }
       .room-card.in-view { opacity: 1; transform: translateY(0); }
     }
 
-    .room-card:hover {
-      background: var(--black-light);
-    }
-
     /* Placeholder for the room photo — replace src with real image in production */
     .room-card__image {
       width: 100%;
-      height: 220px;
+      aspect-ratio: 4 / 3;
       background: var(--black-light);
       display: flex;
       align-items: center;
@@ -830,36 +828,25 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      animation: galleryZoom 12s ease-out infinite alternate;
     }
 
     .room-card__body {
-      padding: 28px;
-    }
-
-    .room-card__type {
-      font-size: 9px;
-      font-weight: 500;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--ember);
-      margin-bottom: 10px;
+      padding: 30px 14px 18px;
     }
 
     .room-card__name {
       font-family: var(--font-serif);
-      font-size: 20px;
+      font-size: clamp(22px, 2.2vw, 28px);
       font-weight: 400;
       color: var(--cream);
-      margin-bottom: 12px;
-      line-height: 1.3;
+      margin-bottom: 14px;
+      line-height: 1.2;
     }
 
     .room-card__desc {
       font-size: 15px;
-      color: var(--warm-dim);
-      line-height: 1.8;
-      margin-bottom: 20px;
+      color: var(--warm-mid);
+      line-height: 1.9;
     }
 
     .room-card__footer {
@@ -977,57 +964,6 @@
     }
 
     /* ============================================================
-       AMENITIES
-    ============================================================ */
-    .amenities__grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-    }
-
-    .amenity {
-      background: var(--black-mid);
-      padding: 36px 24px;
-      text-align: center;
-      transition: background var(--transition);
-    }
-
-    .amenity:hover {
-      background: var(--black-light);
-    }
-
-    .amenity__icon {
-      font-size: 28px;
-      color: var(--ember);
-      margin-bottom: 16px;
-      opacity: 0.8;
-      transition: opacity var(--transition);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .amenity:hover .amenity__icon {
-      opacity: 1;
-    }
-
-    .amenity__name {
-      font-family: var(--font-serif);
-      font-size: 17px;
-      font-weight: 400;
-      color: var(--cream);
-      margin-bottom: 10px;
-    }
-
-    .amenity__desc {
-      font-size: 16px;
-      color: var(--warm-dim);
-      line-height: 1.7;
-    }
-
-    /* ============================================================
        GALLERY
        Masonry-like grid using CSS grid areas for visual interest.
     ============================================================ */
@@ -1114,51 +1050,29 @@
     .testimonial-slider__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
     .testimonial-slider__dot.active { background: var(--ember); }
 
-    .testimonial {
-      border: 1px solid var(--border);
-      padding: 36px 36px;
-      background: var(--black-mid);
-      position: relative;
-    }
-
-    /* Large decorative quotation mark */
-    .testimonial::before {
-      content: '"';
-      position: absolute;
-      top: 20px;
-      left: 32px;
-      font-family: var(--font-serif);
-      font-size: 80px;
-      color: var(--ember);
-      opacity: 0.15;
-      line-height: 1;
-      pointer-events: none;
-    }
-
-    .testimonial__stars {
-      color: var(--ember);
-      font-size: 14px;
-      letter-spacing: 3px;
-      margin-bottom: 16px;
-    }
-
+    /* One review at a time as a pull quote, in the same family as the chef's quote: large cream
+       serif (upright, for readability) at a comfortable reading width, then the stars, then the author in the site's
+       short line + label format. No box, no decorative quote mark. */
+    .testimonial { margin: 0; text-align: center; }
     .testimonial__text {
-      font-family: var(--font-accent);
-      font-size: 20px;
+      font-family: var(--font-serif);
+      font-size: clamp(20px, 2.1vw, 27px);
       font-weight: 400;
-      font-style: italic;
-      color: var(--warm-mid);
-      line-height: 1.9;
-      margin-bottom: 24px;
+      font-style: normal;               /* upright: easier to read across several lines than italic */
+      color: var(--cream);
+      line-height: 1.65;
+      max-width: 760px;
+      margin: 0 auto 22px;
     }
-
+    .testimonial__stars { color: var(--ember); font-size: 13px; letter-spacing: 4px; margin: 0 0 18px; }
     .testimonial__author {
       font-size: 12px;
       font-weight: 500;
-      letter-spacing: 2px;
+      letter-spacing: 4px;
       text-transform: uppercase;
       color: var(--ember);
     }
+    .testimonial__author::before { content: ''; display: block; width: 36px; height: 1px; background: var(--ember); margin: 0 auto 16px; }
 
     /* ============================================================
        BOOKING BAR
@@ -1184,15 +1098,15 @@
     }
 
     .booking__field {
-      padding: 20px 24px;
+      padding: 18px 24px;
       border-right: 1px solid var(--border);
       text-align: left;
-      background: var(--black-mid);
       transition: background var(--transition);
     }
 
-    .booking__field:hover {
-      background: var(--black-light);
+    .booking__field:hover,
+    .booking__field:focus-within {
+      background: rgba(200, 120, 42, .06);
     }
 
     .booking__field:last-of-type {
@@ -1200,7 +1114,7 @@
     }
 
     .booking__field-label {
-      font-size: 8px;
+      font-size: 12px;
       font-weight: 500;
       letter-spacing: 3px;
       text-transform: uppercase;
@@ -1246,6 +1160,10 @@
     .booking__submit:hover {
       background: var(--ember-glow);
     }
+
+    .booking__note { min-height: 1.6em; margin: 18px auto 0; max-width: 900px; font-size: 15px; color: var(--warm-mid); }
+    .booking__note.is-error { color: #f0a090; }
+    .booking__note a { color: var(--ember-glow); }
 
     /* ============================================================
        LOCATION & CONTACT
@@ -1622,8 +1540,6 @@
       .dining__visual { min-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
       .dining__content { padding: 36px 24px; }
 
-      /* 2-column amenities on tablet */
-      .amenities__grid { grid-template-columns: 1fr 1fr; }
 
       /* Gallery: single column with proper tall cells so images aren't squashed */
       .gallery__grid {
@@ -1675,13 +1591,12 @@
       .hero-intro__ctas { flex-direction: column; align-items: center; }
       .hero-intro__ctas .btn-primary,
       .hero-intro__ctas .btn-ghost {
-        width: 260px;                 /* 220px made "Explore the Lodge" wrap onto two lines */
+        width: 260px;                 /* 220px made the longer button label wrap onto two lines */
         padding-left: 16px;
         padding-right: 16px;
         white-space: nowrap;
         text-align: center;
       }
-      .amenities__grid { grid-template-columns: 1fr; }
       /* On very small screens keep single column gallery with comfortable height */
       .gallery__grid { grid-template-columns: 1fr; }
       .gallery__cell { height: 200px; }
@@ -1689,68 +1604,9 @@
     }
 
 
-    /* ── VISUAL GALLERY ─────────────────────────────────────────── */
-    .vis-gallery { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
-    .vis-gallery__header { text-align: center; padding: 0 40px 60px; }
-    .vis-gallery__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 16px; }
-    .vis-gallery__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; }
-    .vis-gallery__title em { font-style: italic; color: var(--ember); }
-    .vis-gallery__item { display: grid; grid-template-columns: 1fr 1fr; min-height: 480px; opacity: 0; transform: translateY(48px); transition: opacity 0.9s ease, transform 0.9s ease; }
-    .vis-gallery__item.in-view { opacity: 1; transform: translateY(0); }
-    .vis-gallery__item:nth-child(odd) .vis-gallery__img { order: 1; }
-    .vis-gallery__item:nth-child(odd) .vis-gallery__text { order: 2; }
-    .vis-gallery__item:nth-child(even) .vis-gallery__img { order: 2; }
-    .vis-gallery__item:nth-child(even) .vis-gallery__text { order: 1; }
-    .vis-gallery__img { overflow: hidden; position: relative; }
-    @keyframes galleryZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
-    .vis-gallery__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: galleryZoom 12s ease-out infinite alternate; }
-    .vis-gallery__text { background: #0c0a08; padding: 60px 52px; display: flex; flex-direction: column; justify-content: center; }
-    .vis-gallery__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 16px; }
-    .vis-gallery__rule { width: 28px; height: 1px; background: var(--ember); margin-bottom: 20px; }
-    .vis-gallery__name { font-family: var(--font-serif); font-size: clamp(20px, 2.5vw, 28px); font-weight: 400; color: var(--cream); line-height: 1.3; margin-bottom: 20px; }
-    .vis-gallery__desc { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; }
-    @media (max-width: 768px) {
-      .vis-gallery__item { grid-template-columns: 1fr; min-height: auto; }
-      .vis-gallery__item:nth-child(even) .vis-gallery__img { order: 0; }
-      .vis-gallery__item:nth-child(even) .vis-gallery__text { order: 1; }
-      .vis-gallery__img { height: 260px; }
-      .vis-gallery__text { padding: 36px 28px; }
-    }
 
 
     /* ── AMENITIES CARDS ─────────────────────────────────────────── */
-    .am-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
-    .am-header { text-align: center; padding: 0 40px 56px; }
-    .am-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
-    .am-title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; }
-    .am-title em { font-style: italic; color: var(--ember); }
-    .am-rule { width: 36px; height: 1px; background: var(--ember); margin: 20px auto 0; }
-    .am-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 80px; max-width: 1000px; margin: 0 auto; padding: 0 40px; background: var(--black); }
-    .am-card {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: #0c0a08;
-      transform: scale(0.9) translateZ(0);
-      transition: transform 0.8s ease;
-      will-change: transform;
-      backface-visibility: hidden;
-      border-radius: 2px;
-    }
-    .am-card.in-view { transform: scale(1) translateZ(0); }
-    .am-card__img-wrap { position: relative; overflow: hidden; height: 320px; border-radius: 2px; }
-    .am-card__body { background: #0c0a08; padding: 20px 24px; }
-    .am-card__img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-    .am-card__overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,5,0.92) 0%, rgba(8,7,5,0.3) 55%, rgba(8,7,5,0.05) 100%); }
-    .am-card__img-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px; }
-    .am-card__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
-    .am-card__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
-    .am-card__name { font-family: var(--font-serif); font-size: 22px; font-weight: 400; color: var(--cream); line-height: 1.2; }
-    .am-card__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
-    @media (max-width: 768px) {
-      .am-grid { grid-template-columns: 1fr; }
-      .am-card__img-wrap { height: 240px; }
-    }
 
     /* ── CULINARY SECTION ───────────────────────────────────────── */
     .cul-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
@@ -1762,15 +1618,6 @@
     .cul-section__intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
 
     /* Kitchen hero */
-    .cul-hero { position: relative; height: 520px; overflow: hidden; margin-bottom: 3px; }
-    @keyframes culZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
-    .cul-hero img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 15%; display: block; animation: culZoom 10s ease-out infinite alternate; }
-    .cul-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(8,7,5,0.78) 0%, rgba(8,7,5,0.1) 65%), linear-gradient(to top, rgba(8,7,5,1) 0%, rgba(8,7,5,0) 40%); }
-    .cul-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 400px; }
-    .cul-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
-    .cul-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 14px; }
-    .cul-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); margin-bottom: 14px; line-height: 1.2; }
-    .cul-hero__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
 
     /* Dish grid label */
     .cul-dishes__header { text-align: center; padding: 56px 40px 32px; }
@@ -1778,103 +1625,35 @@
     .cul-dishes__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); }
 
     /* Dish cards */
-    .cul-dishes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 3px; }
-    .cul-dish { background: var(--black-mid); overflow: hidden; transition: background var(--transition); opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, background var(--transition); }
+    .cul-dishes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1100px; margin: 0 auto 80px; padding: 0 24px; }
+    .cul-dish { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease, border-color .4s ease; }
     .cul-dish.in-view { opacity: 1; transform: translateY(0); }
-    .cul-dish:hover { background: var(--black-light); }
-    .cul-dish__image { width: 100%; height: 220px; overflow: hidden; position: relative; border-bottom: 1px solid var(--border); }
-    .cul-dish__image img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: galleryZoom 12s ease-out infinite alternate; }
-    .cul-dish__body { padding: 28px; }
-    .cul-dish__tag { font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
-    .cul-dish__rule { width: 16px; height: 1px; background: var(--ember); margin-bottom: 12px; }
-    .cul-dish__name { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 12px; line-height: 1.3; }
-    .cul-dish__desc { font-size: 15px; color: var(--warm-dim); line-height: 1.8; margin-bottom: 20px; }
-    .cul-dish__footer { display: flex; align-items: center; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); }
-    .cul-dish__link { font-size: 9px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--warm-mid); transition: color var(--transition); text-decoration: none; }
-    .cul-dish__link:hover { color: var(--ember); }
+    .cul-dish__image { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; position: relative; }
+    .cul-dish__image img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .cul-dish__body { padding: 30px 14px 18px; }
+    .cul-dish__name { font-family: var(--font-serif); font-size: clamp(22px, 2.2vw, 28px); font-weight: 400; color: var(--cream); margin-bottom: 14px; line-height: 1.2; }
+    .cul-dish__desc { font-size: 15px; color: var(--warm-mid); line-height: 1.9; }
 
     /* Quote */
-    .cul-quote { background: var(--black); padding: 68px 40px; text-align: center; }
-    .cul-quote__mark { font-family: var(--font-serif); font-size: 72px; color: var(--ember); line-height: 0.6; margin-bottom: 28px; opacity: 0.5; }
+    /* The chef beside his words. Phone: portrait on top, quote centred below.
+       Desktop (900px+): portrait left, quote right and left-aligned. */
+    .cul-quote { background: var(--black); padding: 52px 24px; text-align: center;
+                 display: grid; gap: 28px; justify-items: center; max-width: 760px; margin: 0 auto; }
+    .cul-quote__portrait { width: min(152px, 48%); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid rgba(232, 149, 74, .35); padding: 10px; }
+    .cul-quote__portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+    .cul-quote__body { margin: 0; }
+    .cul-quote__body blockquote { margin: 0; }
+    @media (min-width: 900px) {
+      .cul-quote { grid-template-columns: 192px 1fr; gap: 48px; align-items: center; justify-items: start; text-align: left; padding: 60px 24px; }
+      .cul-quote__portrait { width: 100%; }
+      .cul-quote .cul-quote__text { margin-left: 0; font-size: 21px; }   /* two classes: must outrank the base rule further down */
+    }
+    .cul-quote__mark { font-family: var(--font-serif); font-size: 56px; color: var(--ember); line-height: 0.6; margin-bottom: 20px; opacity: 0.5; }
     .cul-quote__text { font-family: var(--font-serif); font-size: clamp(18px, 2.5vw, 22px); font-weight: 400; font-style: italic; color: var(--cream); line-height: 1.7; max-width: 640px; margin: 0 auto 20px; }
     .cul-quote__attr { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-dim, #8a4f18); }
 
-    /* Experience */
-    .cul-exp { display: grid; grid-template-columns: 1fr 1fr; min-height: 420px; margin-top: 3px; }
-    .cul-exp__img { position: relative; overflow: hidden; }
-    .cul-exp__img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: culZoom 10s ease-out infinite alternate; }
-    .cul-exp__text { background: var(--black); padding: 60px 52px; display: flex; flex-direction: column; justify-content: center; }
-    .cul-exp__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
-    .cul-exp__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 18px; }
-    .cul-exp__name { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 30px); font-weight: 400; color: var(--cream); margin-bottom: 18px; line-height: 1.2; }
-    .cul-exp__desc { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; margin-bottom: 32px; }
-    .cul-exp__cta { font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); border: 1px solid rgba(200,120,42,0.6); padding: 8px 16px; display: inline-block; align-self: flex-start; text-decoration: none; transition: background 0.3s ease, color 0.3s ease; }
-    .cul-exp__cta:hover { background: var(--ember); color: var(--black); }
-
     @media (max-width: 768px) {
       .cul-dishes__grid { grid-template-columns: 1fr; }
-      .cul-hero { height: 360px; }
-      .cul-hero__text { left: 28px; bottom: 32px; }
-      .cul-exp { grid-template-columns: 1fr; }
-      .cul-exp__img { height: 280px; }
-      .cul-exp__text { padding: 36px 28px; }
-    }
-    /* ── SPIRIT OF AFRICA ───────────────────────────────────────── */
-    .saf-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
-    .saf-section__header { text-align: center; padding: 0 40px 60px; }
-    .saf-section__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
-    .saf-section__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 42px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
-    .saf-section__title em { font-style: italic; color: var(--ember); }
-    .saf-section__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
-    .saf-section__intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
-
-    /* Atmospheric hero */
-    .saf-hero { position: relative; height: 440px; overflow: hidden; margin-bottom: 3px; }
-    .saf-hero img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; animation: culZoom 10s ease-out infinite alternate; }
-    @media (max-width: 768px) { .saf-hero img { object-position: 20% center; } }
-    @media (max-width: 768px) { #attractTrack .vis-gallery__desc { font-size: 15px; } }
-    .saf-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(8,7,5,0.1) 0%, rgba(8,7,5,0.7) 60%, rgba(8,7,5,1) 100%); }
-    .saf-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 400px; text-align: left; }
-    @media (max-width: 768px) { .saf-hero__text { left: 24px; bottom: 7px; text-align: left; } }
-    .saf-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
-    .saf-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
-    .saf-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); line-height: 1.2; }
-    .saf-hero__quote em { color: var(--ember); font-style: normal; }
-
-    /* Attractions sub-header */
-    .saf-attract__header { text-align: center; padding: 56px 40px 32px; }
-    .saf-attract__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
-    .saf-attract__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); margin-bottom: 16px; }
-    .saf-attract__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto; }
-
-    /* Portrait cards */
-    .saf-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 3px; }
-    .saf-card { position: relative; height: 480px; overflow: hidden; }
-    .saf-cards > .saf-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; }
-    .saf-cards > .saf-card.in-view { opacity: 1; transform: translateY(0); }
-    @media (max-width: 768px) {
-      .saf-card { opacity: 0; transform: translateY(40px); transition: opacity 0.9s ease, transform 0.9s ease; height: auto; }
-      .saf-card.in-view { opacity: 1; transform: translateY(0); }
-    }
-    .saf-card img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.6s ease; }
-    .saf-card:hover img { transform: scale(1.04); }
-    .saf-card__overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,5,0.95) 0%, rgba(8,7,5,0.2) 55%, rgba(8,7,5,0.0) 100%); }
-    .saf-card__body { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 28px; }
-    .saf-card__number { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; color: var(--ember); margin-bottom: 10px; }
-    .saf-card__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 12px; }
-    .saf-card__name { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--cream); margin-bottom: 10px; line-height: 1.2; }
-    .saf-card__desc { font-family: var(--font-sans); font-size: 14px; font-weight: 300; color: var(--warm-mid); line-height: 1.7; }
-
-    /* CTA bar */
-    .saf-cta { background: #0c0a08; padding: 64px 40px; text-align: center; border-top: 1px solid rgba(200,120,42,0.15); }
-    .saf-cta__title { font-family: var(--font-serif); font-size: clamp(20px, 3vw, 26px); font-weight: 400; color: var(--cream); margin-bottom: 12px; }
-    .saf-cta__title em { font-style: italic; color: var(--ember); }
-    .saf-cta__sub { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; max-width: 520px; margin: 0 auto 32px; }
-
-    @media (max-width: 768px) {
-      .saf-cards { grid-template-columns: 1fr; }
-      .saf-card { height: 320px; }
-      .saf-hero { height: 320px; }
     }
 
     /* ── ROOMS EXPANDED ─────────────────────────────────────────── */
@@ -1885,23 +1664,13 @@
     .rooms-section-title em { font-style: italic; color: var(--ember); }
     .rooms-section-rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
     .rooms-section-intro { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 560px; margin: 0 auto; }
-    .rooms-hero { position: relative; height: 460px; overflow: hidden; margin-bottom: 3px; }
-    .rooms-hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; display: block; animation: culZoom 12s ease-out infinite alternate; }
-    .rooms-hero__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(8,7,5,0.75) 0%, rgba(8,7,5,0.1) 65%), linear-gradient(to top, rgba(8,7,5,1) 0%, rgba(8,7,5,0) 40%); }
-    .rooms-hero__text { position: absolute; bottom: 7px; left: 60px; max-width: 420px; }
-    .rooms-hero__tag { font-family: var(--font-sans); font-size: 9px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 12px; }
-    .rooms-hero__rule { width: 20px; height: 1px; background: var(--ember); margin-bottom: 14px; }
-    .rooms-hero__name { font-family: var(--font-serif); font-size: 23px; font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 12px; }
-    .rooms-hero__desc { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.8; }
     .rooms-subheader { text-align: center; padding: 56px 40px 32px; }
     .rooms-subheader__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 10px; }
     .rooms-subheader__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); font-weight: 400; color: var(--cream); margin-bottom: 14px; }
     .rooms-subheader__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 16px; }
     .rooms-subheader__tagline { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); font-style: italic; }
     @media (max-width: 768px) {
-      .rooms-hero { height: 320px; }
-      .rooms-hero__text { left: 28px; bottom: 28px; }
-    }
+        }
 
     /* ── AVAILABILITY POPUP ─────────────────────────────────────── */
     .avail-popup-overlay { position: fixed; inset: 0; background: rgba(8,7,5,0.85); z-index: 600; display: none; align-items: center; justify-content: center; padding: 24px; }
@@ -1934,18 +1703,10 @@
     .nav__reserve:hover { background: var(--ember); color: var(--black); }
     @media (max-width: 900px) { .nav__reserve { display: none; } }
 
-    /* ── HERO SCROLL ANIMATION ───────────────────────────────────── */
-    .cul-hero, .rooms-hero, .saf-hero {
-      transition: opacity 0.9s ease;
-    }
-    .cul-hero.in-view, .rooms-hero.in-view, .saf-hero.in-view {
-      opacity: 1;
-    }
-
     /* ── MOBILE SWIPE CAROUSEL ───────────────────────────────────── */
     @media (max-width: 768px) {
       .mobile-carousel-wrap { position: relative; overflow: hidden; width: 100%; }
-      #dishTrack, #roomTrack, #attractTrack {
+      #dishTrack, #roomTrack {
         display: flex !important;
         grid-template-columns: unset !important;
         gap: 0 !important;
@@ -1953,16 +1714,13 @@
         will-change: transform;
       }
       #dishTrack > .cul-dish,
-      #roomTrack > .room-card,
-      #attractTrack > .vis-gallery__item {
+      #roomTrack > .room-card {
         min-width: 100% !important;
         max-width: 100% !important;
         flex-shrink: 0 !important;
         box-sizing: border-box !important;
         grid-template-columns: 1fr !important;
-        background: #0c0a08;
       }
-      #attractTrack > .vis-gallery__item .vis-gallery__img { height: 260px; }
       .carousel-dots { display: flex; justify-content: center; gap: 8px; padding: 0 0 22px; }
       .carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
       .carousel-dot.active { background: var(--ember); }
@@ -1971,10 +1729,149 @@
       .carousel-dots { display: none; }
       #tDots { display: none; }
       .testimonial-slider__controls { display: flex; }
-      #attractCarousel { display: block; }
-      #attractTrack { display: block !important; }
     }
     .nav--hidden { transform: translateY(-100%); }
+    /* Over the hero, the big logo is the brand, so the small one in the nav stays hidden and
+       fades in once the hero has scrolled away (the script after the nav script toggles it).
+       visibility (not just opacity) also takes the hidden link out of the keyboard's Tab order. */
+    .nav__logo { transition: opacity .4s ease, visibility 0s linear 0s; }
+    .nav--over-hero .nav__logo { opacity: 0; visibility: hidden; pointer-events: none;
+                                 transition: opacity .4s ease, visibility 0s linear .4s; }
+
+    /* ── THE SAFARI EMBER EXPERIENCE: a day at the lodge, in five chapters ─────────────────
+       Plain warm black, like the rest of the page. */
+    .story {
+      /* Labels use the lighter ember: the brand orange is too dark for small text over the glow */
+      --accent: var(--ember-glow);
+      position: relative;
+      background: var(--black);
+      color: var(--cream);
+    }
+
+
+    .story__intro {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+      /* Fixed padding instead of a min-height with centring, so the gap below the hero is exact:
+         200px on desktop, easing down to 160px on a phone. The bottom keeps the first chapter
+         where it was. */
+      padding: clamp(160px, 14vw, 200px) 24px clamp(107px, 10vw, 144px);
+    }
+    /* Same sizes and colours as the other section headers (Fire & Flavour, Signature Amenities) */
+    .story__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin: 0 0 14px; }
+    .story__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; margin: 0 0 20px; }
+    .story__title em { font-style: italic; color: var(--ember); }
+    .story__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
+    .story__lede { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
+
+    /* Bottom padding: the space after the Ash Bar, before Fire & Flavour (trimmed 20%: 8vh, 11vh on phones) */
+    .story__chapters { list-style: none; margin: 0; padding: 0 24px 8vh; }
+    @media (max-width: 768px) { .story__chapters { padding-bottom: 11vh; } }
+    .chapter {
+      display: grid; gap: 28px; align-items: center;
+      max-width: 1100px; margin: 0 auto;
+      min-height: 100vh; min-height: 100svh;            /* one chapter per screen */
+      padding: 10vh 0;
+    }
+    /* Pull the first chapter up under the intro. Its content is centred in a full screen, so empty
+       space sat above the café: 428px on desktop, 245px on a phone. This brings it to 340px / 196px,
+       scaling with width between the two. */
+    .story__chapters > .chapter:first-child { margin-top: max(-88px, min(-49px, calc(-34.5px - 3.714vw))); }
+    /* Framed like the dish, room and chef photos: a thin light-ember line set 12px off the picture */
+    .chapter__img { margin: 0; overflow: hidden; border: 1px solid rgba(232,149,74,.35); padding: 12px; aspect-ratio: 4 / 3; }
+    /* The window inside the frame: it clips the photo at the picture's edge (not at the frame
+       line), so during the entrance the photo can rise into place from below, out of nowhere. */
+    .chapter__window { display: block; width: 100%; height: 100%; overflow: hidden; }
+    .chapter__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* Label + short line above each chapter's name, the same format as the section headers */
+    .chapter__label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin: 0 0 14px; }
+    .chapter__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 28px; }
+    .chapter__name { font-family: var(--font-serif); font-size: clamp(26px, 3.4vw, 40px); font-weight: 400; line-height: 1.2; color: var(--cream); margin-bottom: 18px; }
+    .chapter__desc { font-size: 17px; font-weight: 300; line-height: 1.9; color: var(--warm-mid); max-width: 480px; }
+    /* The invitation at the end of each chapter: a quiet text link, not a button, so the story
+       stays a story. The underline grows in on hover; keyboard focus gets a clear outline. */
+    .chapter__cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 26px; padding: 6px 0;                 /* a comfortable tap target on phones */
+      font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--accent);
+      background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+      transition: background-size .35s ease;
+    }
+    .chapter__cta:hover { background-size: 100% 1px; }
+    .chapter__cta:focus-visible { outline: 1px solid var(--accent); outline-offset: 6px; }
+    /* Desktop: picture and words side by side, swapping sides each chapter */
+    @media (min-width: 900px) {
+      .chapter { grid-template-columns: 1.15fr 1fr; gap: 72px; }
+      .chapter:nth-child(even) .chapter__img { order: 2; }
+    }
+    /* Arrival: each chapter's picture and words rise in as they enter (motion-friendly only) */
+    @media (prefers-reduced-motion: no-preference) {
+      /* The frame is already there. First the words rise in (1 s); as they finish (0.6 s), the photo
+         slides up into the frame from below. */
+      .chapter__text { opacity: 0; transform: translateY(40px); transition: opacity 1s ease, transform 1s ease; }
+      .chapter__window img { transform: translateY(101%); transition: transform 1.2s cubic-bezier(.22, .61, .36, 1) .6s; }
+      .chapter.is-in .chapter__window img { transform: none; }
+      .chapter.is-in .chapter__text { opacity: 1; transform: none; }
+    }
+
+    /* The chef's-quote credit used a dim orange that's hard to read on black (about 3.4:1): the lighter ember fixes it. */
+    .cul-quote__attr { color: var(--ember-glow); }
+
+    /* ============================================================
+       FRAMED CARDS: Signature Dishes and Rooms & Suites
+       Like a printed menu card: a thin ember frame around the whole card, the photo inset
+       inside it, the words on the page's black. Labels follow the experience chapters'
+       pattern (small sans number + italic serif word), and the link matches "Reserve stay →".
+    ============================================================ */
+    .cul-dish, .room-card {
+      position: relative;
+      background: transparent;
+      border: 1px solid rgba(232, 149, 74, .35);
+      padding: 14px;
+    }
+    /* Hover: the frame warms up instead of the old background change */
+    .cul-dish:hover, .room-card:hover { border-color: rgba(232, 149, 74, .75); }
+    /* Label + short line above each card's name: the same format as the section headers and the
+       experience chapters */
+    .card__label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin: 0 0 14px; }
+    .card__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 22px; }
+    /* Cards in a row are the same height; making each a column and pushing the footer to the
+       bottom (margin-top: auto) lines the "Reserve" links up even when descriptions differ in length. */
+    .cul-dish, .room-card { display: flex; flex-direction: column; }
+    .cul-dish__body, .room-card__body { flex: 1; display: flex; flex-direction: column; }
+    .card__footer { margin-top: auto; padding-top: 22px; }
+    .card__cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 0;                                   /* a comfortable tap target on phones */
+      font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--ember-glow); text-decoration: none;
+      background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+      transition: background-size .35s ease;
+    }
+    .card__cta:hover { background-size: 100% 1px; }
+    .card__cta:focus-visible { outline: 1px solid var(--ember-glow); outline-offset: 6px; }
+    /* Phone: the carousel slides exactly one screen width, so the side space has to live INSIDE
+       each slide. The frame is drawn by ::before, inset 24px, and the content padded to match. */
+    @media (max-width: 768px) {
+      .cul-dishes__grid, .rooms__grid { gap: 0; padding: 0; }
+      #dishTrack > .cul-dish, #roomTrack > .room-card { border: 0; padding: 14px 38px; }
+      #dishTrack > .cul-dish::before, #roomTrack > .room-card::before {
+        content: ''; position: absolute; inset: 0 24px; pointer-events: none;
+        border: 1px solid rgba(232, 149, 74, .35);
+      }
+    }
+
+    /* One by one: on desktop the three dish cards and the three room cards get their "show" signal
+       together (they're in one row), so the 2nd and 3rd wait 0.35 s and 0.7 s. The delay is only on
+       opacity and movement, and only while arriving, so the frame's hover glow stays instant.
+       Phones show one card at a time in the carousel, so no stagger there. */
+    @media (min-width: 769px) {
+      .cul-dish.in-view:nth-child(2), .rooms__grid > .room-card.in-view:nth-child(2) {
+        transition: opacity .9s ease .35s, transform .9s ease .35s, border-color .4s ease; }
+      .cul-dish.in-view:nth-child(3), .rooms__grid > .room-card.in-view:nth-child(3) {
+        transition: opacity .9s ease .7s, transform .9s ease .7s, border-color .4s ease; }
+    }
   </style>
 </head>
 
@@ -1989,10 +1886,9 @@
     </a>
 
     <ul class="nav__links">
+      <li><a href="#explore">Experiences</a></li>
       <li><a href="#rooms-suites">Rooms</a></li>
       <li><a href="#signature-dishes">Dining</a></li>
-      <li><a href="#signature-attractions">Experiences</a></li>
-      <li><a href="#amenities">Amenities</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
 
@@ -2009,10 +1905,9 @@
   <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation" aria-modal="true">
     <button class="mobile-menu__close" id="menuClose" aria-label="Close menu">&times;</button>
     <div class="mobile-menu__links">
+      <a href="#explore"            onclick="closeMobileMenu()">Experiences</a>
       <a href="#rooms-suites"       onclick="closeMobileMenu()">Rooms</a>
       <a href="#signature-dishes"      onclick="closeMobileMenu()">Dining</a>
-      <a href="#signature-attractions" onclick="closeMobileMenu()">Experiences</a>
-      <a href="#amenities"   onclick="closeMobileMenu()">Amenities</a>
       <a href="#contact"     onclick="closeMobileMenu()">Contact</a>
       <a href="#booking"     onclick="closeMobileMenu()" style="color:var(--ember);font-style:italic;">Reserve</a>
     </div>
@@ -2059,93 +1954,81 @@
           beauty of the African wildlands.
         </p>
         <div class="hero-intro__ctas hero__stage-ctas">
-          <a href="#booking" class="btn-primary">Reserve a Suite</a>
-          <a href="#explore" class="btn-ghost">Explore the Lodge</a>
+          <a href="#booking" class="btn-primary">Reserve Stay</a>
+          <a href="#explore" class="btn-ghost">Explore Resort</a>
         </div>
       </div>
     </section>
 
     <!-- ============================================================
-         INTRO — headline text pushed below the hero
+         THE SAFARI EMBER EXPERIENCE: a day at the lodge, told as you scroll.
+         The page stays dark; a warm glow behind the chapters changes with the hour
+         (the script near the end of the page). The four chapters run in the
+         order of the light in their photos: sunrise spa, midday lunch, golden-hour pool, the bar at night.
     ============================================================ -->
-    <section class="hero-intro" aria-labelledby="hero-heading">
-      <p class="hero-intro__eyebrow">A Private World Unto Itself</p>
-      <div class="hero-intro__line" role="presentation"></div>
-      <h2 class="hero-intro__title" id="hero-heading">
-        Where <em>warmth</em><br>becomes an art form
-      </h2>
-      <p class="hero-intro__desc">
-        Welcome to Kenya's premier luxury safari retreat, where refined comfort meets the untamed beauty of the African wildlands. Nestled in the heart of the vibrant capital, Safari Ember offers an exclusive escape designed for discerning travelers seeking elegance, adventure, and authentic African hospitality.
-      </p>
-      <p class="hero-intro__desc">
-                 
-	</p>
-      <div class="hero-intro__ctas">
-        <a href="#booking" class="btn-primary">Reserve a Suite</a>
-        <a href="#explore" class="btn-ghost">Explore the Hotel</a>
-      </div>
-    </section>
+    <section class="story" id="explore" aria-labelledby="story-heading">
+      <!-- The light: a soft glow that stays put while the story scrolls over it. Decoration only. -->
 
+      <header class="story__intro">
+        <!-- The site's section header pattern: label, serif title with one italic word, short rule, intro -->
+        <p class="story__eyebrow">The Safari Ember Experience</p>
+        <h2 class="story__title" id="story-heading">Discover the <em>Spirit</em> of Africa</h2>
+        <div class="story__rule" role="presentation"></div>
+        <p class="story__lede">What your stay with us will look like, from first light to last call.</p>
+      </header>
 
-    <!-- ============================================================
-         VISUAL GALLERY
-    ============================================================ -->
-    <section class="vis-gallery" id="explore" aria-label="Safari Ember spaces">
-
-      <div class="vis-gallery__header">
-        <p class="vis-gallery__eyebrow">The Safari Ember Experience</p>
-        <h2 class="vis-gallery__title">Every space tells a <em>story</em></h2>
-        <div style="width:36px;height:1px;background:var(--ember);margin:20px auto 0;"></div>
-      </div>
-
-      <div class="vis-gallery__item" data-gallery>
-        <div class="vis-gallery__img">
-          <img src="Ember_penthouse.webp" alt="Ember Penthouse suite" loading="lazy" />
-        </div>
-        <div class="vis-gallery__text">
-          <p class="vis-gallery__tag">Accommodation</p>
-          <div class="vis-gallery__rule"></div>
-          <h3 class="vis-gallery__name">The Ember Penthouse</h3>
-          <p class="vis-gallery__desc">Perched above the city with commanding views and unparalleled privacy, The Ember Penthouse is the pinnacle of luxury at Safari Ember. An elevated sanctuary for guests who seek the extraordinary.</p>
-        </div>
-      </div>
-
-      <div class="vis-gallery__item" data-gallery>
-        <div class="vis-gallery__img">
-          <img src="The_Cinder_restaurant.webp" alt="The Cinder Restaurant" loading="lazy" />
-        </div>
-        <div class="vis-gallery__text">
-          <p class="vis-gallery__tag">Dining</p>
-          <div class="vis-gallery__rule"></div>
-          <h3 class="vis-gallery__name">The Cinder Restaurant</h3>
-          <p class="vis-gallery__desc">Exceptional cuisine meets refined ambiance. Inspired by Kenya's rich culinary heritage and the finest international influences, every dish is crafted with precision and served with understated sophistication.</p>
-        </div>
-      </div>
-
-      <div class="vis-gallery__item" data-gallery>
-        <div class="vis-gallery__img">
-          <img src="Spa_and_wellness.webp" alt="Spa and Wellness" loading="lazy" />
-        </div>
-        <div class="vis-gallery__text">
-          <p class="vis-gallery__tag">Wellness</p>
-          <div class="vis-gallery__rule"></div>
-          <h3 class="vis-gallery__name">The Silt Spa</h3>
-          <p class="vis-gallery__desc">A haven of tranquility where wellness becomes an art form. Indulgent treatments, skilled therapists, and serene surroundings combine to create moments of profound relaxation and renewal.</p>
-        </div>
-      </div>
-
-      <div class="vis-gallery__item" data-gallery>
-        <div class="vis-gallery__img">
-          <img src="The_Ash_Bar.webp" alt="The Ash Bar rooftop" loading="lazy" />
-        </div>
-        <div class="vis-gallery__text">
-          <p class="vis-gallery__tag">Rooftop</p>
-          <div class="vis-gallery__rule"></div>
-          <h3 class="vis-gallery__name">The Ash Bar</h3>
-          <p class="vis-gallery__desc">Safari Ember's destination for refined social experiences. Expertly crafted cocktails, premium spirits, and impeccable service. The perfect setting for conversation and unforgettable evenings.</p>
-        </div>
-      </div>
-
+      <ol class="story__chapters">
+        <li class="chapter">
+          <figure class="chapter__img"><span class="chapter__window"><img src="The_Cinder_restaurant.webp" alt="The Cinder Café's open terrace under a leafy timber roof, set for breakfast" loading="lazy" decoding="async" /></span></figure>
+          <div class="chapter__text">
+            <p class="chapter__label">Dining</p>
+            <div class="chapter__rule" role="presentation"></div>
+            <h3 class="chapter__name">The Cinder Café</h3>
+            <p class="chapter__desc">Start slow under the leafy timber roof: Kenyan coffee grown on the slopes of Mount Kenya, warm mandazi, tropical fruit and eggs any way you like them. Breakfast is included with every stay.</p>
+            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </li>
+        <li class="chapter">
+          <figure class="chapter__img"><span class="chapter__window"><img src="gamedrive.webp" alt="A lion resting in the grass beside an open safari vehicle full of guests" loading="lazy" decoding="async" /></span></figure>
+          <div class="chapter__text">
+            <p class="chapter__label">Game drive</p>
+            <div class="chapter__rule" role="presentation"></div>
+            <h3 class="chapter__name">Nairobi National Park</h3>
+            <p class="chapter__desc">Kenya's first national park, and one of the few places on earth where lions, rhinos and giraffes roam with a city skyline on the horizon. Your guide collects you from the lodge in an open safari vehicle, and you're back in time for lunch.</p>
+            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </li>
+        <li class="chapter">
+          <figure class="chapter__img"><span class="chapter__window"><img src="giraffecent.webp" alt="A guest hand-feeding a Rothschild's giraffe from the raised platform at the Giraffe Centre" loading="lazy" decoding="async" /></span></figure>
+          <div class="chapter__text">
+            <p class="chapter__label">Conservation</p>
+            <div class="chapter__rule" role="presentation"></div>
+            <h3 class="chapter__name">The Giraffe Centre</h3>
+            <p class="chapter__desc">Climb the raised platform and meet the endangered Rothschild's giraffes at eye level. Hold out a pellet and a long, dark tongue takes it straight from your hand. The centre's breeding work has helped return these giraffes to the wild.</p>
+            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </li>
+        <li class="chapter">
+          <figure class="chapter__img"><span class="chapter__window"><img src="Spa_and_wellness.webp" alt="Two guests on massage tables on an open-air spa deck overlooking the plains" loading="lazy" decoding="async" /></span></figure>
+          <div class="chapter__text">
+            <p class="chapter__label">Wellness</p>
+            <div class="chapter__rule" role="presentation"></div>
+            <h3 class="chapter__name">The Silt Spa</h3>
+            <p class="chapter__desc">Let the dust of the morning drive wash away. Our therapists work with warm stones, shea butter and local botanicals in open-air treatment rooms looking out over the trees. Choose a 60 or 90-minute ritual, or simply take the afternoon slowly.</p>
+            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </li>
+        <li class="chapter">
+          <figure class="chapter__img"><span class="chapter__window"><img src="ash-rooftop.webp" alt="The Ash Bar's rooftop terrace at sunset, string lights above and the hills beyond" loading="lazy" decoding="async" /></span></figure>
+          <div class="chapter__text">
+            <p class="chapter__label">Rooftop</p>
+            <div class="chapter__rule" role="presentation"></div>
+            <h3 class="chapter__name">The Ash Bar</h3>
+            <p class="chapter__desc">As the sky turns gold over the Ngong Hills, the rooftop comes alive: string lights overhead, a cocktail in hand, the city settling below. Stay for the moonrise. The bar is open late.</p>
+            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </li>
+      </ol>
     </section>
 
     <!-- ============================================================
@@ -2159,18 +2042,6 @@
         <div class="cul-section__rule"></div>
         <p class="cul-section__intro">Every meal at Safari Ember is a celebration of Kenya's rich culinary heritage. Crafted with the finest local ingredients, inspired by the continent, and elevated by world-class technique.</p>
       </div>
-
-      <!-- Kitchen hero -->
-      <div class="cul-hero">
-        <img src="grill.webp" alt="Safari Ember kitchen — chef at the flame" loading="lazy" />
-        <div class="cul-hero__overlay"></div>
-        <div class="cul-hero__text">
-          <p class="cul-hero__tag">Behind the Flame</p>
-          <div class="cul-hero__rule"></div>
-          <h3 class="cul-hero__name">Where Every Dish Begins</h3>
-        </div>
-      </div>
-      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">Our kitchen is the heart of Safari Ember. A space where craftsmanship, fire, and the finest Kenyan produce come together in every plate we serve.</p>
 
       <!-- Signature dishes -->
       <div class="cul-dishes__header" id="signature-dishes">
@@ -2187,12 +2058,12 @@
             <img src="dish1.webp" alt="The Heritage Plate" loading="lazy" />
           </div>
           <div class="cul-dish__body">
-            <p class="cul-dish__tag">Kenyan Heritage</p>
-            <div class="cul-dish__rule"></div>
+            <p class="card__label">Kenyan heritage</p>
+            <div class="card__rule" role="presentation"></div>
             <h4 class="cul-dish__name">The Heritage Plate</h4>
             <p class="cul-dish__desc">Slow-braised beef in a rich, aromatic tomato stew, served alongside hand-rolled ugali and freshly prepared sukuma wiki. A tribute to Kenya's most beloved culinary traditions, elevated with care.</p>
-            <div class="cul-dish__footer">
-              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2201,12 +2072,12 @@
             <img src="dish2.webp" alt="The Safari Spread" loading="lazy" />
           </div>
           <div class="cul-dish__body">
-            <p class="cul-dish__tag">Sharing Platter</p>
-            <div class="cul-dish__rule"></div>
+            <p class="card__label">Sharing platter</p>
+            <div class="card__rule" role="presentation"></div>
             <h4 class="cul-dish__name">The Safari Spread</h4>
             <p class="cul-dish__desc">A generous celebration of the table: flame-kissed skewers, spiced wraps, and golden sliders brought together for those who believe the finest meals are always shared.</p>
-            <div class="cul-dish__footer">
-              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2215,12 +2086,12 @@
             <img src="dish3.webp" alt="The Northern Classic" loading="lazy" />
           </div>
           <div class="cul-dish__body">
-            <p class="cul-dish__tag">Continental</p>
-            <div class="cul-dish__rule"></div>
+            <p class="card__label">Continental</p>
+            <div class="card__rule" role="presentation"></div>
             <h4 class="cul-dish__name">The Northern Classic</h4>
             <p class="cul-dish__desc">Inspired by the spice routes of North Africa: tender fish with preserved lemon, roasted vegetables, and vibrant accompaniments that carry the warmth and complexity of the continent.</p>
-            <div class="cul-dish__footer">
-              <a href="#booking" class="cul-dish__link">Reserve a Table</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2229,116 +2100,20 @@
 
       <!-- Chef quote -->
       <div class="cul-quote">
-        <div class="cul-quote__mark">"</div>
-        <p class="cul-quote__text">We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.</p>
-        <p class="cul-quote__attr">— Executive Chef, Safari Ember</p>
-      </div>
-
-      <!-- Dining Under the Stars -->
-      <div class="cul-exp">
-        <div class="cul-exp__img">
-          <img src="nightsky.webp" alt="Dining Under the Stars at Safari Ember" loading="lazy" />
+        <div class="cul-quote__portrait">
+          <img src="chef.webp" alt="Safari Ember's executive chef in his whites, arms folded, smiling in the kitchen" width="423" height="529" loading="lazy" decoding="async" />
         </div>
-        <div class="cul-exp__text">
-          <p class="cul-exp__tag">The Experience</p>
-          <div class="cul-exp__rule"></div>
-          <h3 class="cul-exp__name">Dining Under the Stars</h3>
-          <p class="cul-exp__desc">Step outside the ordinary. Our open-air dining experience offers private tables beneath the African sky, where candlelight flickers against the night and the only thing that matters is the moment in front of you.</p>
-          <div class="cul-dish__footer" style="margin-top:20px;">
-            <a href="#booking" class="cul-dish__link">Reserve a Table</a>
-          </div>
-        </div>
+        <!-- figure + blockquote + figcaption: the standard way to mark up a quote and who said it -->
+        <figure class="cul-quote__body">
+          <div class="cul-quote__mark" aria-hidden="true">&ldquo;</div>
+          <blockquote>
+            <p class="cul-quote__text">We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.</p>
+          </blockquote>
+          <figcaption class="cul-quote__attr">— Executive Chef, Safari Ember</figcaption>
+        </figure>
       </div>
 
     </section>
-
-    <!-- ============================================================
-         SPIRIT OF AFRICA
-    ============================================================ -->
-    <section class="saf-section" id="experiences" aria-labelledby="saf-heading">
-
-      <div class="saf-section__header">
-        <p class="saf-section__eyebrow">Discover</p>
-        <h2 class="saf-section__title" id="saf-heading">The <em>Spirit</em> of Africa</h2>
-        <div class="saf-section__rule"></div>
-        <p class="saf-section__intro">Safari Ember sits at the threshold of two worlds: the vibrant pulse of Nairobi and the untamed beauty of the African wilderness. Step outside and let the continent begin.</p>
-      </div>
-
-      <!-- Atmospheric hero -->
-      <div class="saf-hero">
-        <img src="safarispirit.webp" alt="African wilderness at sunset" loading="lazy" />
-        <div class="saf-hero__overlay"></div>
-        <div class="saf-hero__text">
-          <p class="saf-hero__tag">In the Wild</p>
-          <div class="saf-hero__rule"></div>
-          <h3 class="saf-hero__name">Land of Untamed Beauty</h3>
-        </div>
-      </div>
-      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">Less than an hour from your suite, lions roam, giraffes graze, and the city disappears entirely. </p>
-
-      <!-- Attractions sub-header -->
-      <div class="saf-attract__header" id="signature-attractions">
-        <p class="saf-attract__eyebrow">Beyond the Hotel</p>
-        <h3 class="saf-attract__title">Signature Attractions</h3>
-        <div class="saf-attract__rule"></div>
-      </div>
-
-      <div class="carousel-dots" id="attractDots"></div>
-      <div class="mobile-carousel-wrap" id="attractCarousel">
-        <div class="attract-carousel-track" id="attractTrack">
-          <div class="vis-gallery__item" data-gallery>
-            <div class="vis-gallery__img">
-              <img src="nairobinat.webp" alt="Nairobi National Park" loading="lazy" />
-            </div>
-            <div class="vis-gallery__text">
-              <p class="vis-gallery__tag">Wildlife</p>
-              <div class="vis-gallery__rule"></div>
-              <h3 class="vis-gallery__name">Nairobi National Park</h3>
-              <p class="vis-gallery__desc">The only wildlife park in the world set against a city skyline. Lions, rhinos, buffalo, and hundreds of bird species roam freely. All within minutes of your suite at Safari Ember. A safari experience like no other, with the Nairobi skyline as your backdrop.</p>
-              <div class="cul-dish__footer" style="margin-top:20px;">
-                <a href="#booking" class="cul-dish__link">Book Safari</a>
-              </div>
-            </div>
-          </div>
-          <div class="vis-gallery__item" data-gallery>
-            <div class="vis-gallery__img">
-              <img src="giraffecent.webp" alt="Giraffe Centre" loading="lazy" />
-            </div>
-            <div class="vis-gallery__text">
-              <p class="vis-gallery__tag">Conservation</p>
-              <div class="vis-gallery__rule"></div>
-              <h3 class="vis-gallery__name">Giraffe Centre</h3>
-              <p class="vis-gallery__desc">A sanctuary for the endangered Rothschild giraffe, the Giraffe Centre offers a rare and intimate encounter with one of Africa's most magnificent creatures. Feed them by hand, learn their stories, and leave with a memory that lingers long after your stay.</p>
-              <div class="cul-dish__footer" style="margin-top:20px;">
-                <a href="#booking" class="cul-dish__link">Book Safari</a>
-              </div>
-            </div>
-          </div>
-          <div class="vis-gallery__item" data-gallery>
-            <div class="vis-gallery__img">
-              <img src="karenblixen.webp" alt="Karen Blixen Museum" loading="lazy" />
-            </div>
-            <div class="vis-gallery__text">
-              <p class="vis-gallery__tag">Heritage</p>
-              <div class="vis-gallery__rule"></div>
-              <h3 class="vis-gallery__name">Karen Blixen Museum</h3>
-              <p class="vis-gallery__desc">The former home of the celebrated author of Out of Africa, this beautifully preserved colonial farmhouse sits amid lush gardens at the foot of the Ngong Hills. A window into Kenya's storied past and the romantic era that inspired one of literature's greatest memoirs.</p>
-              <div class="cul-dish__footer" style="margin-top:20px;">
-                <a href="#booking" class="cul-dish__link">Book Safari</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CTA bar -->
-
-    </section>
-
-
-
-
-
 
     <!-- ============================================================
          ROOMS & SUITES
@@ -2352,18 +2127,6 @@
         <div class="rooms-section-rule"></div>
         <p class="rooms-section-intro">Every room at Safari Ember is a sanctuary, designed to dissolve the boundary between the wild and the refined. Between adventure and deep, unhurried rest.</p>
       </div>
-
-      <!-- Hero banner -->
-      <div class="rooms-hero">
-        <img src="roomhero.webp" alt="Safari Ember luxury room interior" loading="lazy" />
-        <div class="rooms-hero__overlay"></div>
-        <div class="rooms-hero__text">
-          <p class="rooms-hero__tag">Your Private Retreat</p>
-          <div class="rooms-hero__rule"></div>
-          <h3 class="rooms-hero__name">Crafted for the Discerning Traveller</h3>
-        </div>
-      </div>
-      <p style="font-family:var(--font-sans);font-size:17px;font-weight:300;color:var(--warm-mid);line-height:1.9;padding:32px 40px 0;max-width:700px;margin:0 auto;text-align:center;display:block;">From intimate rooms dressed in warm earth tones to sweeping penthouses above the Nairobi skyline. Each space is a world of its own.</p>
 
       <!-- Sub header -->
       <div class="rooms-subheader" id="rooms-suites">
@@ -2383,15 +2146,15 @@
             <img src="Hearthside_room.webp" alt="Hearthside Room interior with king bed, safari wall art and warm candlelit sconces" loading="lazy" />
           </div>
           <div class="room-card__body">
-            <p class="room-card__type">Deluxe</p>
-            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <p class="card__label">Deluxe</p>
+            <div class="card__rule" role="presentation"></div>
             <h3 class="room-card__name">Hearthside Room</h3>
             <p class="room-card__desc">
               Rich amber tones, king bed, and a private terrace with sweeping city views.
               Handcrafted furniture, Italian linens, and a deep soaking tub.
             </p>
-            <div class="cul-dish__footer" style="margin-top:20px;">
-              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
@@ -2402,15 +2165,15 @@
             <img src="coalbed_suite.webp" alt="Coalbed Suite with canopy bed, African decor and en-suite bathroom" loading="lazy" />
           </div>
           <div class="room-card__body">
-            <p class="room-card__type">Junior Suite</p>
-            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <p class="card__label">Junior suite</p>
+            <div class="card__rule" role="presentation"></div>
             <h3 class="room-card__name">The Coalbed Suite</h3>
             <p class="room-card__desc">
               A split-level sanctuary dressed in velvet and warm oak. Features a freestanding
               soaking tub, parlour lounge, and private butler service.
             </p>
-            <div class="cul-dish__footer" style="margin-top:20px;">
-              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
@@ -2418,128 +2181,23 @@
         <!-- Room 3 -->
         <article class="room-card">
           <div class="room-card__image">
-            <img src="Ember_penthouse.webp" alt="Ember Penthouse exterior with infinity pool, sun loungers and ocean views at sunset" loading="lazy" />
+            <img src="ember-penthouse.webp" alt="The Ember Penthouse: a split-level living space with a spiral staircase, a long walnut dining table for ten under a carved lattice ceiling, and a lounge by the windows" loading="lazy" />
           </div>
           <div class="room-card__body">
-            <p class="room-card__type">Penthouse</p>
-            <div style="width:20px;height:1px;background:var(--ember);margin:8px 0 12px;"></div>
+            <p class="card__label">Penthouse</p>
+            <div class="card__rule" role="presentation"></div>
             <h3 class="room-card__name">The Ember Penthouse</h3>
             <p class="room-card__desc">
               Our crown jewel. Panoramic floor-to-ceiling views, a dedicated private butler,
               bespoke in-room dining, and a rooftop terrace for exclusive use.
             </p>
-            <div class="cul-dish__footer" style="margin-top:20px;">
-              <a href="#booking" class="cul-dish__link">Reserve Room</a>
+            <div class="card__footer">
+              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
 
       </div>
-      </div>
-    </section>
-
-    <!-- ============================================================
-         AMENITIES & EXPERIENCES
-    ============================================================ -->
-    <section class="am-section" id="amenities" aria-labelledby="amenities-heading">
-      <div class="am-header">
-        <p class="am-eyebrow">What awaits you</p>
-        <h2 class="am-title" id="amenities-heading">Signature <em>Amenities</em></h2>
-        <div class="am-rule"></div>
-      </div>
-
-      <div class="am-grid">
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="conci.webp" alt="Valet and Concierge" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Service</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Valet & Concierge</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">Round-the-clock personal service for every need, from curated itineraries to seamless arrivals and departures.</p>
-          </div>
-        </div>
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="infipool.webp" alt="Infinity Pool" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Recreation</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Infinity Pool</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">An elevated horizon pool overlooking the sweeping landscape. The perfect retreat from sunrise to sunset.</p>
-          </div>
-        </div>
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="wellness.webp" alt="Wellness Centre" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Wellness</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Wellness Centre</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">A serene sanctuary of restorative treatments, ancient rituals, and modern therapies designed to renew body and spirit.</p>
-          </div>
-        </div>
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="cuisine.webp" alt="Fine Dining" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Dining</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Fine Dining</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">Award-winning cuisine inspired by Kenyan heritage and the finest international influences, served with understated elegance.</p>
-          </div>
-        </div>
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="business.avif" alt="Business Facilities" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Work</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Business Facilities</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">State-of-the-art meeting rooms and private workspaces for the discerning professional, with seamless connectivity.</p>
-          </div>
-        </div>
-
-        <div class="am-card">
-          <div class="am-card__img-wrap">
-            <img class="am-card__img" src="event.avif" alt="Private Events" loading="lazy" />
-            <div class="am-card__overlay"></div>
-            <div class="am-card__img-body">
-              <p class="am-card__tag">Events</p>
-              <div class="am-card__rule"></div>
-              <h3 class="am-card__name">Private Events</h3>
-            </div>
-          </div>
-          <div class="am-card__body">
-            <p class="am-card__desc">Bespoke celebrations and gatherings in exclusive settings, tailored to every occasion with impeccable attention to detail.</p>
-          </div>
-        </div>
-
       </div>
     </section>
 
@@ -2558,34 +2216,34 @@
         <div class="testimonial-slider__track" id="testimonialTrack">
 
           <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <p class="testimonial__text">
               Safari Ember is unlike any hotel I have stayed in. The warmth of the staff, the extraordinary food, and waking up knowing Nairobi National Park is minutes away. It is a truly once-in-a-lifetime experience.
             </p>
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <footer class="testimonial__author">— Fatima A., Dubai</footer>
           </blockquote>
 
           <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <p class="testimonial__text">
               The Cinder's tasting menu was the highlight of our anniversary trip. Each course felt deliberate, warm, and completely unforgettable. We've already booked to return next spring.
             </p>
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <footer class="testimonial__author">— James &amp; Priya T., London</footer>
           </blockquote>
 
           <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <p class="testimonial__text">
               The atmosphere is genuinely intimate, like being a guest in someone's extraordinarily beautiful home. The staff remembered every preference without being asked twice.
             </p>
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <footer class="testimonial__author">— Amara S., Lagos</footer>
           </blockquote>
 
           <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <p class="testimonial__text">
               We celebrated our anniversary at Safari Ember and could not have chosen better. The Ember Penthouse was breathtaking, the service impeccable, and the Ash Bar at sunset is something we will never forget.
             </p>
+            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <footer class="testimonial__author">— David &amp; Claire M., Nairobi</footer>
           </blockquote>
 
@@ -2607,12 +2265,9 @@
       <h2 class="section-title" id="booking-heading">Reserve Your <em>Stay</em></h2>
       <div class="rule" style="margin-bottom:0"></div>
 
-      <!--
-        This form currently just validates and shows an alert.
-        In production: either integrate a booking API (e.g. Cloudbeds, Mews)
-        or connect to Netlify Forms by adding the `netlify` attribute to the form tag.
-      -->
-      <form class="booking__bar" id="bookingForm" novalidate aria-label="Booking enquiry form">
+      <!-- Dates and guests only: "Check Availability" opens booking.html with them, where the
+           live rooms, prices and the hold happen (Phase 2). -->
+      <form class="booking__bar" id="bookingForm" action="booking.html" novalidate aria-label="Check availability" aria-describedby="bookingNote">
         <div class="booking__field">
           <label class="booking__field-label" for="checkin">Check In</label>
           <input type="date" id="checkin" name="checkin" required aria-required="true" />
@@ -2623,16 +2278,18 @@
         </div>
         <div class="booking__field">
           <label class="booking__field-label" for="guests">Guests</label>
-          <select id="guests" name="guests" aria-label="Number of guests">
-            <option value="1">1 Adult</option>
-            <option value="2" selected>2 Adults</option>
-            <option value="3">3 Guests</option>
-            <option value="4">4 Guests</option>
-            <option value="5">5+ Guests</option>
+          <select id="guests" name="guests">
+            <option value="1">1 guest</option>
+            <option value="2" selected>2 guests</option>
+            <option value="3">3 guests</option>
+            <option value="4">4 guests</option>
+            <option value="5">5 or more</option>
           </select>
         </div>
         <button type="submit" class="booking__submit">Check Availability</button>
       </form>
+      <!-- Says what's chosen ("Tue 20 Oct → Fri 23 Oct · 3 nights"), or what's missing. -->
+      <p class="booking__note" id="bookingNote" aria-live="polite"></p>
     </section>
 
     <!-- ============================================================
@@ -2811,7 +2468,7 @@
       <li><a href="#contact">Contact</a></li>
     </ul>
   </footer>
-  <p style="text-align:center;font-family:var(--font-sans);font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:#fff;padding:16px 0 20px;background:var(--black);margin:0;">Designed &amp; Developed by <span style="color:var(--ember);">ETHAN</span></p>
+  <p class="footer__credit" style="text-align:center;font-family:var(--font-sans);font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:#fff;padding:16px 0 20px;background:var(--black);margin:0;">Designed &amp; Developed by <span style="color:var(--ember);">ETHAN</span></p>
 
   <!-- ============================================================
        JAVASCRIPT
@@ -2844,28 +2501,57 @@
       if (e.key === 'Escape') closeMobileMenu();
     });
 
-    // ---- Booking form validation ------------------------------------
-    document.getElementById('bookingForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    // ---- Booking bar: check the dates here, then hand over to booking.html ----
+    // The same rules as the API (api/src/lib/stay.js), so guests hear about a problem right away
+    // instead of on the next page: check-in from today (Nairobi) to 18 months ahead, 1–30 nights.
+    (function () {
+      var form = document.getElementById('bookingForm');
+      var inEl = document.getElementById('checkin'), outEl = document.getElementById('checkout'), guestsEl = document.getElementById('guests');
+      var note = document.getElementById('bookingNote');
+      // "Today" in Nairobi, not in the visitor's (or UTC's) time zone: at 1 am in Nairobi, UTC is
+      // still on yesterday, and toISOString() would let guests pick a day that's already over.
+      var today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+      function addDays(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+      function nights(a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5); }
+      function nice(iso) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+      var horizon = (function () { var d = new Date(today + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 18); return d.toISOString().slice(0, 10); })();
 
-      const checkin  = document.getElementById('checkin').value;
-      const checkout = document.getElementById('checkout').value;
+      inEl.min = today; inEl.max = horizon; outEl.min = addDays(today, 1); outEl.max = addDays(horizon, 30);
 
-      if (!checkin || !checkout) {
-        alert('Please select your check-in and check-out dates.');
-        return;
+      function say(msg, isError) { note.innerHTML = msg; note.classList.toggle('is-error', !!isError); }
+      // Returns a problem to show, or '' when the stay is fine
+      function problem() {
+        var a = inEl.value, b = outEl.value;
+        if (guestsEl.value === '5') return 'For five or more guests we\'ll arrange two rooms for you: <a href="#inquiry">send us an enquiry</a>.';
+        if (!a || !b) return 'Choose your check-in and check-out dates.';
+        if (a < today) return 'Check-in can\'t be in the past.';
+        if (a > horizon) return 'We take bookings up to 18 months ahead.';
+        var n = nights(a, b);
+        if (n < 1) return 'Check-out must be after check-in.';
+        if (n > 30) return 'Stays can be up to 30 nights. For longer, <a href="#inquiry">send us an enquiry</a>.';
+        return '';
       }
-
-      // Ensure checkout is after checkin
-      if (new Date(checkout) <= new Date(checkin)) {
-        alert('Check-out date must be after check-in date.');
-        return;
+      function update() {
+        if (inEl.value) { outEl.min = addDays(inEl.value, 1); if (outEl.value && outEl.value <= inEl.value) outEl.value = addDays(inEl.value, 1); }
+        if (inEl.value && outEl.value && !problem()) {
+          var n = nights(inEl.value, outEl.value);
+          say(nice(inEl.value) + ' → ' + nice(outEl.value) + ' · ' + n + (n === 1 ? ' night' : ' nights'));
+        } else if (guestsEl.value === '5') say(problem());
+        else say('');
       }
+      [inEl, outEl, guestsEl].forEach(function (el) { el.addEventListener('change', update); });
 
-      // In production: replace this alert with a redirect to your
-      // booking engine, or an API call to your reservation system.
-      openAvailPopup();
-    });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var p = problem();
+        if (p) {
+          say(p, true);
+          (guestsEl.value === '5' ? guestsEl : !inEl.value ? inEl : outEl).focus();
+          return;
+        }
+        location.href = 'booking.html?' + new URLSearchParams({ checkIn: inEl.value, checkOut: outEl.value, guests: guestsEl.value });
+      });
+    })();
 
     // ---- Inquiry form validation ------------------------------------
     document.getElementById('inquiryForm').addEventListener('submit', function(e) {
@@ -2895,16 +2581,6 @@
       }
     }, { passive: true }); // passive: true improves scroll performance
 
-    // ---- Set minimum date to today on booking fields ----------------
-    // Prevents guests from selecting dates in the past.
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('checkin').setAttribute('min', today);
-    document.getElementById('checkout').setAttribute('min', today);
-
-    // When checkin changes, push checkout minimum forward
-    document.getElementById('checkin').addEventListener('change', function() {
-      document.getElementById('checkout').setAttribute('min', this.value);
-    });
   </script>
 
   <script>
@@ -2957,8 +2633,8 @@
       });
     })();
 
-    /* Hero logo: it fades in over the black opening (CSS, from 1.0 s, fully visible at 2.4 s), stays
-       big and centred, then settles at --settle-at (4.0 s; CSS does the move): 3 s on screen in all.
+    /* Hero logo: it fades in over the black opening (CSS, from 0.3 s, fully visible at 1.2 s), stays
+       big and centred, then settles at --settle-at (2.0 s; CSS does the move): 2 s from load in all.
        With "reduce motion" on, there's no opening and the hero starts settled. */
     (function () {
       var hero = document.querySelector('.hero');
@@ -3061,46 +2737,11 @@
   </script>
 
   <script>
-    // Hide heroes immediately before paint to prevent flicker
     (function() {
-      var style = document.createElement('style');
-      style.textContent = '.cul-hero, .rooms-hero, .saf-hero { opacity: 0; }';
-      document.head.appendChild(style);
-    })();
-    (function() {
-      var heroes = document.querySelectorAll('.cul-hero, .rooms-hero, .saf-hero');
-      if (heroes.length) {
-        var heroObserver = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in-view');
-              heroObserver.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.05 });
-        heroes.forEach(function(el) { heroObserver.observe(el); });
-      }
-    })();
-    (function() {
-      var amCards = document.querySelectorAll('.am-card');
-      if (amCards.length) {
-        var amObserver = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in-view');
-            } else {
-              entry.target.classList.remove('in-view');
-            }
-          });
-        }, { threshold: 0.12 });
-        amCards.forEach(function(el) { amObserver.observe(el); });
-      }
-    })();
-    (function() {
-      // Desktop reveal for rooms + attractions grid cards.
+      // Desktop reveal for the room cards.
       // Mobile uses the carousel script instead, so only run above the breakpoint.
       if (window.matchMedia('(max-width: 768px)').matches) return;
-      var cards = document.querySelectorAll('.rooms__grid > .room-card, .saf-cards > .saf-card');
+      var cards = document.querySelectorAll('.rooms__grid > .room-card');
       if (!cards.length) return;
       var obs = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
@@ -3119,26 +2760,12 @@
           entries.forEach(function(entry) {
             if (entry.isIntersecting) {
               entry.target.classList.add('in-view');
-            } else {
-              entry.target.classList.remove('in-view');
+              dishObserver.unobserve(entry.target);   // play once, then the card stays put
             }
           });
         }, { threshold: 0.15 });
         dishes.forEach(function(el) { dishObserver.observe(el); });
       }
-    })();
-    (function() {
-      var items = document.querySelectorAll('[data-gallery]');
-      if (!items.length) return;
-      var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
-      items.forEach(function(el) { observer.observe(el); });
     })();
   </script>
   <script>
@@ -3347,11 +2974,10 @@
 
       initCarousel('dishTrack', 'dishDots');
       initCarousel('roomTrack', 'roomDots');
-      initCarousel('attractTrack', 'attractDots');
 
       // Animate first card on section entry — kept separate from carousel to avoid dot glitches
       if (window.IntersectionObserver) {
-        ['dishTrack', 'roomTrack', 'attractTrack'].forEach(function(trackId) {
+        ['dishTrack', 'roomTrack'].forEach(function(trackId) {
           var t = document.getElementById(trackId);
           if (!t || !t.children[0]) return;
           var firstCard = t.children[0];
@@ -3373,6 +2999,33 @@
           obs.observe(wrap);
         });
       }
+    })();
+  </script>
+  <script>
+    /* Nav logo: hidden while the hero is still showing below the nav bar, visible after.
+       An IntersectionObserver lets the browser report when the hero enters or leaves that
+       area, instead of running code on every scroll event. rootMargin trims the nav's height
+       off the top, so the logo appears exactly as the hero slides out from under the bar. */
+    (function () {
+      var nav = document.querySelector('.nav');
+      var hero = document.querySelector('.hero');
+      if (!nav || !hero) return;
+      if (!('IntersectionObserver' in window)) return;      // very old browsers: logo always shows
+      nav.classList.add('nav--over-hero');                  // the page opens on the hero
+      var observer;
+      function watch() {
+        if (observer) observer.disconnect();
+        observer = new IntersectionObserver(function (entries) {
+          nav.classList.toggle('nav--over-hero', entries[0].isIntersecting);
+        }, { rootMargin: '-' + nav.offsetHeight + 'px 0px 0px 0px' });
+        observer.observe(hero);
+      }
+      watch();
+      // The nav is 60px tall on desktop and 50px on small phones: re-measure if that changes.
+      var lastH = nav.offsetHeight;
+      window.addEventListener('resize', function () {
+        if (nav.offsetHeight !== lastH) { lastH = nav.offsetHeight; watch(); }
+      });
     })();
   </script>
   <script>
@@ -3435,6 +3088,24 @@
         iframe.setAttribute('title', 'Safari Ember location — Bogoria Avenue, Thika');
         facade.replaceWith(iframe);
       });
+    })();
+  </script>
+  <script>
+    /* THE SAFARI EMBER EXPERIENCE: chapters rise in as they arrive (CSS does the movement; see
+       .chapter.is-in). */
+    (function () {
+      var story = document.querySelector('.story');
+      if (!story || !('IntersectionObserver' in window)) {
+        // No observer (very old browser): show every chapter rather than leave them invisible.
+        if (story) story.querySelectorAll('.chapter').forEach(function (c) { c.classList.add('is-in'); });
+        return;
+      }
+      var arrive = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('is-in'); arrive.unobserve(e.target); }
+        });
+      }, { threshold: 0.25 });
+      story.querySelectorAll('.chapter').forEach(function (c) { arrive.observe(c); });
     })();
   </script>
 </body>

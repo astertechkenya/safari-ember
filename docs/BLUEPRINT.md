@@ -130,3 +130,36 @@ never changes what an existing guest owes.
    cancel, rooms and rates, closures, enquiries inbox.
 6. **Ship it.** Neon production database with a least-privilege app login, Render, Netlify
    proxy, uptime monitor, Sentry, and the case study.
+
+## Admin design (Phase 5, prototype done Oct 2026)
+
+The admin is designed and clickable before the backend exists: `frontend/admin/index.html`,
+running on sample data shaped exactly like the tables above. Phase 5 swaps the sample data
+for `/api/admin/*` calls; the screens stay as they are.
+
+**Decisions.** Calm dark ember look (the site's warm black and ember, but plain sans-serif for
+data, no decorative motion, all text at least 4.5:1 contrast). Desktop first for the reception
+computer, but every screen works on a phone (drawer menu, bookings as cards, scrolling calendar).
+Not linked from the site and marked `noindex`.
+
+| Screen | What it does |
+|---|---|
+| Sign-in | Email + password, then a 6-digit authenticator code; backup codes for a lost phone |
+| Today | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries |
+| Bookings | Search by name, reference, email or phone; filter by status and room type |
+| Booking | Stay, guest, frozen nightly prices, deposit and balance due, history, check in / out, cancel (with reason), resend email, copy guest link |
+| Calendar | Rooms free per night for three weeks, season band, closures hatched; a night lists who is staying |
+| Rooms & rates | Base rate, units and "bookable" per room type; seasonal rates list and add form |
+| Closures | List with a warning when confirmed bookings overlap; close dates by room type or whole lodge |
+| Enquiries | Inbox with unread marks, reply by email, mark as handled |
+
+**Schema changes the admin needs (Phase 5 migration).**
+- `bookings.checked_in_at` (timestamp, null until arrival). "In house" = `CONFIRMED` + checked in.
+  Check-out sets `COMPLETED`.
+- `bookings.cancel_reason` (text), shown to the guest in the cancellation email.
+- Staff actions logged (who checked in / cancelled what, when) in an `admin_events` table.
+
+**Rules carried into the API.** Every `/api/admin/*` route requires a signed-in admin session
+with two-factor completed. Cancelling never refunds automatically (refund in M-Pesa/Paystack
+per policy). Closing dates never cancels existing bookings. Rate changes affect new bookings
+only. Guest-typed text (names, requests, enquiry messages) is always escaped when displayed.

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book your stay · Safari Ember</title>
+  <meta name="description" content="Check live availability and reserve your room at Safari Ember." />
+  <!-- A guest's booking link carries a private token after the #. Never send this page's address
+       to other sites (images, fonts) with the full URL. -->
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <link rel="icon" href="mark.webp" type="image/webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Cormorant+Garamond:wght@400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       SAFARI EMBER · BOOKING
+       Three steps on one page: 1 choose a room, 2 your details, 3 your hold.
+       Step 3 is also the guest's private booking link: booking.html#SE-XXXXXX.<token>
+       Same look as the site: warm black, ember, framed cards, 12px labels.
+    ========================================================================== */
+    :root {
+      --black: #080705; --black-mid: #0f0c09; --black-light: #1f1710;
+      --ember: #c8782a; --ember-glow: #e8954a;
+      --cream: #f5e8d0; --warm-mid: #c4a882; --warm-dim: #a99379;
+      --line: rgba(232, 149, 74, .35); --line-soft: rgba(200, 120, 42, .18);
+      --ok: #9fd3a0; --bad: #f0a090;
+      --serif: 'Playfair Display', Georgia, serif;
+      --accent: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Jost', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { background: var(--black); color: var(--cream); font-family: var(--sans); font-weight: 300; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: var(--ember-glow); }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    h1, h2, h3 { font-weight: 400; margin: 0; }
+    :focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 3px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .num { font-variant-numeric: tabular-nums; }
+    [hidden] { display: none !important; }
+
+    /* The site's label + short line format */
+    .label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin: 0 0 14px; }
+    .rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 22px; }
+
+    /* ── Top bar ─────────────────────────────────────────────────────────── */
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--line-soft); }
+    .top__brand { display: flex; align-items: center; gap: 10px; color: var(--cream); text-decoration: none; font-family: var(--serif); font-size: 18px; }
+    .top__brand img { width: 34px; height: 34px; }
+    .top__back { color: var(--warm-mid); text-decoration: none; font-size: 14px; }
+    .top__back:hover { color: var(--cream); }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 96px; }
+    .head { text-align: center; margin-bottom: 32px; }
+    .head h1 { font-family: var(--serif); font-size: clamp(28px, 4vw, 42px); line-height: 1.2; }
+    .head h1 em { font-style: italic; color: var(--ember); }
+    .head .rule { margin: 18px auto 0; }
+
+    /* Steps: where the guest is */
+    .steps { display: flex; justify-content: center; gap: 0; list-style: none; padding: 0; margin: 0 0 36px; flex-wrap: wrap; }
+    .steps li { display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--warm-dim); padding: 0 14px; }
+    .steps li + li::before { content: ''; width: 28px; height: 1px; background: var(--line-soft); margin-right: 14px; }
+    .steps b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-soft); font-weight: 500; letter-spacing: 0; }
+    .steps [aria-current="step"] { color: var(--cream); }
+    .steps [aria-current="step"] b { border-color: var(--ember); color: var(--ember-glow); }
+    .steps .done b { background: var(--ember); border-color: var(--ember); color: #120c06; }
+
+    /* ── Search bar (same as the homepage's) ─────────────────────────────── */
+    .search { display: grid; grid-template-columns: 1fr 1fr 1fr auto; border: 1px solid var(--line); max-width: 900px; margin: 0 auto; }
+    .search__field { padding: 16px 22px; border-right: 1px solid var(--line-soft); }
+    .search__field:focus-within { background: rgba(200, 120, 42, .06); }
+    .search__field label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 4px; }
+    .search__field input, .search__field select { background: transparent; border: 0; width: 100%; color: var(--cream); font-family: var(--accent); font-size: 18px; color-scheme: dark; outline: none; }
+    .search__field select option { background: var(--black-mid); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 28px; border: 1px solid var(--ember); background: var(--ember); color: #120c06;
+           font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: background .25s ease; }
+    .btn:hover { background: var(--ember-glow); border-color: var(--ember-glow); }
+    .btn--ghost { background: transparent; color: var(--ember-glow); border-color: var(--line); }
+    .btn--ghost:hover { background: rgba(200, 120, 42, .1); }
+    .btn[disabled] { opacity: .45; cursor: not-allowed; }
+    .note { text-align: center; color: var(--warm-mid); margin: 16px 0 0; min-height: 1.6em; }
+    .note.is-error, .error { color: var(--bad); }
+
+    /* Messages: loading, problems */
+    .notice { max-width: 760px; margin: 32px auto 0; border: 1px solid var(--line-soft); padding: 22px 26px; text-align: center; color: var(--warm-mid); }
+    .notice h2 { font-family: var(--serif); font-size: 22px; color: var(--cream); margin-bottom: 8px; }
+    .notice--error { border-color: rgba(240, 160, 144, .4); }
+
+    /* ── Step 1: rooms ───────────────────────────────────────────────────── */
+    .rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 40px; }
+    .room { border: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; }
+    .room.is-off { opacity: .55; }
+    .room__img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--black-light); }
+    .room__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .room__body { padding: 26px 12px 12px; display: flex; flex-direction: column; flex: 1; }
+    .room h2 { font-family: var(--serif); font-size: clamp(22px, 2.2vw, 26px); line-height: 1.2; margin-bottom: 10px; }
+    .room__desc { color: var(--warm-mid); font-size: 15px; line-height: 1.8; margin: 0 0 14px; }
+    .room__facts { font-size: 14px; color: var(--warm-dim); margin: 0 0 18px; }
+    .room__price { border-top: 1px solid var(--line-soft); padding-top: 16px; margin-top: auto; }
+    .room__total { font-family: var(--serif); font-size: 24px; }
+    .room__total small { font-family: var(--sans); font-size: 14px; color: var(--warm-mid); }
+    .room__deposit { font-size: 14px; color: var(--warm-mid); margin: 2px 0 12px; }
+    .room details { font-size: 14px; color: var(--warm-mid); margin-bottom: 18px; }
+    .room summary { cursor: pointer; color: var(--ember-glow); width: fit-content; }
+    .room details ul { list-style: none; padding: 8px 0 0; margin: 0; }
+    .room details li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+    .room__left { font-size: 13px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--ember-glow); margin: 0 0 10px; }
+    .room__why { font-size: 14px; color: var(--warm-dim); margin: 0; }
+
+    /* ── Step 2: details ─────────────────────────────────────────────────── */
+    .details { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: start; margin-top: 8px; }
+    .form { display: grid; gap: 20px; }
+    .form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
+    .field label span { color: var(--warm-dim); letter-spacing: 1px; text-transform: none; font-weight: 300; }
+    .input { width: 100%; min-height: 48px; padding: 11px 14px; background: transparent; border: 1px solid var(--line-soft); color: var(--cream); font-size: 16px; }
+    .input:focus { border-color: var(--ember-glow); outline: none; box-shadow: 0 0 0 3px rgba(232, 149, 74, .2); }
+    .input[aria-invalid="true"] { border-color: var(--bad); }
+    textarea.input { min-height: 96px; resize: vertical; }
+    .hint { font-size: 13px; color: var(--warm-dim); margin: 0; }
+    .field .error { font-size: 14px; margin: 0; }
+    .form__foot { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+    .fine { font-size: 13px; color: var(--warm-dim); margin: 0; }
+
+    .summary { border: 1px solid var(--line); padding: 26px; position: sticky; top: 24px; }
+    .summary h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 4px; }
+    .summary dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 18px 0 0; font-size: 15px; }
+    .summary dt { color: var(--warm-mid); }
+    .summary dd { margin: 0; text-align: right; }
+    .summary .sep { grid-column: 1 / -1; border-top: 1px solid var(--line-soft); margin: 6px 0; }
+    .summary .big { font-family: var(--serif); font-size: 22px; color: var(--ember-glow); }
+    .linkbtn { background: none; border: 0; padding: 0; color: var(--ember-glow); cursor: pointer; text-decoration: underline; font-size: 14px; }
+
+    /* ── Step 3: the hold / the guest's booking ──────────────────────────── */
+    .hold { max-width: 720px; margin: 0 auto; border: 1px solid var(--line); padding: 40px 36px; text-align: center; }
+    .hold .rule { margin: 18px auto 24px; }
+    .hold h2 { font-family: var(--serif); font-size: clamp(26px, 3.4vw, 34px); line-height: 1.25; }
+    .hold h2 em { font-style: italic; color: var(--ember); }
+    .ref { display: inline-block; margin: 6px 0 4px; font-family: var(--sans); font-weight: 500; font-size: 26px; letter-spacing: 4px; color: var(--cream); font-variant-numeric: tabular-nums; }
+    .timer { font-size: 15px; color: var(--warm-mid); margin: 8px 0 0; }
+    .timer b { color: var(--ember-glow); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .hold__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; text-align: left; margin: 30px 0 0; border-top: 1px solid var(--line-soft); padding-top: 24px; }
+    .hold__grid dt { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
+    .hold__grid dd { margin: 4px 0 0; }
+    .next { margin-top: 28px; padding: 18px 20px; border-left: 2px solid var(--ember); background: rgba(200, 120, 42, .06); text-align: left; color: var(--warm-mid); font-size: 15px; }
+    .next b { color: var(--cream); font-weight: 500; }
+    .hold__actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+    .status { display: inline-block; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; padding: 4px 12px; border: 1px solid currentColor; }
+    .status--HELD { color: var(--ember-glow); } .status--CONFIRMED, .status--COMPLETED { color: var(--ok); }
+    .status--EXPIRED { color: var(--warm-dim); } .status--CANCELLED { color: var(--bad); }
+
+    .loading { text-align: center; color: var(--warm-mid); margin-top: 40px; }
+
+    /* ── Phones ──────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .rooms { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
+      .details { grid-template-columns: 1fr; }
+      .summary { position: static; order: -1; }
+    }
+    @media (max-width: 700px) {
+      .search { grid-template-columns: 1fr 1fr; }
+      .search__field:nth-child(2) { border-right: 0; }
+      .search__field:nth-child(3) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line-soft); }
+      .search .btn { grid-column: 1 / -1; }
+      .form__row { grid-template-columns: 1fr; }
+      .steps li { padding: 0 6px; font-size: 11px; letter-spacing: 1px; }
+      .steps li + li::before { width: 14px; margin-right: 6px; }
+      .steps li span { display: none; }
+      .steps li[aria-current="step"] span { display: inline; }
+      .hold { padding: 30px 20px; }
+      .hold__grid { grid-template-columns: 1fr; }
+      .wrap { padding-top: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="top__brand" href="index.html"><img src="mark.webp" alt="" />Safari Ember</a>
+    <a class="top__back" href="index.html#booking">← Back to the site</a>
+  </header>
+
+  <main class="wrap" id="main" tabindex="-1">
+    <div class="head">
+      <span class="label">Reservations</span>
+      <h1 id="title">Reserve Your <em>Stay</em></h1>
+      <div class="rule" role="presentation"></div>
+    </div>
+
+    <ol class="steps" id="steps" aria-label="Booking steps">
+      <li data-step="1"><b>1</b><span>Room</span></li>
+      <li data-step="2"><b>2</b><span>Your details</span></li>
+      <li data-step="3"><b>3</b><span>Hold</span></li>
+    </ol>
+
+    <!-- STEP 1 · choose a room -->
+    <section id="step-rooms" aria-labelledby="title">
+      <form class="search" id="search" novalidate aria-describedby="searchNote">
+        <div class="search__field"><label for="checkIn">Check in</label><input type="date" id="checkIn" name="checkIn" required /></div>
+        <div class="search__field"><label for="checkOut">Check out</label><input type="date" id="checkOut" name="checkOut" required /></div>
+        <div class="search__field"><label for="guests">Guests</label>
+          <select id="guests" name="guests"><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 or more</option></select></div>
+        <button class="btn" type="submit">Update</button>
+      </form>
+      <p class="note" id="searchNote" aria-live="polite"></p>
+      <div id="results" aria-live="polite" aria-busy="false"></div>
+    </section>
+
+    <!-- STEP 2 · guest details -->
+    <section id="step-details" hidden aria-labelledby="detailsTitle">
+      <h2 class="sr-only" id="detailsTitle">Your details</h2>
+      <div class="details">
+        <form class="form" id="detailsForm" novalidate>
+          <div class="form__row">
+            <div class="field"><label for="firstName">First name</label><input class="input" id="firstName" name="firstName" autocomplete="given-name" maxlength="60" required aria-describedby="firstName-err" /><p class="error" id="firstName-err" hidden></p></div>
+            <div class="field"><label for="lastName">Last name</label><input class="input" id="lastName" name="lastName" autocomplete="family-name" maxlength="60" required aria-describedby="lastName-err" /><p class="error" id="lastName-err" hidden></p></div>
+          </div>
+          <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="email-hint email-err" />
+            <p class="hint" id="email-hint">Your confirmation goes here.</p><p class="error" id="email-err" hidden></p></div>
+          <div class="field"><label for="phone">Mobile number</label><input class="input" id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" required aria-describedby="phone-hint phone-err" />
+            <p class="hint" id="phone-hint">Kenyan (0712 345 678) or international with + and the country code.</p><p class="error" id="phone-err" hidden></p></div>
+          <div class="field"><label for="requests">Special requests <span>(optional)</span></label><textarea class="input" id="requests" name="requests" maxlength="1000" aria-describedby="requests-err"></textarea><p class="error" id="requests-err" hidden></p></div>
+          <p class="error" id="formError" role="alert" hidden></p>
+          <div class="form__foot">
+            <button class="btn" type="submit" id="holdBtn">Hold my room</button>
+            <button class="btn btn--ghost" type="button" id="backToRooms">Change room</button>
+          </div>
+          <p class="fine">We hold the room for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
+        </form>
+        <aside class="summary" id="summary" aria-label="Your stay"></aside>
+      </div>
+    </section>
+
+    <!-- STEP 3 · the hold, and the guest's booking link -->
+    <section id="step-hold" hidden aria-live="polite"></section>
+  </main>
+
+  <script>
+  /* ============================================================================================
+     BOOKING PAGE
+     Talks to the booking API (api/, Phase 1) through /api, which Netlify (and server.py locally)
+     forwards to the API server:
+       GET  /api/availability?checkIn&checkOut&guests   rooms, prices, deposit for those dates
+       POST /api/bookings                               hold a room → { booking, token, url }
+       GET  /api/bookings/:ref  + header X-Booking-Token   a booking, through its private link
+     The private link is booking.html#SE-XXXXXX.<token>. The token is after the #, so browsers never
+     send it to any server: the page reads it and sends it in a header.
+
+     SECURITY: names, requests and room descriptions are shown with esc() or textContent, never as
+     raw HTML. Prices always come from the API; the page only displays them.
+  ============================================================================================ */
+  (function () {
+    'use strict';
+
+    var ROOM_PHOTOS = {           // slug → photo (the same ones as the homepage)
+      'hearthside-room': 'Hearthside_room.webp',
+      'coalbed-suite': 'coalbed_suite.webp',
+      'ember-penthouse': 'ember-penthouse.webp',
+    };
+    var HOLD_MINUTES = 15;        // matches the API's HOLD_MINUTES (the hold's real end comes from the API)
+
+    /* ── Helpers ─────────────────────────────────────────────────────────────────────────── */
+    function $(id) { return document.getElementById(id); }
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    var KES = new Intl.NumberFormat('en-KE');
+    function money(n) { return 'KES ' + KES.format(n); }
+    var TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+    function addDays(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+    function addMonths(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); }
+    function nightsBetween(a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5); }
+    function day(iso, long) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', long ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' } : { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+    function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many || one + 's'); }
+    var HORIZON = addMonths(TODAY, 18);
+
+    // One way to call the API. Errors come back as { error } with a message written for guests.
+    function api(path, opts) {
+      return fetch('/api' + path, Object.assign({ headers: { Accept: 'application/json' } }, opts || {}))
+        .then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (body) {
+            if (!res.ok) { var e = new Error(body.error || 'Something went wrong'); e.status = res.status; throw e; }
+            return body;
+          });
+        }, function () {
+          var e = new Error('We couldn\'t reach our booking system. Check your connection and try again.'); e.status = 0; throw e;
+        });
+    }
+
+    /* ── State and steps ─────────────────────────────────────────────────────────────────── */
+    var S = { stay: null, results: null, room: null };
+
+    function showStep(n) {
+      $('step-rooms').hidden = n !== 1; $('step-details').hidden = n !== 2; $('step-hold').hidden = n !== 3;
+      document.querySelectorAll('#steps li').forEach(function (li) {
+        var k = Number(li.dataset.step);
+        li.classList.toggle('done', k < n);
+        if (k === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+      });
+      $('title').innerHTML = n === 1 ? 'Reserve Your <em>Stay</em>' : n === 2 ? 'Your <em>Details</em>' : 'Your <em>Booking</em>';
+    }
+    // Move focus to the new content, like a page load, so keyboard and screen-reader users follow
+    function focusMain() { $('main').focus({ preventScroll: true }); window.scrollTo(0, 0); }
+
+    /* ── STEP 1: search and rooms ────────────────────────────────────────────────────────── */
+    var f = { in: $('checkIn'), out: $('checkOut'), guests: $('guests') };
+    f.in.min = TODAY; f.in.max = HORIZON; f.out.min = addDays(TODAY, 1);
+    f.in.addEventListener('change', function () {
+      if (f.in.value) { f.out.min = addDays(f.in.value, 1); if (f.out.value && f.out.value <= f.in.value) f.out.value = addDays(f.in.value, 1); }
+    });
+
+    function stayProblem(st) {
+      if (st.guests >= 5) return 'For five or more guests we\'ll arrange two rooms for you: <a href="index.html#inquiry">send us an enquiry</a>.';
+      if (!st.checkIn || !st.checkOut) return 'Choose your check-in and check-out dates.';
+      if (st.checkIn < TODAY) return 'Check-in can\'t be in the past.';
+      if (st.checkIn > HORIZON) return 'We take bookings up to 18 months ahead.';
+      var n = nightsBetween(st.checkIn, st.checkOut);
+      if (n < 1) return 'Check-out must be after check-in.';
+      if (n > 30) return 'Stays can be up to 30 nights. For longer, <a href="index.html#inquiry">send us an enquiry</a>.';
+      return '';
+    }
+    function stayLine(st) { var n = nightsBetween(st.checkIn, st.checkOut); return day(st.checkIn) + ' → ' + day(st.checkOut) + ' · ' + plural(n, 'night') + ' · ' + plural(st.guests, 'guest'); }
+
+    function search(st, pushHistory) {
+      var p = stayProblem(st);
+      var note = $('searchNote');
+      if (p) { note.innerHTML = p; note.classList.add('is-error'); $('results').innerHTML = ''; return; }
+      note.classList.remove('is-error'); note.textContent = stayLine(st);
+      S.stay = st;
+      // Keep the dates in the address, so refresh, back and sharing all work
+      var url = 'booking.html?' + new URLSearchParams({ checkIn: st.checkIn, checkOut: st.checkOut, guests: st.guests });
+      if (pushHistory) history.pushState({ step: 1 }, '', url); else history.replaceState({ step: 1 }, '', url);
+      var box = $('results');
+      box.setAttribute('aria-busy', 'true');
+      box.innerHTML = '<p class="loading">Checking availability…</p>';
+      api('/availability?' + new URLSearchParams({ checkIn: st.checkIn, checkOut: st.checkOut, guests: st.guests }))
+        .then(function (data) { S.results = data; box.innerHTML = roomsHtml(data); })
+        .catch(function (e) { box.innerHTML = problemHtml(e); })
+        .then(function () { box.setAttribute('aria-busy', 'false'); });
+    }
+
+    function roomsHtml(data) {
+      if (data.needsMoreRooms) return '<div class="notice"><h2>A bigger party?</h2><p>No single room sleeps ' + data.guests + '. We\'ll happily arrange two rooms: <a href="index.html#inquiry">send us an enquiry</a>.</p></div>';
+      var any = data.rooms.some(function (r) { return r.available; });
+      return (any ? '' : '<div class="notice"><h2>Fully booked</h2><p>Nothing is free for every night of these dates. Try moving your stay by a day or two.</p></div>') +
+        '<div class="rooms">' + data.rooms.map(function (r) {
+          var why = !r.fits ? 'Sleeps ' + r.sleeps + ': too small for ' + data.guests + ' guests.' : !r.available ? 'Fully booked for these dates.' : '';
+          return '<article class="room' + (r.available ? '' : ' is-off') + '">' +
+            '<div class="room__img"><img src="' + esc(ROOM_PHOTOS[r.slug] || '') + '" alt="" loading="lazy" /></div>' +
+            '<div class="room__body">' +
+              '<span class="label">' + esc(r.kind) + '</span><div class="rule" role="presentation"></div>' +
+              '<h2>' + esc(r.name) + '</h2>' +
+              '<p class="room__desc">' + esc(r.description) + '</p>' +
+              '<p class="room__facts">Sleeps ' + r.sleeps + '</p>' +
+              '<div class="room__price">' +
+                (r.left ? '<p class="room__left">Only ' + r.left + ' left</p>' : '') +
+                '<div class="room__total num">' + money(r.totalKes) + ' <small>for ' + plural(data.nights, 'night') + '</small></div>' +
+                '<p class="room__deposit num">' + money(r.depositKes) + ' deposit to confirm (' + r.depositPercent + '%)</p>' +
+                '<details><summary>Price per night</summary><ul>' + r.nightly.map(function (n) {
+                  return '<li><span>' + day(n.night) + (n.season ? ' · ' + esc(n.season) : '') + '</span><span class="num">' + money(n.rateKes) + '</span></li>';
+                }).join('') + '</ul></details>' +
+                (r.available
+                  ? '<button class="btn" type="button" data-room="' + esc(r.slug) + '">Choose this room</button>'
+                  : '<p class="room__why">' + why + '</p>') +
+              '</div></div></article>';
+        }).join('') + '</div>';
+    }
+    function problemHtml(e) {
+      return '<div class="notice notice--error" role="alert"><h2>We couldn\'t check availability</h2><p>' + esc(e.message) + '</p>' +
+        '<p><button class="btn btn--ghost" type="button" data-retry="1">Try again</button></p></div>';
+    }
+
+    $('search').addEventListener('submit', function (e) {
+      e.preventDefault();
+      search({ checkIn: f.in.value, checkOut: f.out.value, guests: Number(f.guests.value) }, true);
+    });
+    $('results').addEventListener('click', function (e) {
+      if (e.target.closest('[data-retry]')) return search(S.stay, false);
+      var b = e.target.closest('[data-room]'); if (!b) return;
+      S.room = S.results.rooms.find(function (r) { return r.slug === b.dataset.room; });
+      history.pushState({ step: 2, room: S.room.slug }, '', location.href);
+      openDetails();
+    });
+
+    /* ── STEP 2: details ─────────────────────────────────────────────────────────────────── */
+    function openDetails() {
+      var r = S.room, st = S.stay, n = nightsBetween(st.checkIn, st.checkOut);
+      $('summary').innerHTML =
+        '<span class="label">Your stay</span><div class="rule" role="presentation"></div>' +
+        '<h2>' + esc(r.name) + '</h2>' +
+        '<dl class="num">' +
+          '<dt>Check in</dt><dd>' + day(st.checkIn) + ', from 14:00</dd>' +
+          '<dt>Check out</dt><dd>' + day(st.checkOut) + ', by 11:00</dd>' +
+          '<dt>Guests</dt><dd>' + st.guests + '</dd>' +
+          '<dt>' + plural(n, 'night') + '</dt><dd>' + money(r.totalKes) + '</dd>' +
+          '<span class="sep" role="presentation"></span>' +
+          '<dt>Deposit to confirm</dt><dd class="big">' + money(r.depositKes) + '</dd>' +
+          '<dt>Balance at the lodge</dt><dd>' + money(r.balanceKes) + '</dd>' +
+        '</dl>' +
+        '<p style="margin:18px 0 0"><button class="linkbtn" type="button" id="changeStay">Change dates or room</button></p>';
+      $('changeStay').onclick = function () { history.back(); };
+      clearErrors(); $('formError').hidden = true;
+      showStep(2); focusMain();
+      setTimeout(function () { $('firstName').focus(); }, 0);
+    }
+    $('backToRooms').addEventListener('click', function () { history.back(); });
+
+    // The same rules as the API (api/src/lib/fields.js and phone.js), so mistakes show at once.
+    // The API checks everything again: these are for the guest's convenience, not for security.
+    var NAME = /^\p{L}[\p{L}\p{M} .'’-]*$/u;
+    function normalisePhone(input) {
+      var raw = String(input || '').replace(/[\s\-().]/g, '');
+      var ke = raw.match(/^(?:\+?254|0)?([17]\d{8})$/);
+      if (ke) return '+254' + ke[1];
+      var intl = raw.match(/^\+([1-9]\d{6,14})$/);
+      return intl ? '+' + intl[1] : null;
+    }
+    var FIELDS = ['firstName', 'lastName', 'email', 'phone', 'requests'];
+    function check(name, v) {
+      v = v.trim();
+      if (name === 'firstName' || name === 'lastName') {
+        if (!v) return 'Please enter your ' + (name === 'firstName' ? 'first' : 'last') + ' name.';
+        if (!NAME.test(v)) return 'Use letters only (hyphens and apostrophes are fine).';
+      }
+      if (name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'Please enter a valid email address.';
+      if (name === 'phone' && !normalisePhone(v)) return 'Use a Kenyan mobile (0712 345 678) or start with + and the country code.';
+      if (name === 'requests' && v.length > 1000) return 'Please keep requests under 1,000 characters.';
+      return '';
+    }
+    function setError(name, msg) {
+      var input = $(name), err = $(name + '-err');
+      err.textContent = msg; err.hidden = !msg;
+      if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+    }
+    function clearErrors() { FIELDS.forEach(function (n) { setError(n, ''); }); }
+    FIELDS.forEach(function (n) { $(n).addEventListener('blur', function () { if ($(n).value) setError(n, check(n, $(n).value)); }); });
+
+    var sending = false;
+    $('detailsForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (sending) return;                                // no double holds from a double click
+      var first = null;
+      FIELDS.forEach(function (n) { var m = check(n, $(n).value); setError(n, m); if (m && !first) first = n; });
+      $('formError').hidden = true;
+      if (first) { $(first).focus(); return; }
+
+      sending = true;
+      var btn = $('holdBtn'); btn.disabled = true; btn.textContent = 'Holding your room…';
+      var body = {
+        room: S.room.slug, checkIn: S.stay.checkIn, checkOut: S.stay.checkOut, guests: S.stay.guests,
+        firstName: $('firstName').value.trim(), lastName: $('lastName').value.trim(),
+        email: $('email').value.trim(), phone: $('phone').value.trim(),
+      };
+      var req = $('requests').value.trim(); if (req) body.requests = req;
+
+      api('/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) })
+        .then(function (res) {
+          // Go to the guest's private link. Replace (not push): "back" shouldn't reopen a filled form.
+          var hash = res.url.split('#')[1];
+          history.replaceState({ step: 3 }, '', 'booking.html#' + hash);
+          viewBooking(res.booking);
+        })
+        .catch(function (err) {
+          // The API's messages are written for guests: "email: must be a valid email address"
+          var m = /^(firstName|lastName|email|phone|requests): (.+)$/.exec(err.message);
+          if (err.status === 400 && m) { setError(m[1], m[2].charAt(0).toUpperCase() + m[2].slice(1) + '.'); $(m[1]).focus(); }
+          else if (err.status === 409) {
+            // Someone else took the last one a moment ago: back to the rooms, with fresh availability
+            history.back();
+            setTimeout(function () { search(S.stay, false); $('searchNote').textContent = err.message; $('searchNote').classList.add('is-error'); }, 50);
+          }
+          else { $('formError').textContent = err.message; $('formError').hidden = false; }
+        })
+        .then(function () { sending = false; btn.disabled = false; btn.textContent = 'Hold my room'; });
+    });
+
+    /* ── STEP 3: the hold, also the guest's private link ─────────────────────────────────── */
+    var tick;
+    function viewBooking(b) {
+      clearInterval(tick);
+      var held = b.status === 'HELD';
+      var STATUS = { HELD: 'Held for you', CONFIRMED: 'Confirmed', COMPLETED: 'Stayed', EXPIRED: 'Hold expired', CANCELLED: 'Cancelled' };
+      var again = 'booking.html?' + new URLSearchParams({ checkIn: b.checkIn, checkOut: b.checkOut, guests: b.guests });
+      $('step-hold').innerHTML = '<div class="hold">' +
+        '<span class="status status--' + esc(b.status) + '">' + (STATUS[b.status] || esc(b.status)) + '</span>' +
+        '<div class="rule" role="presentation"></div>' +
+        '<h2>' + (held ? 'Your room is <em>held</em>, ' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : 'Your <em>booking</em>, ') +
+          (b.status === 'EXPIRED' ? '' : esc(b.guest.firstName)) + '</h2>' +
+        '<p style="margin:14px 0 0;color:var(--warm-mid)">Booking reference</p><div class="ref">' + esc(b.ref) + '</div>' +
+        (held ? '<p class="timer" id="timer">Held for <b>15:00</b></p>' : '') +
+        '<dl class="hold__grid num">' +
+          '<div><dt>Room</dt><dd>' + esc(b.room.name) + '</dd></div>' +
+          '<div><dt>Guests</dt><dd>' + b.guests + '</dd></div>' +
+          '<div><dt>Check in</dt><dd>' + day(b.checkIn, true) + '<br><small style="color:var(--warm-dim)">from 14:00</small></dd></div>' +
+          '<div><dt>Check out</dt><dd>' + day(b.checkOut, true) + '<br><small style="color:var(--warm-dim)">by 11:00</small></dd></div>' +
+          '<div><dt>Total</dt><dd>' + money(b.totalKes) + ' · ' + plural(b.nights, 'night') + '</dd></div>' +
+          '<div><dt>Deposit to confirm</dt><dd>' + money(b.depositKes) + '</dd></div>' +
+        '</dl>' +
+        (held ? '<div class="next"><b>Next: pay the deposit.</b> Online payment by M-Pesa or card arrives in the next update. Until then the hold shows how booking works; it lapses after ' + HOLD_MINUTES + ' minutes and the room goes back on sale.</div>' : '') +
+        (b.status === 'EXPIRED' ? '<div class="next">The 15 minutes passed without a deposit, so the room went back on sale. It may well still be free.</div>' : '') +
+        '<p class="fine" style="margin-top:22px">Keep this page\'s link: it\'s your private link to this booking. Don\'t share it.</p>' +
+        '<div class="hold__actions">' +
+          (b.status === 'EXPIRED' || b.status === 'CANCELLED' ? '<a class="btn" href="' + esc(again) + '">Check these dates again</a>' : '') +
+          '<a class="btn btn--ghost" href="index.html">Back to Safari Ember</a></div>' +
+      '</div>';
+      showStep(3); focusMain();
+      if (held && b.holdExpiresAt) {
+        var end = new Date(b.holdExpiresAt).getTime();
+        var run = function () {
+          var left = Math.max(0, end - Date.now());
+          var el = $('timer'); if (!el) return clearInterval(tick);
+          if (!left) { clearInterval(tick); loadFromLink(); return; }        // ask the API: it decides
+          el.innerHTML = 'Held for <b>' + Math.floor(left / 6e4) + ':' + String(Math.floor(left % 6e4 / 1000)).padStart(2, '0') + '</b>';
+        };
+        run(); tick = setInterval(run, 1000);
+      }
+    }
+
+    function loadFromLink() {
+      var m = /^#(SE-[A-Z0-9]{6})\.(\d{10}\.[A-Za-z0-9_-]{43})$/.exec(location.hash);
+      if (!m) return false;
+      showStep(3);
+      $('step-hold').innerHTML = '<p class="loading">Opening your booking…</p>';
+      api('/bookings/' + m[1], { headers: { Accept: 'application/json', 'X-Booking-Token': m[2] } })
+        .then(function (res) { viewBooking(res.booking); })     // the API answers { booking }
+        .catch(function (e) {
+          $('step-hold').innerHTML = '<div class="notice notice--error" role="alert"><h2>We couldn\'t open this booking</h2><p>' + esc(e.message) + '</p>' +
+            '<p><a class="btn btn--ghost" href="booking.html">Make a new booking</a></p></div>';
+        });
+      return true;
+    }
+
+    /* ── Start: a booking link, or a search from the address ─────────────────────────────── */
+    function fromAddress() {
+      var q = new URLSearchParams(location.search);
+      var st = { checkIn: q.get('checkIn') || '', checkOut: q.get('checkOut') || '', guests: Math.min(5, Math.max(1, Number(q.get('guests')) || 2)) };
+      f.in.value = st.checkIn; f.out.value = st.checkOut; f.guests.value = String(st.guests);
+      if (st.checkIn) f.out.min = addDays(st.checkIn, 1);
+      showStep(1);
+      if (st.checkIn && st.checkOut) search(st, false);
+      else { $('searchNote').textContent = 'Choose your dates to see the rooms that are free.'; }
+    }
+    // Back/forward between steps 1 and 2 (the browser's own buttons)
+    window.addEventListener('popstate', function (e) {
+      var st = e.state || {};
+      if (st.step === 2 && S.room) { openDetails(); return; }
+      if (loadFromLink()) return;
+      // Back to the rooms: check again, since availability may have changed (or this guest just held one)
+      if (S.stay) { showStep(1); focusMain(); search(S.stay, false); } else fromAddress();
+    });
+    window.addEventListener('hashchange', function () { loadFromLink(); });
+
+    if (!loadFromLink()) fromAddress();
+  })();
+  </script>
+</body>
+</html>
