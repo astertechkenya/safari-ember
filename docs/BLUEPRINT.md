@@ -85,9 +85,10 @@ seasonal_rates   id, room_type_id, starts_on, ends_on (exclusive), nightly_rate_
 closures         id, room_type_id (null = every type), starts_on, ends_on (exclusive), units, reason
 bookings         id, ref, room_type_id, check_in, check_out, guests, nights, total_kes, deposit_kes,
                  status, hold_expires_at, first_name, last_name, email, phone, requests,
-                 created_at, confirmed_at, cancelled_at
+                 created_at, confirmed_at, cancelled_at, refund_due
 booking_nights   booking_id, night, rate_kes        (the price of each night, frozen at booking time)
-payments         (Phase 3) id, booking_id, provider, amount_kes, status, provider refs
+payments         id, booking_id, provider (DARAJA | PAYSTACK), status, amount_kes, received_kes,
+                 phone, provider_ref, receipt, result_code, failure_reason, raw, checked_at, created_at
 enquiries        id, first_name, last_name, email, phone, subject, message, check_in, check_out,
                  guests, status, created_at
 admins, sessions (Phase 5, as NURA)
@@ -108,9 +109,52 @@ never changes what an existing guest owes.
 | `GET /api/availability?checkIn=…&checkOut=…&guests=…` | Each room type: available or not, units left (when few), nightly prices, total, deposit |
 | `POST /api/bookings` | Hold a unit: room type, dates, guests, guest details → reference, amount due, hold expiry, signed link |
 | `GET /api/bookings/:ref` (signed link) | The booking's status, for the confirmation page |
-| `POST /api/bookings/:ref/pay` (Phase 3) | Start the deposit payment: M-Pesa prompt or Paystack page |
+| `POST /api/bookings/:ref/pay` (signed link) | Start the deposit payment: `{ method: 'mpesa', phone? }` sends a prompt; `{ method: 'card' }` returns Paystack's page address |
+| `POST /api/payments/mpesa/callback/:secret` | Safaricom's result (a hint: we then ask Safaricom ourselves) |
+| `POST /api/payments/paystack/webhook` | Paystack's signed events (a hint: we then ask Paystack ourselves) |
 | `POST /api/enquiries` | The "Get in touch" form, saved and (Phase 4) emailed to the lodge |
 | `/api/admin/*` (Phase 5) | Bookings, calendar, rooms, rates, closures, enquiries |
+
+## Deposits (Phase 3)
+
+**Nothing is paid on anyone's word.** Safaricom's callback, Paystack's webhook and the booking
+page asking "is it paid yet?" all lead to the same step: the API asks the provider itself
+(M-Pesa STK query, Paystack verify) with our own credentials, and records what it says. A
+forged callback can't confirm a booking.
+
+**One attempt at a time.** A booking has at most one `PENDING` payment (a unique index, so two
+quick taps can't make two). Six attempts per booking, five M-Pesa prompts per number per hour.
+Switching from an unfinished card page to M-Pesa first checks the card wasn't paid after all.
+
+**Settles once.** Every status change is a conditional update (`… where status = 'PENDING'`)
+under a row lock, taken in a fixed order (payment, then booking, then room type), so racing
+answers can't settle a payment twice or deadlock.
+
+**What a paid deposit does:**
+
+| Booking when the money arrives | Result |
+|---|---|
+| `HELD`, hold still running | `CONFIRMED` |
+| Hold ran out, room still free | `CONFIRMED` (re-held under the room type's lock, like a new booking) |
+| Hold ran out, room taken meanwhile | `EXPIRED` with `refund_due`; the guest's page says a refund is coming |
+| Already `CONFIRMED` or `CANCELLED` | `refund_due` (a duplicate or late deposit) |
+| Different amount or currency | Payment `FLAGGED`, booking unchanged: a person decides |
+
+**Grace.** Starting a payment extends the hold to at least 5 minutes from then
+(`PAYMENT_GRACE_MINUTES`), so a guest typing their PIN in the last seconds isn't cut off. An
+expired booking can start paying again only if its room is still free.
+
+**Who notices.** The booking page polls while a payment is pending (the API asks the provider
+at most every 4 seconds however often it's asked). The minute job checks M-Pesa payments with
+no callback after a minute and card payments after two, and gives up on card pages left open
+for an hour. On a laptop Safaricom can't reach the callback, so the page's polling settles.
+
+**Sandbox.** In Daraja's sandbox the prompt asks for KES 1 (`DARAJA_SANDBOX_AMOUNT_KES`); the
+page says so. Paystack test keys take Paystack's test cards. Production refuses to start with a
+Paystack test key alongside live Daraja.
+
+**Refunds are manual for now.** `refund_due` bookings and `FLAGGED` payments will be listed in
+the admin (Phase 5); until then, they're in the database and the logs (`refund due`, `FLAGGED`).
 
 ## Phases
 

@@ -18,6 +18,7 @@ import { roomsRouter } from './routes/rooms.js';
 import { availabilityRouter } from './routes/availability.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { enquiriesRouter } from './routes/enquiries.js';
+import { paymentsRouter } from './routes/payments.js';
 
 export function createApp() {
   const app = express();
@@ -49,7 +50,12 @@ export function createApp() {
     },
   }));
 
-  app.use(express.json({ limit: '50kb' })); // oversized bodies are refused before any route sees them
+  app.use(express.json({
+    limit: '50kb',                // oversized bodies are refused before any route sees them
+    // Paystack signs the exact bytes it sends. Keep them for the webhook route only: parsing
+    // and re-serialising could change spacing and break the signature check.
+    verify: (req, res, buf) => { if (req.url.startsWith('/api/payments/')) req.rawBody = buf; },
+  }));
 
   // Liveness: is the process up? No database query, so frequent checks don't keep Neon awake.
   app.get('/api/ping', (req, res) => res.json({ ok: true }));
@@ -58,6 +64,10 @@ export function createApp() {
     await db.execute(sql`select 1`);
     res.json({ ok: true });
   });
+
+  // Payment providers' servers, before the CSRF check: they're not browsers (no Origin), and
+  // each route authenticates its caller itself (a secret path, an HMAC signature).
+  app.use('/api/payments', paymentsRouter);
 
   app.use(sameOrigin);          // refuse writes triggered by other websites (CSRF)
 

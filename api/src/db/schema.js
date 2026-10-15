@@ -11,6 +11,7 @@
 import { sql } from 'drizzle-orm';
 import {
   pgTable, pgEnum, serial, integer, text, varchar, date, timestamp, boolean, index, uniqueIndex, check, primaryKey,
+  uuid, jsonb,
 } from 'drizzle-orm/pg-core';
 
 // ── Rooms ──────────────────────────────────────────────────────────────────────────────────
@@ -96,6 +97,9 @@ export const bookings = pgTable('bookings', {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   confirmedAt: timestamp({ withTimezone: true }),
   cancelledAt: timestamp({ withTimezone: true }),
+  // A deposit arrived that the booking can't use: after the hold ran out and the room was
+  // taken, after a cancellation, or a second deposit. The lodge refunds it (admin, Phase 5).
+  refundDue: boolean().notNull().default(false),
 }, (t) => [
   uniqueIndex('bookings_ref_key').on(t.ref),
   // Availability asks "which bookings of this type overlap these nights and still hold a unit?"
@@ -117,6 +121,44 @@ export const bookingNights = pgTable('booking_nights', {
 }, (t) => [
   primaryKey({ columns: [t.bookingId, t.night] }),
   check('booking_nights_rate_check', sql`${t.rateKes} > 0`),
+]);
+
+// ── Payments (Phase 3) ─────────────────────────────────────────────────────────────────────
+// One row per attempt to pay a deposit, by M-Pesa (DARAJA) or card (PAYSTACK).
+//   PENDING   waiting: the prompt is on the guest's phone, or they're on Paystack's page
+//   PAID      the provider confirmed it (always by OUR question to them, never a callback's word)
+//   FAILED    cancelled, declined, timed out, or never sent
+//   FLAGGED   paid, but not the amount we asked for: a person decides (admin, Phase 5)
+// A row only ever moves forward from PENDING, once (every update says "where status = PENDING").
+export const paymentProvider = pgEnum('payment_provider', ['DARAJA', 'PAYSTACK']);
+export const paymentStatus = pgEnum('payment_status', ['PENDING', 'PAID', 'FAILED', 'FLAGGED']);
+
+export const payments = pgTable('payments', {
+  // Random, not 1, 2, 3: it's also the reference Paystack sees, and it shouldn't reveal how many
+  // payments the lodge takes.
+  id: uuid().primaryKey().defaultRandom(),
+  bookingId: integer().notNull().references(() => bookings.id, { onDelete: 'restrict' }),
+  provider: paymentProvider().notNull(),
+  status: paymentStatus().notNull().default('PENDING'),
+  amountKes: integer().notNull(),                     // what we asked for (a token amount in the M-Pesa sandbox)
+  receivedKes: integer(),                             // set only when a different amount arrived (FLAGGED)
+  phone: varchar({ length: 20 }),                     // M-Pesa: the number prompted
+  providerRef: varchar({ length: 100 }),              // Safaricom's CheckoutRequestID, or our id at Paystack
+  receipt: varchar({ length: 60 }),                   // M-Pesa receipt (QK12AB34CD) or "Card •••• 4081"
+  resultCode: varchar({ length: 30 }),
+  failureReason: text(),                              // written for the guest
+  raw: jsonb(),                                       // the provider's answer, for reconciling by hand
+  checkedAt: timestamp({ withTimezone: true }),       // last time we asked the provider (throttles page checks)
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('payments_provider_ref_key').on(t.providerRef),
+  // One payment in flight per booking: a double tap on "Pay" can't send two prompts.
+  uniqueIndex('payments_one_pending_key').on(t.bookingId).where(sql`${t.status} = 'PENDING'`),
+  index('payments_booking_idx').on(t.bookingId, t.createdAt),
+  index('payments_open_idx').on(t.status, t.provider, t.createdAt),
+  index('payments_phone_idx').on(t.phone, t.createdAt),
+  check('payments_amount_check', sql`${t.amountKes} > 0`),
 ]);
 
 // ── Enquiries ("Get in touch") ─────────────────────────────────────────────────────────────

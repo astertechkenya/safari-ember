@@ -38,5 +38,8 @@ export function bookingTokenValid(ref, token, { now = Date.now(), secret = confi
   return expected.length === given.length && timingSafeEqual(expected, given);
 }
 
-/** The full link for the confirmation page and emails. */
-export const bookingUrl = (ref) => `${config.SITE_URL}/booking.html#${ref}.${bookingToken(ref)}`;
+/**
+ * The full link for the confirmation page, emails and Paystack's return. Pass the booking's
+ * createdAt as `now` and the link is the same every time it's made, so a guest only ever sees one.
+ */
+export const bookingUrl = (ref, opts) => `${config.SITE_URL}/booking.html#${ref}.${bookingToken(ref, opts)}`;

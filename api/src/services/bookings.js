@@ -20,6 +20,7 @@ import { roomTypes, seasonalRates, bookings, bookingNights } from '../db/schema.
 import { config } from '../config.js';
 import { httpError } from '../middleware/errors.js';
 import { freeUnits } from './availability.js';
+import { checkBookingPayment, paymentSummary, paymentMethods } from './payments.js';
 import { quote } from './pricing.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
@@ -121,11 +122,21 @@ export async function createHold({ room, checkIn, checkOut, guests, firstName, l
     await tx.insert(bookingNights).values(q.nightly.map((n) => ({ bookingId: row.id, night: n.night, rateKes: n.rateKes })));
     return row;
   });
-  return { booking: await publicBooking(created.ref), token: bookingToken(created.ref), url: bookingUrl(created.ref) };
+  // Tokens are made as of the booking's creation: the same link whenever it's made again.
+  const asOf = { now: created.createdAt.getTime() };
+  return { booking: await publicBooking(created.ref), token: bookingToken(created.ref, asOf), url: bookingUrl(created.ref, asOf) };
 }
 
-/** A booking as the guest may see it (through their signed link). */
-export async function publicBooking(ref) {
+/**
+ * A booking as the guest may see it (through their signed link).
+ * check: true when the guest's page is asking (GET): a payment still waiting is checked with
+ * its provider first, so the answer is fresh. Throttled in services/payments.js.
+ */
+export async function publicBooking(ref, { check = false } = {}) {
+  if (check) {
+    const [row] = await db.select({ id: bookings.id }).from(bookings).where(eq(bookings.ref, ref));
+    if (row) await checkBookingPayment(row.id);
+  }
   const [b] = await db.select({ booking: bookings, room: roomTypes })
     .from(bookings).innerJoin(roomTypes, eq(roomTypes.id, bookings.roomTypeId))
     .where(eq(bookings.ref, ref));
@@ -145,6 +156,12 @@ export async function publicBooking(ref) {
     // Only what confirms "this is my booking". The link may be forwarded, so no email or phone.
     guest: { firstName: x.firstName, lastName: x.lastName },
     createdAt: x.createdAt.toISOString(),
+    confirmedAt: x.confirmedAt ? x.confirmedAt.toISOString() : null,
+    // Phase 3: the deposit. payment is the latest attempt (null before the first);
+    // refundDue means money arrived that this booking couldn't use, and the lodge owes it back.
+    payment: await paymentSummary(x.id),
+    refundDue: x.refundDue,
+    paymentMethods: paymentMethods(),
   };
 }
 

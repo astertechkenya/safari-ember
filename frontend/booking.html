@@ -16,7 +16,7 @@
   <style>
     /* ==========================================================================
        SAFARI EMBER · BOOKING
-       Three steps on one page: 1 choose a room, 2 your details, 3 your hold.
+       Three steps on one page: 1 choose a room, 2 your details, 3 hold and pay the deposit.
        Step 3 is also the guest's private booking link: booking.html#SE-XXXXXX.<token>
        Same look as the site: warm black, ember, framed cards, 12px labels.
     ========================================================================== */
@@ -152,6 +152,29 @@
     .status--HELD { color: var(--ember-glow); } .status--CONFIRMED, .status--COMPLETED { color: var(--ok); }
     .status--EXPIRED { color: var(--warm-dim); } .status--CANCELLED { color: var(--bad); }
 
+    /* ── Paying the deposit (inside step 3) ──────────────────────────────── */
+    .pay { margin-top: 30px; border-top: 1px solid var(--line-soft); padding-top: 26px; text-align: left; }
+    .pay__title { font-family: var(--serif); font-size: 22px; text-align: center; margin-bottom: 4px; }
+    .pay__sub { text-align: center; color: var(--warm-mid); margin: 0 0 22px; font-size: 15px; }
+    .pay__ways { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pay__way { border: 1px solid var(--line-soft); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .pay__way h3 { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
+    .pay__way p { margin: 0; font-size: 14px; color: var(--warm-mid); }
+    .pay__way .btn { margin-top: auto; width: 100%; padding: 0 16px; }
+    .pay__problem { margin: 0 0 18px; padding: 14px 18px; border-left: 2px solid var(--bad); background: rgba(240, 160, 144, .06); color: var(--cream); font-size: 15px; }
+    /* Waiting for the guest's PIN / the card result */
+    .wait { margin-top: 28px; padding: 22px; border: 1px solid var(--line); text-align: center; }
+    .wait h3 { font-family: var(--serif); font-size: 22px; margin-bottom: 6px; }
+    .wait p { margin: 6px 0 0; color: var(--warm-mid); font-size: 15px; }
+    .wait .hold__actions { margin-top: 18px; }
+    /* A slow ember pulse while waiting. Still for anyone who prefers reduced motion. */
+    .pulse { width: 12px; height: 12px; border-radius: 50%; background: var(--ember-glow); margin: 0 auto 14px; animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+    .paid { margin-top: 28px; padding: 18px 20px; border-left: 2px solid var(--ok); background: rgba(159, 211, 160, .06); text-align: left; color: var(--warm-mid); font-size: 15px; }
+    .paid b { color: var(--cream); font-weight: 500; }
+    .next--bad { border-left-color: var(--bad); }
+
     .loading { text-align: center; color: var(--warm-mid); margin-top: 40px; }
 
     /* ── Phones ──────────────────────────────────────────────────────────── */
@@ -172,6 +195,7 @@
       .steps li[aria-current="step"] span { display: inline; }
       .hold { padding: 30px 20px; }
       .hold__grid { grid-template-columns: 1fr; }
+      .pay__ways { grid-template-columns: 1fr; }
       .wrap { padding-top: 28px; }
     }
   </style>
@@ -192,7 +216,7 @@
     <ol class="steps" id="steps" aria-label="Booking steps">
       <li data-step="1"><b>1</b><span>Room</span></li>
       <li data-step="2"><b>2</b><span>Your details</span></li>
-      <li data-step="3"><b>3</b><span>Hold</span></li>
+      <li data-step="3"><b>3</b><span>Deposit</span></li>
     </ol>
 
     <!-- STEP 1 · choose a room -->
@@ -462,6 +486,7 @@
           // Go to the guest's private link. Replace (not push): "back" shouldn't reopen a filled form.
           var hash = res.url.split('#')[1];
           history.replaceState({ step: 3 }, '', 'booking.html#' + hash);
+          LINK = { ref: res.booking.ref, token: res.token };
           viewBooking(res.booking);
         })
         .catch(function (err) {
@@ -479,16 +504,87 @@
     });
 
     /* ── STEP 3: the hold, also the guest's private link ─────────────────────────────────── */
-    var tick;
-    function viewBooking(b) {
-      clearInterval(tick);
+    //
+    // The deposit, as the guest sees it. The page never decides that anything is paid: it shows
+    // what the API says (GET /api/bookings/:ref), and the API only believes Safaricom or Paystack
+    // when it has asked them itself.
+    //
+    //   HELD, nothing paid yet      → the two ways to pay (and why the last try didn't work)
+    //   HELD, a payment PENDING     → "check your phone" / "finishing your card payment", polling
+    //   CONFIRMED                   → the receipt
+    //   EXPIRED with refundDue      → the deposit came too late; the lodge refunds it
+    var tick, poll;
+    var LINK = null;                 // { ref, token } of the booking on screen
+    var B = null;                    // the booking as last shown
+
+    function waitingHtml(b) {
+      var p = b.payment;
+      if (p.method === 'mpesa') {
+        // In Safaricom's sandbox the prompt asks for a token amount (the API sets it); say so,
+        // or a tester will think the price is wrong.
+        var test = p.amountKes !== b.depositKes
+          ? '<p class="fine">Test mode: the prompt asks for ' + money(p.amountKes) + ', not the full deposit.</p>' : '';
+        return '<div class="wait" role="status"><div class="pulse" aria-hidden="true"></div>' +
+          '<h3>Check your phone</h3>' +
+          '<p>We\'ve sent an M-Pesa prompt to <b class="num">' + esc(p.phone) + '</b>. Enter your M-Pesa PIN to pay ' + money(p.amountKes) + '.</p>' +
+          '<p>This page updates by itself once the payment goes through.</p>' + test +
+        '</div>';
+      }
+      return '<div class="wait" role="status"><div class="pulse" aria-hidden="true"></div>' +
+        '<h3>Finishing your card payment</h3>' +
+        '<p>If you closed the card page before paying, you can go back to it, or pay with M-Pesa instead.</p>' +
+        '<div class="hold__actions">' +
+          '<button class="btn" type="button" data-pay="card">Return to card payment</button>' +
+          (b.paymentMethods.indexOf('mpesa') > -1 ? '<button class="btn btn--ghost" type="button" data-pay="switch">Pay with M-Pesa instead</button>' : '') +
+        '</div></div>';
+    }
+
+    function payHtml(b) {
+      var ways = b.paymentMethods || [];
+      if (!ways.length) {
+        return '<div class="next"><b>Next: pay the deposit.</b> Online payment isn\'t switched on yet. We\'ll contact you about the deposit; the hold lapses after ' + HOLD_MINUTES + ' minutes.</div>';
+      }
+      var p = b.payment;
+      if (p && p.status === 'PENDING' && p.sent) return waitingHtml(b);
+      var problem = p && (p.status === 'FAILED' || p.status === 'FLAGGED') && p.message
+        ? '<p class="pay__problem" role="alert">' + esc(p.message) + (p.status === 'FAILED' ? ' You can try again below.' : '') + '</p>' : '';
+      return '<div class="pay" aria-labelledby="payTitle">' +
+        '<h3 class="pay__title" id="payTitle">Pay the deposit to confirm</h3>' +
+        '<p class="pay__sub num">' + money(b.depositKes) + ' now · ' + money(b.balanceKes) + ' balance later</p>' + problem +
+        '<div class="pay__ways">' +
+          (ways.indexOf('mpesa') > -1 ?
+            '<form class="pay__way" id="mpesaForm" novalidate>' +
+              '<h3>M-Pesa</h3>' +
+              '<p>We\'ll send a prompt to your phone. Enter your PIN there to pay.</p>' +
+              '<div class="field"><label for="mpesaPhone">M-Pesa number <span>(if not the one you booked with)</span></label>' +
+                '<input class="input" id="mpesaPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="0712 345 678" aria-describedby="mpesaPhone-err" />' +
+                '<p class="error" id="mpesaPhone-err" hidden></p></div>' +
+              '<button class="btn" type="submit" data-label="Send M-Pesa prompt">Send M-Pesa prompt</button>' +
+            '</form>' : '') +
+          (ways.indexOf('card') > -1 ?
+            '<div class="pay__way">' +
+              '<h3>Card</h3>' +
+              '<p>Visa or Mastercard, on Paystack\'s secure page. You\'ll come straight back here.</p>' +
+              '<button class="btn" type="button" data-pay="card" data-label="Pay by card">Pay by card</button>' +
+            '</div>' : '') +
+        '</div>' +
+        '<p class="error" id="payError" role="alert" hidden></p>' +
+      '</div>';
+    }
+
+    function viewBooking(b, quiet) {
+      clearInterval(tick); clearTimeout(poll);
+      B = b;
       var held = b.status === 'HELD';
+      var refund = b.refundDue;
       var STATUS = { HELD: 'Held for you', CONFIRMED: 'Confirmed', COMPLETED: 'Stayed', EXPIRED: 'Hold expired', CANCELLED: 'Cancelled' };
       var again = 'booking.html?' + new URLSearchParams({ checkIn: b.checkIn, checkOut: b.checkOut, guests: b.guests });
+      var p = b.payment;
+      var paid = p && p.status === 'PAID';
       $('step-hold').innerHTML = '<div class="hold">' +
         '<span class="status status--' + esc(b.status) + '">' + (STATUS[b.status] || esc(b.status)) + '</span>' +
         '<div class="rule" role="presentation"></div>' +
-        '<h2>' + (held ? 'Your room is <em>held</em>, ' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : 'Your <em>booking</em>, ') +
+        '<h2>' + (held ? 'Your room is <em>held</em>, ' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +
           (b.status === 'EXPIRED' ? '' : esc(b.guest.firstName)) + '</h2>' +
         '<p style="margin:14px 0 0;color:var(--warm-mid)">Booking reference</p><div class="ref">' + esc(b.ref) + '</div>' +
         (held ? '<p class="timer" id="timer">Held for <b>15:00</b></p>' : '') +
@@ -498,31 +594,129 @@
           '<div><dt>Check in</dt><dd>' + day(b.checkIn, true) + '<br><small style="color:var(--warm-dim)">from 14:00</small></dd></div>' +
           '<div><dt>Check out</dt><dd>' + day(b.checkOut, true) + '<br><small style="color:var(--warm-dim)">by 11:00</small></dd></div>' +
           '<div><dt>Total</dt><dd>' + money(b.totalKes) + ' · ' + plural(b.nights, 'night') + '</dd></div>' +
-          '<div><dt>Deposit to confirm</dt><dd>' + money(b.depositKes) + '</dd></div>' +
+          (b.status === 'CONFIRMED' && paid
+            ? '<div><dt>Deposit paid</dt><dd>' + money(b.depositKes) + '</dd></div><div><dt>Balance</dt><dd>' + money(b.balanceKes) + '</dd></div>'
+            : '<div><dt>Deposit to confirm</dt><dd>' + money(b.depositKes) + '</dd></div>') +
         '</dl>' +
-        (held ? '<div class="next"><b>Next: pay the deposit.</b> Online payment by M-Pesa or card arrives in the next update. Until then the hold shows how booking works; it lapses after ' + HOLD_MINUTES + ' minutes and the room goes back on sale.</div>' : '') +
-        (b.status === 'EXPIRED' ? '<div class="next">The 15 minutes passed without a deposit, so the room went back on sale. It may well still be free.</div>' : '') +
+        (held ? payHtml(b) : '') +
+        (b.status === 'CONFIRMED' ? '<div class="paid"><b>Your deposit is in and your room is yours.</b>' +
+            (paid && p.receipt ? ' Receipt <span class="num">' + esc(p.receipt) + '</span>.' : '') +
+            (refund ? ' A second payment also reached us for this booking; we\'ll refund it and be in touch.' : '') + '</div>' : '') +
+        (b.status === 'EXPIRED' && refund ? '<div class="next next--bad"><b>Your deposit arrived after the hold ran out, and the room had been booked by then.</b> We\'re sorry. We\'ll refund it in full and be in touch by email.' +
+            (p && p.receipt ? ' Receipt <span class="num">' + esc(p.receipt) + '</span>.' : '') + '</div>' : '') +
+        (b.status === 'EXPIRED' && !refund ? '<div class="next">The 15 minutes passed without a deposit, so the room went back on sale. It may well still be free.</div>' : '') +
         '<p class="fine" style="margin-top:22px">Keep this page\'s link: it\'s your private link to this booking. Don\'t share it.</p>' +
         '<div class="hold__actions">' +
-          (b.status === 'EXPIRED' || b.status === 'CANCELLED' ? '<a class="btn" href="' + esc(again) + '">Check these dates again</a>' : '') +
+          ((b.status === 'EXPIRED' || b.status === 'CANCELLED') ? '<a class="btn" href="' + esc(again) + '">Check these dates again</a>' : '') +
           '<a class="btn btn--ghost" href="index.html">Back to Safari Ember</a></div>' +
       '</div>';
-      showStep(3); focusMain();
+      showStep(3);
+      if (!quiet) focusMain();
       if (held && b.holdExpiresAt) {
         var end = new Date(b.holdExpiresAt).getTime();
         var run = function () {
           var left = Math.max(0, end - Date.now());
           var el = $('timer'); if (!el) return clearInterval(tick);
-          if (!left) { clearInterval(tick); loadFromLink(); return; }        // ask the API: it decides
+          if (!left) { clearInterval(tick); refresh(); return; }        // ask the API: it decides
           el.innerHTML = 'Held for <b>' + Math.floor(left / 6e4) + ':' + String(Math.floor(left % 6e4 / 1000)).padStart(2, '0') + '</b>';
         };
         run(); tick = setInterval(run, 1000);
       }
+      // A payment is on its way: ask again soon. Every 4 seconds for the first two minutes
+      // (a PIN takes seconds), then every 15. The API asks Safaricom/Paystack at most every few
+      // seconds however often we poll, so this can't hammer them.
+      if (p && p.status === 'PENDING') {
+        if (!waitingSince) waitingSince = Date.now();
+        poll = setTimeout(refresh, Date.now() - waitingSince < 12e4 ? 4000 : 15000);
+      } else waitingSince = 0;
+    }
+    var waitingSince = 0;
+
+    // The booking again, re-drawn only if something the guest would notice changed, and
+    // without moving their focus (they may be typing a number).
+    function refresh() {
+      if (!LINK) return;
+      api('/bookings/' + LINK.ref, { headers: { Accept: 'application/json', 'X-Booking-Token': LINK.token } })
+        .then(function (res) {
+          var b = res.booking;
+          var same = B && JSON.stringify([b.status, b.refundDue, b.payment, b.holdExpiresAt]) === JSON.stringify([B.status, B.refundDue, B.payment, B.holdExpiresAt]);
+          if (same) {                                    // nothing new: just ask again later
+            B = b;
+            if (b.payment && b.payment.status === 'PENDING') poll = setTimeout(refresh, Date.now() - waitingSince < 12e4 ? 4000 : 15000);
+            return;
+          }
+          var typing = document.activeElement && document.activeElement.id === 'mpesaPhone' ? $('mpesaPhone').value : null;
+          viewBooking(b, true);
+          if (typing !== null && $('mpesaPhone')) { $('mpesaPhone').value = typing; $('mpesaPhone').focus(); }
+          // Status changes are announced by the role="status"/"alert" regions; a confirmation
+          // also moves focus to the top so a screen reader starts at "You're booked".
+          if (b.status !== 'HELD') focusMain();
+        })
+        .catch(function () { poll = setTimeout(refresh, 15000); });   // a blip: try again, quietly
     }
 
+    function payError(msg) { var el = $('payError'); if (el) { el.textContent = msg; el.hidden = false; } }
+
+    // One way to start paying. method: 'mpesa' (phone optional) or 'card'.
+    var paying = false;
+    function startPay(method, phone, btn) {
+      if (paying || !LINK) return;
+      paying = true;
+      if (btn) { btn.disabled = true; btn.textContent = method === 'card' ? 'Opening the card page…' : 'Sending the prompt…'; }
+      var body = { method: method }; if (phone) body.phone = phone;
+      api('/bookings/' + LINK.ref + '/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Booking-Token': LINK.token },
+        body: JSON.stringify(body),
+      })
+        .then(function (res) {
+          if (res.url) { location.assign(res.url); return; }          // off to Paystack; it brings the guest back here
+          paying = false; waitingSince = Date.now();
+          viewBooking(res.booking, true);
+        })
+        .catch(function (e) {
+          paying = false;
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Try again'; }
+          var m = /^phone: (.+)$/.exec(e.message);
+          if (m && $('mpesaPhone')) { var el = $('mpesaPhone-err'); el.textContent = m[1].charAt(0).toUpperCase() + m[1].slice(1) + '.'; el.hidden = false; $('mpesaPhone').setAttribute('aria-invalid', 'true'); $('mpesaPhone').focus(); return; }
+          // 409: the booking moved on (paid meanwhile, room taken, a prompt already out). Show the
+          // message, then the booking as it is now.
+          if (e.status === 409) { refresh(); setTimeout(function () { payError(e.message); }, 400); return; }
+          payError(e.message);
+        });
+    }
+
+    // Clicks and submits inside step 3 (its HTML is redrawn, so listen once, on the section).
+    $('step-hold').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pay]'); if (!b) return;
+      if (b.dataset.pay === 'card') startPay('card', null, b);
+      // Switching from an unfinished card page: the API closes it, after checking it wasn't paid.
+      if (b.dataset.pay === 'switch') { B.payment = null; viewBooking(B, true); clearTimeout(poll); if ($('mpesaPhone')) $('mpesaPhone').focus(); }
+    });
+    $('step-hold').addEventListener('submit', function (e) {
+      if (e.target.id !== 'mpesaForm') return;
+      e.preventDefault();
+      var input = $('mpesaPhone'), err = $('mpesaPhone-err'), v = input.value.trim(), phone = '';
+      err.hidden = true; input.removeAttribute('aria-invalid');
+      if (v) {
+        var n = normalisePhone(v);
+        if (!n || !/^\+254[17]\d{8}$/.test(n)) {
+          err.textContent = 'M-Pesa needs a Kenyan mobile number, like 0712 345 678.'; err.hidden = false;
+          input.setAttribute('aria-invalid', 'true'); input.focus(); return;
+        }
+        phone = n;
+      }
+      startPay('mpesa', phone, e.target.querySelector('button[type="submit"]'));
+    });
+
+    // The link: #SE-XXXXXX.<token>. Paystack sends the guest back with ?trxref=…&reference=…
+    // stuck on the end; those are ignored (the API asks Paystack itself) and tidied away.
     function loadFromLink() {
-      var m = /^#(SE-[A-Z0-9]{6})\.(\d{10}\.[A-Za-z0-9_-]{43})$/.exec(location.hash);
+      var m = /^#(SE-[A-Z0-9]{6})\.(\d{10}\.[A-Za-z0-9_-]{43})(?:[?&].*)?$/.exec(location.hash);
       if (!m) return false;
+      var clean = '#' + m[1] + '.' + m[2];
+      if (location.hash !== clean) history.replaceState({ step: 3 }, '', location.pathname + clean);
+      LINK = { ref: m[1], token: m[2] };
       showStep(3);
       $('step-hold').innerHTML = '<p class="loading">Opening your booking…</p>';
       api('/bookings/' + m[1], { headers: { Accept: 'application/json', 'X-Booking-Token': m[2] } })

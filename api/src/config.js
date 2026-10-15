@@ -39,6 +39,37 @@ const schema = z.object({
   // Show "only N left" when this few units or fewer are free. Above it, just "available":
   // a lodge doesn't want to advertise exactly how empty it is.
   FEW_LEFT: z.coerce.number().int().min(0).max(20).default(3),
+
+  // ── Deposits (Phase 3, adapted from NURA) ──────────────────────────────────────────────────
+  // M-Pesa through Safaricom's Daraja API. Offered only when all four DARAJA_* values,
+  // PUBLIC_API_URL and MPESA_CALLBACK_SECRET are set.
+  DARAJA_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
+  DARAJA_CONSUMER_KEY: z.string().min(1).optional(),
+  DARAJA_CONSUMER_SECRET: z.string().min(1).optional(),
+  DARAJA_SHORTCODE: z.string().regex(/^\d{5,7}$/, 'must be a paybill or till number').optional(),
+  DARAJA_PASSKEY: z.string().min(1).optional(),
+  // Where Safaricom posts results: the API's own public https address (Render), not the site.
+  // Locally Safaricom can't reach your computer, and that's fine: the booking page's checks ask
+  // Safaricom directly, so payments still settle. Any https address works there.
+  PUBLIC_API_URL: z.url().optional(),
+  // Part of the callback address, so only Safaricom (who we gave it to) knows where to post.
+  MPESA_CALLBACK_SECRET: z.string().min(32, 'must be at least 32 characters')
+    .regex(/^[A-Za-z0-9_-]+$/, 'may only contain letters, digits, - and _ (generate it with the command in api/.env.example)')
+    .optional(),
+  // Tests point this at a fake Daraja. Leave unset: the address follows DARAJA_ENV.
+  DARAJA_BASE_URL: z.url().optional(),
+  // SAFETY: in the sandbox the prompt asks for this many shillings, never the real deposit, so a
+  // test can't take a real amount from a real phone. Ignored in production.
+  DARAJA_SANDBOX_AMOUNT_KES: z.coerce.number().int().positive().default(1),
+
+  // Cards (and Apple Pay) through Paystack. Guests type card details on Paystack's own page,
+  // never on Safari Ember. sk_test_… while testing.
+  PAYSTACK_SECRET_KEY: z.string().regex(/^sk_(test|live)_[A-Za-z0-9]+$/, 'must be a Paystack secret key (sk_test_… or sk_live_…)').optional(),
+  // Tests point this at a fake Paystack. Leave unset.
+  PAYSTACK_BASE_URL: z.url().optional(),
+  // Starting a payment keeps the room held for at least this long, so a guest typing their
+  // M-Pesa PIN at minute 14 doesn't lose the room at minute 15.
+  PAYMENT_GRACE_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
 });
 
 function load(env) {
@@ -66,7 +97,14 @@ function load(env) {
     }
     if (rules.length) throw new Error(`Invalid environment configuration:\n${rules.map((r) => `  - ${r}`).join('\n')}`);
   }
-  return Object.freeze({ ...c, isProd: c.NODE_ENV === 'production', isTest: c.NODE_ENV === 'test' });
+  if (c.NODE_ENV === 'production' && c.PAYSTACK_SECRET_KEY?.startsWith('sk_test_') && c.DARAJA_ENV === 'production') {
+    // Mixed modes would confirm real bookings with test cards. Pick one.
+    throw new Error('Invalid environment configuration:\n  - PAYSTACK_SECRET_KEY: a test key with DARAJA_ENV=production; use both test or both live');
+  }
+  const mpesaEnabled = Boolean(c.DARAJA_CONSUMER_KEY && c.DARAJA_CONSUMER_SECRET && c.DARAJA_SHORTCODE
+    && c.DARAJA_PASSKEY && c.PUBLIC_API_URL && c.MPESA_CALLBACK_SECRET);
+  const cardEnabled = Boolean(c.PAYSTACK_SECRET_KEY);
+  return Object.freeze({ ...c, isProd: c.NODE_ENV === 'production', isTest: c.NODE_ENV === 'test', mpesaEnabled, cardEnabled });
 }
 
 export const config = load(process.env);

@@ -1,6 +1,7 @@
 // jobs/index.js: work the API does on a timer, not in answer to a request.
 //
-// One job for now: holds whose time ran out become EXPIRED. (Availability already ignores a
+// Two jobs: payments nobody has reported on are checked with their provider (Phase 3), and
+// holds whose time ran out become EXPIRED. (Availability already ignores a
 // lapsed hold the second it lapses, so this is tidying, not correctness: the admin's list
 // shows EXPIRED, and from Phase 4 the guest gets a "your hold ran out" email.)
 //
@@ -11,6 +12,7 @@
 // every minute until no hold is open. Same design as NURA's payment jobs.
 import { logger } from '../logger.js';
 import { expireHolds, anyOpenHolds } from '../services/bookings.js';
+import { reconcilePayments, anyPendingPayments } from '../services/payments.js';
 
 const EVERY_MINUTE = 60 * 1000;
 let timer = null;
@@ -23,11 +25,15 @@ async function tick() {
   running = true;
   const wakesAtStart = wakeCount;
   try {
+    // Payments first: a deposit that arrived in the last minute should confirm its booking
+    // before that booking's hold is expired.
+    const settled = await reconcilePayments();
+    if (settled) logger.info({ settled }, 'settled waiting payments');
     const n = await expireHolds();
     if (n) logger.info({ expired: n }, 'expired unpaid holds');
     // Nothing left to watch: stop until woken. Unless a wake arrived while this tick ran (a
     // hold committed just after the check): then stopping would leave it unwatched.
-    if (!(await anyOpenHolds()) && wakeCount === wakesAtStart) quiet();
+    if (!(await anyOpenHolds()) && !(await anyPendingPayments()) && wakeCount === wakesAtStart) quiet();
   } catch (err) {
     logger.error({ err }, 'hold expiry job failed');   // logged, retried next minute
   } finally {
@@ -49,7 +55,7 @@ export function startJobs() {
   tick();                       // catch up on anything left open before a restart
 }
 
-/** A hold was just created: run every minute until none is open. */
+/** A hold or a payment was just started: run every minute until none is open. */
 export function wakeJobs() {
   if (!started) return;         // tests and scripts never start the timer
   wakeCount += 1;
