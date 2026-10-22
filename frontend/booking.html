@@ -74,7 +74,7 @@
     /* ── Search bar (same as the homepage's: sand, dark-brown labels, black edge when in use) ── */
     /* minmax(0, 1fr): let the columns shrink below a date field's natural width, so nothing
        can push the bar wider than its box */
-    .search { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; background: var(--field); border: 1px solid var(--field); max-width: 900px; margin: 0 auto; }
+    .search { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; background: var(--field); max-width: 900px; margin: 0 auto; }   /* no border: on the sand it drew a pale line around the button */
     .search__field { padding: 16px 22px; border-right: 1px solid rgba(28, 22, 16, .14); }
     .search__field:focus-within { background: rgba(255, 250, 242, .45); box-shadow: inset 0 0 0 2px var(--black); }
     .search__field label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--field-label); margin-bottom: 4px; }
