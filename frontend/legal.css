@@ -1,0 +1,111 @@
+/* legal.css: shared by privacy.html and terms.html.
+   Long reading pages, so they use the site's colours and fonts but are built for reading:
+   a narrow column (about 70 characters a line), generous line height, and Jost at regular
+   weight for body text, which stays clear at length. */
+
+:root {
+  --black: #080705;
+  --black-mid: #0f0c09;
+  --ember: #c8782a;
+  --ember-glow: #e8954a;
+  --cream: #f5e8d0;
+  --warm-mid: #c4a882;
+  --border: rgba(200, 120, 42, .15);
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Jost', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--black);
+  color: var(--cream);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+/* Skip link: lets keyboard users jump past the header straight to the text */
+.skip {
+  position: absolute; left: 16px; top: -60px;
+  background: var(--ember); color: var(--black);
+  padding: 10px 16px; font-size: 14px; text-decoration: none; z-index: 10;
+}
+.skip:focus { top: 16px; }
+
+/* ── Header: the mark links home ── */
+.legal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1100px; margin: 0 auto; padding: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.legal-head__home { display: inline-flex; align-items: center; gap: 12px; color: var(--cream); text-decoration: none; }
+.legal-head__home img { display: block; width: 40px; height: 40px; }
+.legal-head__name { font-family: var(--font-serif); font-size: 17px; letter-spacing: 3px; text-transform: uppercase; }
+.legal-head__back {
+  font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ember-glow); text-decoration: none; padding: 8px 0;   /* a comfortable tap target */
+}
+.legal-head__back:hover { text-decoration: underline; text-underline-offset: 6px; }
+
+/* ── The text ── */
+main { max-width: 720px; margin: 0 auto; padding: 72px 24px 96px; }
+
+.legal__label {
+  font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--ember-glow); margin: 0 0 14px;
+}
+h1 {
+  font-family: var(--font-serif); font-weight: 400; line-height: 1.2;
+  font-size: clamp(32px, 5vw, 48px); margin: 0 0 18px;
+}
+h1 em { font-style: italic; color: var(--ember); }
+.legal__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 22px; }
+.legal__updated { font-size: 15px; color: var(--warm-mid); margin: 0 0 48px; }
+
+h2 {
+  font-family: var(--font-serif); font-weight: 400; font-size: 26px; line-height: 1.3;
+  margin: 56px 0 14px;
+  scroll-margin-top: 24px;   /* links from the contents land with a little room above */
+}
+h3 { font-size: 17px; font-weight: 500; margin: 28px 0 8px; color: var(--cream); }
+p, li { color: #e4d6bf; }    /* a shade softer than the headings, still about 13:1 on the black */
+p { margin: 0 0 16px; }
+ul { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 8px; }
+li::marker { color: var(--ember); }
+strong { font-weight: 500; color: var(--cream); }
+
+a { color: var(--ember-glow); text-underline-offset: 3px; }
+a:hover { color: var(--cream); }
+a:focus-visible, .legal-head__home:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 4px; }
+
+/* Contents: a short list of the sections, so readers can jump to what they came for */
+.legal__toc {
+  border: 1px solid var(--border); background: var(--black-mid);
+  padding: 24px 28px; margin: 0 0 8px;
+}
+.legal__toc p { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--warm-mid); margin: 0 0 12px; }
+.legal__toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+.legal__toc li { margin-bottom: 6px; break-inside: avoid; }
+
+/* ── Footer ── */
+.legal-foot {
+  border-top: 1px solid var(--border);
+  max-width: 1100px; margin: 0 auto; padding: 32px 24px 40px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px;
+  font-size: 15px; color: var(--warm-mid);
+}
+.legal-foot ul { display: flex; flex-wrap: wrap; gap: 8px 24px; list-style: none; margin: 0; padding: 0; }
+.legal-foot a { color: var(--warm-mid); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; font-size: 14px; }
+.legal-foot a:hover, .legal-foot a[aria-current="page"] { color: var(--ember-glow); }
+
+@media (max-width: 600px) {
+  main { padding: 48px 20px 72px; }
+  .legal-head__name { display: none; }      /* the mark alone on small screens */
+  .legal__toc ol { columns: 1; }
+  .legal-foot { justify-content: center; text-align: center; }
+  .legal-foot ul { justify-content: center; }
+}

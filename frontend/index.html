@@ -41,6 +41,10 @@
 
       --transition:   0.3s ease;
       --section-pad:  100px 40px;
+      /* THE RHYTHM: the empty space between one block of content and the next, the same
+         everywhere on the page (sections, and the experience chapters). 200px on a desktop,
+         easing down to 120px on a phone. Change it here and the whole page follows. */
+      --rhythm:       clamp(120px, 13.9vw, 200px);
     }
 
     /* ============================================================
@@ -539,10 +543,10 @@
        effects and the nav's own hide-on-scroll keep working. Timeline:
          0.0–0.3 s  black
          0.3–1.2 s  the film and the logo fade in together
-         2.0 s      the logo starts to settle (--settle-at), and the nav bar and pause button fade in
+         1.6 s      the logo starts to settle (--settle-at), and the nav bar and pause button fade in
        --settle-at is the one place to change the settle time: the settle script waits for the
        nav's fade to start, so the logo and the nav can't drift apart. */
-    :root { --settle-at: 2s; }            /* the opening lasts 2 s: the big logo starts to settle at 2 s (it fades in from 0.3 s) */
+    :root { --settle-at: 1.6s; }          /* the opening lasts 1.6 s: the big logo starts to settle at 1.6 s (it fades in from 0.3 s) */
     .hero { background: var(--black); }
     .hero__media { position: absolute; inset: 0; }
     /* Phones: zoom the film out. The clips are wide (16:9) and a phone is tall, so filling the
@@ -770,7 +774,6 @@
     ============================================================ */
     .section {
       padding: var(--section-pad);
-      border-bottom: 1px solid rgba(200,120,42,0.2);
     }
 
     .section--alt {
@@ -1040,9 +1043,9 @@
     /* ============================================================
        TESTIMONIALS
     ============================================================ */
-    .testimonial-slider { position: relative; overflow: hidden; padding-bottom: 48px; }
+    .testimonial-slider { position: relative; overflow: hidden; }
     .testimonial-slider__track { display: flex; transition: transform 0.5s ease; }
-    .testimonial-slider__controls { display: none; align-items: center; justify-content: center; gap: 24px; margin-top: 32px; }
+    .testimonial-slider__controls { display: none; align-items: center; justify-content: center; gap: 24px; margin-top: 52px; }   /* a little room after the closing line */
     .testimonial-slider__btn { background: none; border: 1px solid rgba(200,120,42,0.4); color: var(--ember); font-size: 20px; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
     @media (max-width: 768px) { .testimonial-slider__btn { display: none; } }
     .testimonial-slider__btn:hover { background: var(--ember); color: var(--black); }
@@ -1050,21 +1053,32 @@
     .testimonial-slider__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
     .testimonial-slider__dot.active { background: var(--ember); }
 
-    /* One review at a time as a pull quote, in the same family as the chef's quote: large cream
-       serif (upright, for readability) at a comfortable reading width, then the stars, then the author in the site's
-       short line + label format. No box, no decorative quote mark. */
-    .testimonial { margin: 0; text-align: center; }
+    /* One review at a time: warm serif quote (upright, for readability), then the author, the
+       stars, and the site's short ember line. */
+    /* The frame (no visible border) holds the quote, author and stars. Every slide is as tall as
+       the longest quote (the track stretches them) and the frame fills that height; the quote
+       takes the spare room, so the author and stars stay at the same height on every slide. */
+    .testimonial { margin: 0; text-align: center; display: flex; flex-direction: column; }
+    .testimonial__frame {
+      flex: 1;
+      display: flex; flex-direction: column;
+      width: 100%; max-width: 760px; margin: 0 auto;
+      box-sizing: border-box;
+    }
     .testimonial__text {
       font-family: var(--font-serif);
-      font-size: clamp(20px, 2.1vw, 27px);
+      font-size: clamp(18px, 1.9vw, 24px);   /* about 10% smaller than before */
       font-weight: 400;
       font-style: normal;               /* upright: easier to read across several lines than italic */
-      color: var(--cream);
+      color: #f0d6ad;                   /* warmer than the cream headings: a candlelit sand */
       line-height: 1.65;
-      max-width: 760px;
-      margin: 0 auto 22px;
+      margin: 0 0 22px;
+      flex: 1;                          /* take the spare height... */
+      display: flex; align-items: center; justify-content: center;   /* ...with the words centred in it */
     }
-    .testimonial__stars { color: var(--ember); font-size: 13px; letter-spacing: 4px; margin: 0 0 18px; }
+    /* Under the quote: author, stars, then the site's short ember line to close it */
+    .testimonial__stars { color: var(--ember); font-size: 13px; letter-spacing: 4px; margin: 14px 0 0; }
+    .testimonial__stars::after { content: ''; display: block; width: 36px; height: 1px; background: var(--ember); margin: 18px auto 0; }
     .testimonial__author {
       font-size: 12px;
       font-weight: 500;
@@ -1072,7 +1086,64 @@
       text-transform: uppercase;
       color: var(--ember);
     }
-    .testimonial__author::before { content: ''; display: block; width: 36px; height: 1px; background: var(--ember); margin: 0 auto 16px; }
+
+    /* ============================================================
+       BOOKING LANDSCAPE
+       The photo behind "Reserve Your Stay". It plays once: the photo settles from a slight
+       zoom as the section comes into view, then stays still.
+    ============================================================ */
+    /* The booking section with the landscape behind it */
+    .booking.booking--scenic {     /* .booking is defined below: two classes to win */
+      position: relative;
+      overflow: hidden;
+      padding: clamp(120px, 20vh, 200px) 40px;
+      border: 0;
+    }
+    .booking--scenic > .booking__bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 55%;
+    }
+    .booking--scenic::after {
+      content: ''; position: absolute; inset: 0;
+      background:
+        linear-gradient(to bottom, var(--black) 0%, rgba(8,7,5,.35) 25%, rgba(8,7,5,.35) 75%, var(--black) 100%),
+        rgba(8,7,5,.38);
+    }
+    .booking--scenic > :not(.booking__bg) { position: relative; z-index: 1; }
+    /* Frosted ivory glass: the photo shows through, blurred and warm, while the fields stay
+       light enough for dark text. 82% ivory keeps the small labels above WCAG AA (about 5.6:1)
+       even over the darkest part of the photo; below about 75% they fall short. */
+    .booking--scenic .booking__bar {
+      background: rgba(245,236,221,.86);   /* a soft apricot, frosted */
+      /* Keep the ivory inside the border. Otherwise it shows through the see-through ember
+         border as a pale line, most visibly around the button. */
+      background-clip: padding-box;
+      -webkit-backdrop-filter: blur(14px) saturate(1.1);
+      backdrop-filter: blur(14px) saturate(1.1);
+    }
+    .booking--scenic .booking__field { border-right-color: rgba(28,22,16,.14); }
+    .booking--scenic .booking__field:hover { background: rgba(255,250,242,.35); }
+    /* The field you're in: lighter, with a black edge (these inputs have no outline of their own) */
+    .booking--scenic .booking__field:focus-within { background: rgba(255,250,242,.6); box-shadow: inset 0 0 0 2px var(--black); }
+    .booking--scenic .booking__field-label { color: #522b0a; }   /* darker brown: 5.1:1 even where the apricot sits over the darkest grass */
+    .booking--scenic .booking__field input[type="date"],
+    .booking--scenic .booking__field select { color: #1c1610; color-scheme: light; }
+    .booking--scenic .booking__field select option { background: #fffaf2; color: #1c1610; }
+    .booking--scenic .section-title { text-shadow: 0 2px 24px rgba(0,0,0,.55); }
+
+    @media (prefers-reduced-motion: no-preference) {
+      /* The same slow burn as the mini heroes: 10 seconds, at an even, unhurried pace */
+      .booking--scenic .booking__bg {
+        transform: scale(1.08);
+        transition: transform 10s cubic-bezier(.25,.46,.45,.94);
+      }
+      .booking--scenic.is-in .booking__bg { transform: none; }
+    }
+
+    @media (max-width: 768px) {
+      .booking.booking--scenic { padding: 96px 20px; }
+    }
 
     /* ============================================================
        BOOKING BAR
@@ -1080,8 +1151,6 @@
     ============================================================ */
     .booking {
       background: var(--black);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
       padding: 64px 40px;
       text-align: center;
     }
@@ -1175,113 +1244,12 @@
       gap: 0;
     }
 
-    /* Map placeholder — in production, embed a Google Map iframe here */
     .contact__map {
-      background: var(--black-light);
       min-height: 360px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       border-right: 1px solid var(--border);
-      position: relative;
+      background: var(--black-light);   /* shows while the map loads */
     }
-
-    .contact__map-placeholder {
-      text-align: center;
-    }
-
-    .contact__map-icon {
-      font-size: 40px;
-      color: var(--ember);
-      opacity: 0.2;
-      display: block;
-      margin-bottom: 12px;
-    }
-
-    .contact__map-label {
-      font-size: 9px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--warm-dim);
-    }
-
-    /* Clickable map facade — loads the real iframe only on interaction,
-       avoiding Google Maps' third-party scripts on initial page load.
-       Faux-map backdrop with a pin and ember CTA button. */
-    .contact__map-facade {
-      position: relative;
-      width: 100%;
-      min-height: 360px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: var(--black-mid);
-      border: none;
-      cursor: pointer;
-      transition: background var(--transition);
-    }
-    .contact__map-facade:hover {
-      background: var(--black-light);
-    }
-
-    /* Faint grid lines suggesting streets */
-    .contact__map-grid {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-    .contact__map-gridline {
-      position: absolute;
-      background: rgba(200,120,42,0.08);
-    }
-    .contact__map-gridline--h { left: 0; right: 0; height: 1px; }
-    .contact__map-gridline--v { top: 0; bottom: 0; width: 1px; }
-
-    .contact__map-pin {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-    }
-    .contact__map-dot {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      border: 1px solid var(--border-mid);
-      background: rgba(200,120,42,0.08);
-      color: var(--ember-glow);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-      transition: background var(--transition), border-color var(--transition);
-    }
-    .contact__map-facade:hover .contact__map-dot {
-      background: rgba(200,120,42,0.16);
-      border-color: var(--ember);
-    }
-    .contact__map-pin .contact__map-label {
-      display: block;
-      margin-bottom: 20px;
-      color: var(--warm-mid);
-    }
-    .contact__map-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--ember);
-      color: var(--black);
-      font-family: var(--font-sans);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 12px 26px;
-      transition: background var(--transition);
-    }
-    .contact__map-facade:hover .contact__map-cta {
-      background: var(--ember-glow);
-    }
+    .contact__map iframe { display: block; width: 100%; height: 100%; min-height: 360px; border: 0; }
 
     .contact__info {
       padding: 48px 40px;
@@ -1315,45 +1283,58 @@
     .form-section {
       padding: var(--section-pad);
       background: var(--black);
-      border-bottom: 1px solid rgba(200,120,42,0.2);
     }
 
-    .form {
-      max-width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+    /* Get in Touch: one centred column under the heading: Ophelia (see .person), then the form.
+       No panel: the ivory fields are what stands out on the dark page. */
+    .enquire { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+    /* A person and their words, centred: round portrait in a thin ember ring, the line in italic,
+       then NAME · ROLE. Used for Ophelia (Get in Touch) and the chef (Fire & Flavour). */
+    .person { margin: 0; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .person blockquote { margin: 0; }
+    .person__face {
+      width: 134px; height: 134px; border-radius: 50%;   /* 20% larger than the first 112px */
+      object-fit: cover; object-position: center 20%;
+      border: 1px solid rgba(232,149,74,.45); padding: 5px;   /* a thin ember ring, set off the photo */
     }
+    .person__text { font-family: var(--font-serif); font-style: italic; font-size: 21px; line-height: 1.6; color: var(--cream); margin: 22px 0 8px; max-width: 640px; }
+    .person__who { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-glow); }
+    .person--enquire { margin-bottom: 34px; }
+    .person--chef { padding: 60px 24px 0; }
+    .form { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+    .form__send { width: 100%; }
+    /* Read by screen readers, invisible on screen */
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    /* Call / WhatsApp / Email as ember icons, no circle. Each link is still 44px square, so the
+       tap target stays comfortable on a phone even though only the icon shows. */
+    .contact__direct { list-style: none; padding: 0; margin: 6px 0 0 -10px; display: flex; gap: 6px; }
+    .contact__direct a { display: grid; place-items: center; width: 44px; height: 44px; color: var(--ember-glow); transition: color var(--transition), transform var(--transition); }
+    .contact__direct svg { width: 24px; height: 24px; display: block; }
+    .contact__direct a:hover, .contact__direct a:focus-visible { color: var(--cream); transform: translateY(-1px); }
 
     .form__row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 14px;
     }
 
     .form__group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
     }
 
-    .form__label {
-      font-size: 9px;
-      font-weight: 500;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--ember);
-    }
-
-    /* All form inputs share the same dark styling */
+    /* All form inputs share the same apricot as the Reserve Your Stay bar: #dcd2c3 is
+       what that frosted bar averages out to on screen, so the two read as one colour */
     .form__input,
     .form__textarea {
-      background: var(--black-mid);
-      border: 1px solid var(--border);
-      color: var(--cream);
-      font-family: var(--font-accent);
-      font-size: 17px;
+      background: #dcd2c3;
+      border: 1px solid #dcd2c3;
+      color: #1c1610;                   /* dark text on apricot */
+      /* Jost, the site's sans: open, even letters that stay clear at small sizes, unlike the
+         display serif. Regular weight (400): the light 300 is too thin for typing into. */
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 16px;
       padding: 14px 16px;
       outline: none;
       transition: border-color var(--transition);
@@ -1361,23 +1342,24 @@
       resize: vertical;
     }
 
+    /* The field you're in: bright edge and a soft glow (also what keyboard users follow) */
     .form__input:focus,
     .form__textarea:focus {
-      border-color: var(--ember-dim);
+      border-color: var(--ember-glow);
+      box-shadow: 0 0 0 3px rgba(232,149,74,.35);
     }
 
     .form__input::placeholder,
     .form__textarea::placeholder {
-      color: var(--warm-dim);
-      font-style: italic;
+      color: #5e4a38;                   /* readable hint on apricot (5.4:1), still clearly a hint */
     }
 
     .form__textarea {
       min-height: 120px;
     }
 
-    .form__submit {
-      align-self: flex-start;
+    @media (max-width: 700px) {
+      .person__text { font-size: 18px; }
     }
 
     /* ============================================================
@@ -1385,30 +1367,30 @@
     ============================================================ */
     .footer {
       background: var(--black);
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border);   /* the one ember line on the page: it closes it off */
       padding: 40px;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
     }
 
-    .footer__logo {
-      font-family: var(--font-serif);
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--warm-mid);
-    }
-
+    /* Three columns: copyright left, the mark in the centre, links right */
     .footer__copy {
+      grid-column: 1; grid-row: 1;
       font-size: 15px;
       color: var(--warm-mid);
       letter-spacing: 1px;
-      text-align: center;
+      text-align: left;
     }
 
+    .footer__logo {
+      grid-column: 2; grid-row: 1;
+      display: flex; justify-content: center;
+    }
+    .footer__logo img { display: block; height: 36px; width: auto; }
+
     .footer__links {
+      grid-column: 3; grid-row: 1;
       display: flex;
       gap: 24px;
       justify-content: flex-end;
@@ -1561,12 +1543,13 @@
       /* Stack booking bar */
       .booking__bar { grid-template-columns: 1fr; }
       .booking__field { border-right: none; border-bottom: 1px solid var(--border); }
+      .booking--scenic .booking__field { border-bottom-color: rgba(28,22,16,.14); }
 
       /* Stack contact */
       .contact__layout { grid-template-columns: 1fr; }
       .contact__map { border-right: none; border-bottom: 1px solid var(--border); }
 
-      /* Stack form row */
+      /* Stack form row: name and email one above the other */
       .form__row { grid-template-columns: 1fr; }
 
       /* Stack footer */
@@ -1575,7 +1558,10 @@
         gap: 20px;
         text-align: center;
       }
-      .footer__links { justify-content: center; }
+      /* Stacked: mark, then links, then copyright */
+      .footer__logo { grid-column: 1; grid-row: 1; }
+      .footer__links { grid-column: 1; grid-row: 2; justify-content: center; flex-wrap: wrap; gap: 12px 24px; }
+      .footer__copy { grid-column: 1; grid-row: 3; text-align: center; }
     }
 
     @media (max-width: 480px) {
@@ -1609,7 +1595,7 @@
     /* ── AMENITIES CARDS ─────────────────────────────────────────── */
 
     /* ── CULINARY SECTION ───────────────────────────────────────── */
-    .cul-section { background: var(--black); padding: 80px 0; border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .cul-section { background: var(--black); padding: 80px 0; }
     .cul-section__header { text-align: center; padding: 0 40px 64px; }
     .cul-section__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
     .cul-section__title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
@@ -1634,31 +1620,13 @@
     .cul-dish__name { font-family: var(--font-serif); font-size: clamp(22px, 2.2vw, 28px); font-weight: 400; color: var(--cream); margin-bottom: 14px; line-height: 1.2; }
     .cul-dish__desc { font-size: 15px; color: var(--warm-mid); line-height: 1.9; }
 
-    /* Quote */
-    /* The chef beside his words. Phone: portrait on top, quote centred below.
-       Desktop (900px+): portrait left, quote right and left-aligned. */
-    .cul-quote { background: var(--black); padding: 52px 24px; text-align: center;
-                 display: grid; gap: 28px; justify-items: center; max-width: 760px; margin: 0 auto; }
-    .cul-quote__portrait { width: min(152px, 48%); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid rgba(232, 149, 74, .35); padding: 10px; }
-    .cul-quote__portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-    .cul-quote__body { margin: 0; }
-    .cul-quote__body blockquote { margin: 0; }
-    @media (min-width: 900px) {
-      .cul-quote { grid-template-columns: 192px 1fr; gap: 48px; align-items: center; justify-items: start; text-align: left; padding: 60px 24px; }
-      .cul-quote__portrait { width: 100%; }
-      .cul-quote .cul-quote__text { margin-left: 0; font-size: 21px; }   /* two classes: must outrank the base rule further down */
-    }
-    .cul-quote__mark { font-family: var(--font-serif); font-size: 56px; color: var(--ember); line-height: 0.6; margin-bottom: 20px; opacity: 0.5; }
-    .cul-quote__text { font-family: var(--font-serif); font-size: clamp(18px, 2.5vw, 22px); font-weight: 400; font-style: italic; color: var(--cream); line-height: 1.7; max-width: 640px; margin: 0 auto 20px; }
-    .cul-quote__attr { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-dim, #8a4f18); }
-
     @media (max-width: 768px) {
       .cul-dishes__grid { grid-template-columns: 1fr; }
     }
 
     /* ── ROOMS EXPANDED ─────────────────────────────────────────── */
     .rooms-section-header { text-align: center; padding: 0 40px 60px; }
-    .section--alt#rooms { padding: 80px 0; background: var(--black); border-bottom: 1px solid rgba(200,120,42,0.2); }
+    .section--alt#rooms { padding: 80px 0; background: var(--black); }
     .rooms-section-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin-bottom: 14px; }
     .rooms-section-title { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: var(--cream); line-height: 1.2; margin-bottom: 20px; }
     .rooms-section-title em { font-style: italic; color: var(--ember); }
@@ -1729,6 +1697,21 @@
       .carousel-dots { display: none; }
       #tDots { display: none; }
       .testimonial-slider__controls { display: flex; }
+      #tDotsDesktop { display: none; }   /* desktop: arrows only, no dots */
+    }
+    /* Wide screens: the arrows move out to either side of the quote, level with its middle, and
+       only the dots stay below. (Narrower tablets keep arrows below: beside a near-full-width
+       quote they'd crowd the text.) */
+    @media (min-width: 1000px) {
+      .testimonial-slider__controls { margin-top: 0; }   /* nothing left in the row below */
+      .testimonial-slider__btn {
+        position: absolute; z-index: 2;
+        top: calc(50% - 22px);           /* level with the middle of the quote */
+      }
+      /* 380px = half the quote's 760px width; then a 120px gap, then the 44px button.
+         max(0px, …): never past the slider's edge, where it would be cut off */
+      #tPrev { left: max(0px, calc(50% - 380px - 120px - 44px)); }
+      #tNext { right: max(0px, calc(50% - 380px - 120px - 44px)); }
     }
     .nav--hidden { transform: translateY(-100%); }
     /* Over the hero, the big logo is the brand, so the small one in the nav stays hidden and
@@ -1752,10 +1735,9 @@
     .story__intro {
       display: flex; flex-direction: column; align-items: center;
       text-align: center;
-      /* Fixed padding instead of a min-height with centring, so the gap below the hero is exact:
-         200px on desktop, easing down to 160px on a phone. The bottom keeps the first chapter
-         where it was. */
-      padding: clamp(160px, 14vw, 200px) 24px clamp(107px, 10vw, 144px);
+      /* One rhythm below the hero. No bottom padding: the first chapter's own top padding (half a
+         rhythm) is the gap, so the title sits closer to the story it introduces. */
+      padding: var(--rhythm) 24px 0;
     }
     /* Same sizes and colours as the other section headers (Fire & Flavour, Signature Amenities) */
     .story__eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--ember); margin: 0 0 14px; }
@@ -1764,23 +1746,27 @@
     .story__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
     .story__lede { font-family: var(--font-sans); font-size: 17px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; max-width: 580px; margin: 0 auto; }
 
-    /* Bottom padding: the space after the Ash Bar, before Fire & Flavour (trimmed 20%: 8vh, 11vh on phones) */
-    .story__chapters { list-style: none; margin: 0; padding: 0 24px 8vh; }
-    @media (max-width: 768px) { .story__chapters { padding-bottom: 11vh; } }
+    .story__chapters { list-style: none; margin: 0; padding: 0 24px; }
     .chapter {
       display: grid; gap: 28px; align-items: center;
       max-width: 1100px; margin: 0 auto;
-      min-height: 100vh; min-height: 100svh;            /* one chapter per screen */
-      padding: 10vh 0;
+      padding: calc(var(--rhythm) / 2) 0;              /* half the rhythm above and below: chapters sit one rhythm apart */
     }
-    /* Pull the first chapter up under the intro. Its content is centred in a full screen, so empty
-       space sat above the café: 428px on desktop, 245px on a phone. This brings it to 340px / 196px,
-       scaling with width between the two. */
-    .story__chapters > .chapter:first-child { margin-top: max(-88px, min(-49px, calc(-34.5px - 3.714vw))); }
-    /* Framed like the dish, room and chef photos: a thin light-ember line set 12px off the picture */
-    .chapter__img { margin: 0; overflow: hidden; border: 1px solid rgba(232,149,74,.35); padding: 12px; aspect-ratio: 4 / 3; }
-    /* The window inside the frame: it clips the photo at the picture's edge (not at the frame
-       line), so during the entrance the photo can rise into place from below, out of nowhere. */
+    /* The frame sits behind the photo, shifted up and to the left, so the photo looks as if it's
+       sliding out of it rather than mounted inside it. The frame is a pseudo-element: it takes no
+       space in the layout, and the photo (which comes later in the stacking order) covers its
+       lower-right part (lower-left for photos on the right). The figure doesn't clip, so the
+       frame can sit outside it. */
+    .chapter__img { --offset: 12px; position: relative; margin: 0; aspect-ratio: 4 / 3; }
+    .chapter__img::before {
+      content: ''; position: absolute; pointer-events: none;
+      inset: calc(var(--offset) * -1) var(--offset) var(--offset) calc(var(--offset) * -1);   /* top right bottom left */
+      border: 1px solid rgba(232,149,74,.35);
+    }
+    .chapter__window { position: relative; }   /* stacks the photo above the frame */
+    @media (max-width: 700px) { .chapter__img { margin: 12px 0 0 12px; } }   /* room for the frame inside the page gutter */
+    /* The photo's own box: it clips the photo at the picture's edge (not at the frame line), so
+       during the entrance the photo can rise into place from below, out of nowhere. */
     .chapter__window { display: block; width: 100%; height: 100%; overflow: hidden; }
     .chapter__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     /* Label + short line above each chapter's name, the same format as the section headers */
@@ -1788,35 +1774,26 @@
     .chapter__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 28px; }
     .chapter__name { font-family: var(--font-serif); font-size: clamp(26px, 3.4vw, 40px); font-weight: 400; line-height: 1.2; color: var(--cream); margin-bottom: 18px; }
     .chapter__desc { font-size: 17px; font-weight: 300; line-height: 1.9; color: var(--warm-mid); max-width: 480px; }
-    /* The invitation at the end of each chapter: a quiet text link, not a button, so the story
-       stays a story. The underline grows in on hover; keyboard focus gets a clear outline. */
-    .chapter__cta {
-      display: inline-flex; align-items: center; gap: 8px;
-      margin-top: 26px; padding: 6px 0;                 /* a comfortable tap target on phones */
-      font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--accent);
-      background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
-      transition: background-size .35s ease;
-    }
-    .chapter__cta:hover { background-size: 100% 1px; }
-    .chapter__cta:focus-visible { outline: 1px solid var(--accent); outline-offset: 6px; }
     /* Desktop: picture and words side by side, swapping sides each chapter */
     @media (min-width: 900px) {
       .chapter { grid-template-columns: 1.15fr 1fr; gap: 72px; }
       .chapter:nth-child(even) .chapter__img { order: 2; }
+      /* Mirror the frame for photos on the right: it shifts up and to the right, so every photo
+         slides out toward the middle of the page, towards its words. */
+      .chapter:nth-child(even) .chapter__img::before {
+        inset: calc(var(--offset) * -1) calc(var(--offset) * -1) var(--offset) var(--offset);
+      }
     }
     /* Arrival: each chapter's picture and words rise in as they enter (motion-friendly only) */
     @media (prefers-reduced-motion: no-preference) {
-      /* The frame is already there. First the words rise in (1 s); as they finish (0.6 s), the photo
-         slides up into the frame from below. */
+      /* The frame is already there. First the words rise in (1 s); as they finish (0.48 s), the photo
+         slides up into place from below, clipped at its own edge. */
       .chapter__text { opacity: 0; transform: translateY(40px); transition: opacity 1s ease, transform 1s ease; }
-      .chapter__window img { transform: translateY(101%); transition: transform 1.2s cubic-bezier(.22, .61, .36, 1) .6s; }
+      .chapter__window img { transform: translateY(101%); transition: transform 1.2s cubic-bezier(.22, .61, .36, 1) .48s; }   /* photo starts .48s after the words */
       .chapter.is-in .chapter__window img { transform: none; }
       .chapter.is-in .chapter__text { opacity: 1; transform: none; }
     }
 
-    /* The chef's-quote credit used a dim orange that's hard to read on black (about 3.4:1): the lighter ember fixes it. */
-    .cul-quote__attr { color: var(--ember-glow); }
 
     /* ============================================================
        FRAMED CARDS: Signature Dishes and Rooms & Suites
@@ -1871,6 +1848,91 @@
         transition: opacity .9s ease .35s, transform .9s ease .35s, border-color .4s ease; }
       .cul-dish.in-view:nth-child(3), .rooms__grid > .room-card.in-view:nth-child(3) {
         transition: opacity .9s ease .7s, transform .9s ease .7s, border-color .4s ease; }
+    }
+
+    /* ============================================================
+       SECTION RHYTHM
+       Every section gets half the rhythm above and below its content, so the gap between any
+       two neighbouring sections is one rhythm (--rhythm, at the top). Reserve Your Stay keeps its
+       own padding (the photo needs the height); its neighbours give it a whole rhythm instead,
+       so the photo's edge sits one rhythm from their content.
+    ============================================================ */
+    #dining.cul-section,
+    #rooms.section--alt,
+    #testimonials.section,
+    #contact.section,
+    #inquiry.form-section { padding-top: calc(var(--rhythm) / 2); padding-bottom: calc(var(--rhythm) / 2); }
+    #testimonials.section { padding-bottom: var(--rhythm); }
+    #contact.section { padding-top: var(--rhythm); }
+
+    /* ============================================================
+       MINI HEROES
+       One wide photo under the Fire & Flavour and A Place Like Home introductions, edge to
+       edge. They arrive once (a slight zoom settles slowly, over 10 seconds) and then stay still. Sizes: 900px for phones, 1600px, and the largest for big and sharp
+       (high-density) screens; the browser picks the one that fits.
+    ============================================================ */
+    .mini-hero {
+      position: relative;
+      margin: 0;
+      height: clamp(260px, 38vw, 540px);
+      overflow: hidden;
+    }
+    .mini-hero img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .mini-hero--flame img { object-position: center 45%; }
+    .mini-hero--rooms img { object-position: center 62%; }   /* the band with the view and the bed; most of the thatch is cropped */
+    /* The photo fades into the black at top and bottom with a mask (the photo itself turns
+       transparent) rather than a black layer on top, over a taller, eased fade: many small steps
+       that start and finish gently, so there's no visible line where the fade begins or ends. */
+    .mini-hero {
+      -webkit-mask-image: linear-gradient(to bottom,
+        transparent 0%, rgba(0,0,0,.04) 3%, rgba(0,0,0,.12) 6%, rgba(0,0,0,.25) 9%, rgba(0,0,0,.42) 12%,
+        rgba(0,0,0,.6) 15%, rgba(0,0,0,.76) 18%, rgba(0,0,0,.88) 21%, rgba(0,0,0,.96) 24%, #000 27%,
+        #000 73%, rgba(0,0,0,.96) 76%, rgba(0,0,0,.88) 79%, rgba(0,0,0,.76) 82%, rgba(0,0,0,.6) 85%,
+        rgba(0,0,0,.42) 88%, rgba(0,0,0,.25) 91%, rgba(0,0,0,.12) 94%, rgba(0,0,0,.04) 97%, transparent 100%);
+              mask-image: linear-gradient(to bottom,
+        transparent 0%, rgba(0,0,0,.04) 3%, rgba(0,0,0,.12) 6%, rgba(0,0,0,.25) 9%, rgba(0,0,0,.42) 12%,
+        rgba(0,0,0,.6) 15%, rgba(0,0,0,.76) 18%, rgba(0,0,0,.88) 21%, rgba(0,0,0,.96) 24%, #000 27%,
+        #000 73%, rgba(0,0,0,.96) 76%, rgba(0,0,0,.88) 79%, rgba(0,0,0,.76) 82%, rgba(0,0,0,.6) 85%,
+        rgba(0,0,0,.42) 88%, rgba(0,0,0,.25) 91%, rgba(0,0,0,.12) 94%, rgba(0,0,0,.04) 97%, transparent 100%);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      /* A slow burn: the photo eases back from a slight zoom over 10 seconds, at an even,
+         unhurried pace (a gentle ease-out, not a quick start), so you barely see it move. */
+      .mini-hero img { transform: scale(1.08); transition: transform 10s cubic-bezier(.25,.46,.45,.94); }
+      .mini-hero.is-in img { transform: none; }
+    }
+
+    /* Title on the photo: the section's label, heading and short line sit in the middle of the
+       mini hero, over a soft darkening that's strongest behind the words. */
+    .mini-hero__title {
+      position: absolute; inset: 0; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 0 24px;
+    }
+    .mini-hero .mini-hero__title { padding: 0 24px; }        /* overrides the headers' own spacing */
+    .mini-hero__title > :last-child { margin-bottom: 0; }
+    .mini-hero__title h2 { text-shadow: 0 2px 28px rgba(0,0,0,.6); }
+    .mini-hero::before {
+      content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(8,7,5,.68) 0%, rgba(8,7,5,.42) 55%, rgba(8,7,5,.2) 100%);
+    }
+    .mini-hero__title { z-index: 2; }
+    /* Food hero only: the darkening behind the title, 10% stronger again (busy, bright kitchen) */
+    .mini-hero--flame::before {
+      background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(8,7,5,.75) 0%, rgba(8,7,5,.46) 55%, rgba(8,7,5,.22) 100%);
+    }
+    /* Halfway between the site's orange and its lighter glow: a touch brighter on the photos */
+    .mini-hero__title p, .mini-hero__title em { color: #d8873a; }
+    .mini-hero__title div { background: #d8873a; }
+    /* The introduction, under the photo */
+    .mini-hero__intro { margin: 36px auto 0; padding: 0 24px; text-align: center; }   /* was centred by the header it used to sit in */
+    /* Phones only: the small orange tags inside the Experience chapters and the six dish and room
+       cards are 20% smaller (12px to 9.6px, letter-spacing scaled with them). Scoped to those
+       components so the section headings' labels keep their size. */
+    @media (max-width: 700px) {
+      .chapter .chapter__label,
+      .cul-dish .card__label,
+      .room-card .card__label { font-size: 9.6px; letter-spacing: 3.2px; }
     }
   </style>
 </head>
@@ -1985,7 +2047,6 @@
             <div class="chapter__rule" role="presentation"></div>
             <h3 class="chapter__name">The Cinder Café</h3>
             <p class="chapter__desc">Start slow under the leafy timber roof: Kenyan coffee grown on the slopes of Mount Kenya, warm mandazi, tropical fruit and eggs any way you like them. Breakfast is included with every stay.</p>
-            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
           </div>
         </li>
         <li class="chapter">
@@ -1995,7 +2056,6 @@
             <div class="chapter__rule" role="presentation"></div>
             <h3 class="chapter__name">Nairobi National Park</h3>
             <p class="chapter__desc">Kenya's first national park, and one of the few places on earth where lions, rhinos and giraffes roam with a city skyline on the horizon. Your guide collects you from the lodge in an open safari vehicle, and you're back in time for lunch.</p>
-            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
           </div>
         </li>
         <li class="chapter">
@@ -2005,7 +2065,6 @@
             <div class="chapter__rule" role="presentation"></div>
             <h3 class="chapter__name">The Giraffe Centre</h3>
             <p class="chapter__desc">Climb the raised platform and meet the endangered Rothschild's giraffes at eye level. Hold out a pellet and a long, dark tongue takes it straight from your hand. The centre's breeding work has helped return these giraffes to the wild.</p>
-            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
           </div>
         </li>
         <li class="chapter">
@@ -2015,7 +2074,6 @@
             <div class="chapter__rule" role="presentation"></div>
             <h3 class="chapter__name">The Silt Spa</h3>
             <p class="chapter__desc">Let the dust of the morning drive wash away. Our therapists work with warm stones, shea butter and local botanicals in open-air treatment rooms looking out over the trees. Choose a 60 or 90-minute ritual, or simply take the afternoon slowly.</p>
-            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
           </div>
         </li>
         <li class="chapter">
@@ -2025,7 +2083,6 @@
             <div class="chapter__rule" role="presentation"></div>
             <h3 class="chapter__name">The Ash Bar</h3>
             <p class="chapter__desc">As the sky turns gold over the Ngong Hills, the rooftop comes alive: string lights overhead, a cocktail in hand, the city settling below. Stay for the moonrise. The bar is open late.</p>
-            <a class="chapter__cta" href="#booking">Reserve stay <span aria-hidden="true">&rarr;</span></a>
           </div>
         </li>
       </ol>
@@ -2036,12 +2093,19 @@
     ============================================================ -->
     <section class="cul-section" id="dining" aria-labelledby="dining-heading">
 
-      <div class="cul-section__header">
-        <p class="cul-section__eyebrow">A Culinary Journey</p>
-        <h2 class="cul-section__title" id="dining-heading">Fire & <em>Flavour</em></h2>
-        <div class="cul-section__rule"></div>
-        <p class="cul-section__intro">Every meal at Safari Ember is a celebration of Kenya's rich culinary heritage. Crafted with the finest local ingredients, inspired by the continent, and elevated by world-class technique.</p>
+      <!-- Mini hero: the section's title sits on the photo; its introduction follows below -->
+      <div class="mini-hero mini-hero--flame" data-band>
+        <img src="mini-flame-1600.webp"
+             srcset="mini-flame-900.webp 900w, mini-flame-1600.webp 1600w, mini-flame-2400.webp 2400w"
+             sizes="100vw" width="1600" height="1067"
+             alt="Chefs at work in the open kitchen, flames rising from the grill beside the carving table" loading="lazy" decoding="async" />
+        <div class="mini-hero__title cul-section__header">
+          <p class="cul-section__eyebrow">A Culinary Journey</p>
+          <h2 class="cul-section__title" id="dining-heading">Fire & <em>Flavour</em></h2>
+          <div class="cul-section__rule"></div>
+        </div>
       </div>
+      <p class="cul-section__intro mini-hero__intro">Every meal at Safari Ember is a celebration of Kenya's rich culinary heritage. Crafted with the finest local ingredients, inspired by the continent, and elevated by world-class technique.</p>
 
       <!-- Signature dishes -->
       <div class="cul-dishes__header" id="signature-dishes">
@@ -2098,20 +2162,15 @@
       </div>
       </div>
 
-      <!-- Chef quote -->
-      <div class="cul-quote">
-        <div class="cul-quote__portrait">
-          <img src="chef.webp" alt="Safari Ember's executive chef in his whites, arms folded, smiling in the kitchen" width="423" height="529" loading="lazy" decoding="async" />
-        </div>
-        <!-- figure + blockquote + figcaption: the standard way to mark up a quote and who said it -->
-        <figure class="cul-quote__body">
-          <div class="cul-quote__mark" aria-hidden="true">&ldquo;</div>
-          <blockquote>
-            <p class="cul-quote__text">We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.</p>
-          </blockquote>
-          <figcaption class="cul-quote__attr">— Executive Chef, Safari Ember</figcaption>
-        </figure>
-      </div>
+      <!-- Chef quote: the same format as Ophelia's in Get in Touch -->
+      <figure class="person person--chef">
+        <img class="person__face" src="chef.webp" alt="Safari Ember's executive chef in his whites, smiling in the kitchen"
+             width="423" height="529" loading="lazy" decoding="async" />
+        <blockquote>
+          <p class="person__text">&ldquo;We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.&rdquo;</p>
+        </blockquote>
+        <figcaption class="person__who">Executive Chef &middot; Safari Ember</figcaption>
+      </figure>
 
     </section>
 
@@ -2120,13 +2179,20 @@
     ============================================================ -->
     <section class="section--alt" id="rooms" aria-labelledby="rooms-heading">
 
-      <!-- Section header -->
-      <div class="rooms-section-header">
-        <p class="rooms-section-eyebrow">Where to Rest</p>
-        <h2 class="rooms-section-title" id="rooms-heading">A Place Like <em>Home</em></h2>
-        <div class="rooms-section-rule"></div>
-        <p class="rooms-section-intro">Every room at Safari Ember is a sanctuary, designed to dissolve the boundary between the wild and the refined. Between adventure and deep, unhurried rest.</p>
+      <!-- Mini hero: the section's title sits on the photo; its introduction follows below -->
+      <div class="mini-hero mini-hero--rooms" data-band>
+        <img src="mini-rest-1600.webp"
+             srcset="mini-rest-900.webp 900w, mini-rest-1600.webp 1600w, mini-rest-2400.webp 2400w"
+             sizes="100vw" width="1600" height="1009"
+             alt="A four-poster bed hung with white netting under a high thatched roof, leather armchairs by a wide window over the savannah" loading="lazy" decoding="async" />
+        <div class="mini-hero__title rooms-section-header">
+          <p class="rooms-section-eyebrow">Where to Rest</p>
+          <h2 class="rooms-section-title" id="rooms-heading">A Place Like <em>Home</em></h2>
+          <div class="rooms-section-rule"></div>
+        </div>
       </div>
+      <p class="rooms-section-intro mini-hero__intro">Every room at Safari Ember is a sanctuary, designed to dissolve the boundary between the wild and the refined. Between adventure and deep, unhurried rest.</p>
+
 
       <!-- Sub header -->
       <div class="rooms-subheader" id="rooms-suites">
@@ -2162,7 +2228,7 @@
         <!-- Room 2 -->
         <article class="room-card">
           <div class="room-card__image">
-            <img src="coalbed_suite.webp" alt="Coalbed Suite with canopy bed, African decor and en-suite bathroom" loading="lazy" />
+            <img src="coalbed-suite-1200.webp" alt="The Coalbed Suite: a king bed with a carved wooden headboard beneath exposed timber beams, a writing desk by the windows" loading="lazy" decoding="async" />
           </div>
           <div class="room-card__body">
             <p class="card__label">Junior suite</p>
@@ -2216,35 +2282,43 @@
         <div class="testimonial-slider__track" id="testimonialTrack">
 
           <blockquote class="testimonial">
-            <p class="testimonial__text">
-              Safari Ember is unlike any hotel I have stayed in. The warmth of the staff, the extraordinary food, and waking up knowing Nairobi National Park is minutes away. It is a truly once-in-a-lifetime experience.
-            </p>
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-            <footer class="testimonial__author">— Fatima A., Dubai</footer>
+            <div class="testimonial__frame">
+              <p class="testimonial__text">
+                Safari Ember is unlike any hotel I have stayed in. The warmth of the staff, the extraordinary food, and waking up knowing Nairobi National Park is minutes away. It is a truly once-in-a-lifetime experience.
+              </p>
+              <footer class="testimonial__author">— Fatima A., Dubai</footer>
+              <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            </div>
           </blockquote>
 
           <blockquote class="testimonial">
-            <p class="testimonial__text">
-              The Cinder's tasting menu was the highlight of our anniversary trip. Each course felt deliberate, warm, and completely unforgettable. We've already booked to return next spring.
-            </p>
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-            <footer class="testimonial__author">— James &amp; Priya T., London</footer>
+            <div class="testimonial__frame">
+              <p class="testimonial__text">
+                The Cinder's tasting menu was the highlight of our anniversary trip. Each course felt deliberate, warm, and completely unforgettable. We've already booked to return next spring.
+              </p>
+              <footer class="testimonial__author">— James &amp; Priya T., London</footer>
+              <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            </div>
           </blockquote>
 
           <blockquote class="testimonial">
-            <p class="testimonial__text">
-              The atmosphere is genuinely intimate, like being a guest in someone's extraordinarily beautiful home. The staff remembered every preference without being asked twice.
-            </p>
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-            <footer class="testimonial__author">— Amara S., Lagos</footer>
+            <div class="testimonial__frame">
+              <p class="testimonial__text">
+                The atmosphere is genuinely intimate, like being a guest in someone's extraordinarily beautiful home. The staff remembered every preference without being asked twice.
+              </p>
+              <footer class="testimonial__author">— Amara S., Lagos</footer>
+              <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            </div>
           </blockquote>
 
           <blockquote class="testimonial">
-            <p class="testimonial__text">
-              We celebrated our anniversary at Safari Ember and could not have chosen better. The Ember Penthouse was breathtaking, the service impeccable, and the Ash Bar at sunset is something we will never forget.
-            </p>
-            <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-            <footer class="testimonial__author">— David &amp; Claire M., Nairobi</footer>
+            <div class="testimonial__frame">
+              <p class="testimonial__text">
+                We celebrated our anniversary at Safari Ember and could not have chosen better. The Ember Penthouse was breathtaking, the service impeccable, and the Ash Bar at sunset is something we will never forget.
+              </p>
+              <footer class="testimonial__author">— David &amp; Claire M., Nairobi</footer>
+              <div class="testimonial__stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            </div>
           </blockquote>
 
         </div>
@@ -2260,7 +2334,14 @@
     <!-- ============================================================
          BOOKING / AVAILABILITY BAR
     ============================================================ -->
-    <section class="booking" id="booking" aria-labelledby="booking-heading">
+    <section class="booking booking--scenic" id="booking" aria-labelledby="booking-heading" data-band>
+      <!-- The landscape behind the dates: the decision is "I want to be there", then the form.
+           Decorative (alt=""): the heading says what the section is. Placeholder photo. -->
+      <img class="booking__bg"
+           src="band-landscape-1600.webp"
+           srcset="band-landscape-900.webp 900w, band-landscape-1600.webp 1600w"
+           sizes="100vw" width="1600" height="900" alt=""
+           loading="lazy" decoding="async" />
       <span class="label" style="display:block;text-align:center">Availability</span>
       <h2 class="section-title" id="booking-heading">Reserve Your <em>Stay</em></h2>
       <div class="rule" style="margin-bottom:0"></div>
@@ -2293,6 +2374,71 @@
     </section>
 
     <!-- ============================================================
+         LOCATION & CONTACT
+    ============================================================ -->
+    <section class="section section--deep" id="contact" aria-labelledby="contact-heading">
+      <div class="section__header">
+        <span class="label">Find Us</span>
+        <h2 class="section-title" id="contact-heading">Location &amp; <em>Contact</em></h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="contact__layout">
+
+        <!-- The map loads by itself as the visitor scrolls near it (loading="lazy"), so it costs
+             nothing for people who never reach this part of the page. -->
+        <div class="contact__map">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4426.294020334565!2d37.0629147386458!3d-1.0093891984401901!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4c43e23bacd3%3A0x253ab50e30ae9ea5!2sBogoria%20Avenue!5e0!3m2!1sen!2ske!4v1780338140219!5m2!1sen!2ske"
+            title="Map: Safari Ember, Bogoria Avenue, Thika"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen></iframe>
+        </div>
+
+        <address class="contact__info" style="font-style:normal">
+          <div>
+            <span class="contact__item-label">Address</span>
+            <p class="contact__item-val">13 Bogoria Lane, Thika</p>
+          </div>
+          <div>
+            <span class="contact__item-label">Reservations</span>
+            <a href="tel:+254705439631" class="contact__item-val">+254 705 439 631</a>
+          </div>
+          <div>
+            <span class="contact__item-label">Email</span>
+            <a href="mailto:stay@safariember.com" class="contact__item-val">stay@safariember.com</a>
+          </div>
+          <div>
+            <span class="contact__item-label">Connect</span>
+            <!-- Icon links: the visible part is the icon; aria-label gives each its name for
+                 screen readers, and title shows it on hover. Icons are decorative (aria-hidden). -->
+            <ul class="contact__direct" aria-label="Contact and social links">
+              <li><a href="tel:+254705439631" aria-label="Call us" title="Call">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a></li>
+              <li><a href="https://wa.me/254705439631" rel="noopener" aria-label="Message us on WhatsApp" title="WhatsApp">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              </a></li>
+              <li><a href="mailto:stay@safariember.com" aria-label="Email us" title="Email">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="m3 6 9 7 9-7"/></svg>
+              </a></li>
+              <!-- Social profiles: placeholder addresses (#). Put the lodge's real profile links here. -->
+              <li><a href="#" aria-label="Safari Ember on Instagram" title="Instagram">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg>
+              </a></li>
+              <li><a href="#" aria-label="Safari Ember on Facebook" title="Facebook">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg>
+              </a></li>
+            </ul>
+          </div>
+          </div>
+        </address>
+
+      </div>
+    </section>
+
+    <!-- ============================================================
          CONTACT INQUIRY FORM
          Uses Netlify Forms for zero-backend form handling.
          Just add netlify attribute when you deploy to Netlify.
@@ -2312,143 +2458,58 @@
           netlify-honeypot="bot-field"
         Netlify will handle form submissions automatically — no backend needed.
       -->
-      <form
-        class="form"
-        id="inquiryForm"
-        name="contact"
-        method="POST"
-        action="/thank-you.html"
-        netlify
-        netlify-honeypot="bot-field"
-        novalidate
-        aria-label="Contact inquiry form"
-      >
-        <!-- Honeypot field: hidden from humans, catches spam bots -->
-        <p style="display:none">
-          <label>Don't fill this out: <input name="bot-field" /></label>
-        </p>
+      <div class="enquire">
+        <!-- A named person to write to, centred under the heading. Placeholder portrait and name:
+             replace before launch. -->
+        <figure class="person person--enquire">
+          <img class="person__face" src="concierge.webp" alt="Ophelia Wangari, Guest Relations at Safari Ember"
+               width="326" height="408" loading="lazy" decoding="async" />
+          <blockquote>
+            <p class="person__text">&ldquo;Tell me what you&rsquo;re planning, and I&rsquo;ll take care of the rest.&rdquo;</p>
+          </blockquote>
+          <figcaption class="person__who">Ophelia Wangari &middot; Guest Relations</figcaption>
+        </figure>
 
-        <div class="form__row">
-          <div class="form__group">
-            <label class="form__label" for="first-name">First Name</label>
-            <input class="form__input" type="text" id="first-name" name="first-name"
-                   placeholder="James" required aria-required="true" autocomplete="given-name" />
-          </div>
-          <div class="form__group">
-            <label class="form__label" for="last-name">Last Name</label>
-            <input class="form__input" type="text" id="last-name" name="last-name"
-                   placeholder="Kanini" required aria-required="true" autocomplete="family-name" />
-          </div>
-        </div>
+        <form
+          class="form"
+          id="inquiryForm"
+          name="contact"
+          method="POST"
+          action="/thank-you.html"
+          netlify
+          netlify-honeypot="bot-field"
+          novalidate
+          aria-label="Contact inquiry form"
+        >
+          <!-- Honeypot field: hidden from humans, catches spam bots -->
+          <p style="display:none">
+            <label>Don't fill this out: <input name="bot-field" /></label>
+          </p>
 
-        <div class="form__group">
-          <label class="form__label" for="email">Email Address</label>
-          <input class="form__input" type="email" id="email" name="email"
-                 placeholder="james@example.com" required aria-required="true" autocomplete="email" />
-        </div>
-
-        <div class="form__group">
-          <label class="form__label" for="subject">Subject</label>
-          <input class="form__input" type="text" id="subject" name="subject"
-                 placeholder="Room enquiry, special occasion, dining reservation…" />
-        </div>
-
-        <div class="form__group">
-          <label class="form__label" for="message">Message</label>
-          <textarea class="form__textarea" id="message" name="message"
-                    placeholder="Tell us how we can make your stay extraordinary…"
-                    required aria-required="true"></textarea>
-        </div>
-
-        <div class="form__submit">
-          <button type="submit" class="btn-primary">Send Enquiry</button>
-        </div>
-
-      </form>
-    </section>
-
-    <!-- ============================================================
-         LOCATION & CONTACT
-    ============================================================ -->
-    <section class="section section--deep" id="contact" aria-labelledby="contact-heading">
-      <div class="section__header">
-        <span class="label">Find Us</span>
-        <h2 class="section-title" id="contact-heading">Location &amp; <em>Contact</em></h2>
-        <div class="rule"></div>
-      </div>
-
-      <div class="contact__layout">
-
-        <!--
-          MAP PLACEHOLDER
-          To embed a real Google Map, replace this entire div with:
-          <iframe
-            src="https://www.google.com/maps/embed?pb=YOUR_EMBED_CODE"
-            width="100%"
-            height="360"
-            style="border:0"
-            allowfullscreen=""
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Safari Ember location map"
-          ></iframe>
-        -->
-        <div class="contact__map" style="padding:0;overflow:hidden;">
-          <button type="button" class="contact__map-facade" id="mapFacade"
-            data-map-src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4426.294020334565!2d37.0629147386458!3d-1.0093891984401901!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4c43e23bacd3%3A0x253ab50e30ae9ea5!2sBogoria%20Avenue!5e0!3m2!1sen!2ske!4v1780338140219!5m2!1sen!2ske"
-            aria-label="Load interactive map of Safari Ember, Bogoria Avenue, Thika">
-            <span class="contact__map-grid" aria-hidden="true">
-              <span class="contact__map-gridline contact__map-gridline--h" style="top:30%;"></span>
-              <span class="contact__map-gridline contact__map-gridline--h" style="top:58%;"></span>
-              <span class="contact__map-gridline contact__map-gridline--h" style="top:82%;"></span>
-              <span class="contact__map-gridline contact__map-gridline--v" style="left:28%;"></span>
-              <span class="contact__map-gridline contact__map-gridline--v" style="left:62%;"></span>
-              <span class="contact__map-gridline contact__map-gridline--v" style="left:84%;"></span>
-            </span>
-            <span class="contact__map-pin">
-              <span class="contact__map-dot" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 21s-6-5.686-6-10a6 6 0 0 1 12 0c0 4.314-6 10-6 10z"/>
-                  <circle cx="12" cy="11" r="2"/>
-                </svg>
-              </span>
-              <span class="contact__map-label">Bogoria Avenue &middot; Thika</span>
-              <span class="contact__map-cta">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>
-                </svg>
-                View map
-              </span>
-            </span>
-          </button>
-        </div>
-
-        <address class="contact__info" style="font-style:normal">
-          <div>
-            <span class="contact__item-label">Address</span>
-            <p class="contact__item-val">13 Bogoria Lane, Thika</p>
-          </div>
-          <div>
-            <span class="contact__item-label">Reservations</span>
-            <a href="tel:+254705439631" class="contact__item-val">+254 705 439 631</a>
-          </div>
-          <div>
-            <span class="contact__item-label">Email</span>
-            <a href="mailto:stay@safariember.com" class="contact__item-val">stay@safariember.com</a>
-          </div>
-          <div>
-            <span class="contact__item-label">Concierge</span>
-            <p class="contact__item-val">Available 24 hours, 7 days a week</p>
-          </div>
-          <div>
-            <span class="contact__item-label">Follow</span>
-            <div style="display:flex;gap:16px;margin-top:4px">
-              <a href="#" class="contact__item-val" style="font-size: 15px" aria-label="Instagram">Instagram</a>
-              <a href="#" class="contact__item-val" style="font-size: 15px" aria-label="Facebook">Facebook</a>
+          <!-- Three fields only. The placeholders say what each is; the labels are there for
+               screen readers (visually hidden), because a placeholder alone disappears as you type. -->
+          <div class="form__row">
+            <div class="form__group">
+              <label class="visually-hidden" for="name">Name</label>
+              <input class="form__input" type="text" id="name" name="name"
+                     placeholder="Your name" required aria-required="true" autocomplete="name" />
+            </div>
+            <div class="form__group">
+              <label class="visually-hidden" for="email">Email address</label>
+              <input class="form__input" type="email" id="email" name="email"
+                     placeholder="Email address" required aria-required="true" autocomplete="email" />
             </div>
           </div>
-        </address>
 
+          <div class="form__group">
+            <label class="visually-hidden" for="enquiry">Your enquiry</label>
+            <textarea class="form__textarea" id="enquiry" name="enquiry"
+                      placeholder="Tell us how we can make your stay extraordinary…"
+                      required aria-required="true"></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary form__send">Send Enquiry</button>
+        </form>
       </div>
     </section>
 
@@ -2458,13 +2519,13 @@
        FOOTER
   ============================================================ -->
   <footer class="footer" role="contentinfo">
-    <div class="footer__logo" style="display:flex;align-items:center;gap:8px;">
-      <img src="sember.png" alt="Safari Ember logo" style="height:36px;width:auto;object-fit:contain;" />
-    </div>
     <p class="footer__copy">&copy; 2026 Safari Ember. All rights reserved.</p>
+    <a class="footer__logo" href="#" aria-label="Safari Ember, back to top">
+      <img src="sember-108.webp" alt="" width="36" height="36" />
+    </a>
     <ul class="footer__links">
-      <li><a href="#">Privacy Policy</a></li>
-      <li><a href="#">Terms of Use</a></li>
+      <li><a href="privacy.html">Privacy Policy</a></li>
+      <li><a href="terms.html">Terms of Use</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
   </footer>
@@ -2634,7 +2695,7 @@
     })();
 
     /* Hero logo: it fades in over the black opening (CSS, from 0.3 s, fully visible at 1.2 s), stays
-       big and centred, then settles at --settle-at (2.0 s; CSS does the move): 2 s from load in all.
+       big and centred, then settles at --settle-at (1.6 s; CSS does the move): 1.6 s from load in all.
        With "reduce motion" on, there's no opening and the hero starts settled. */
     (function () {
       var hero = document.querySelector('.hero');
@@ -2737,6 +2798,18 @@
   </script>
 
   <script>
+    (function() {
+      // The booking landscape: plays its arrival once when a quarter is on screen, then stays still.
+      var bands = document.querySelectorAll('[data-band]');
+      if (!bands.length) return;
+      if (!('IntersectionObserver' in window)) { bands.forEach(function(b) { b.classList.add('is-in'); }); return; }
+      var bandObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) { entry.target.classList.add('is-in'); bandObs.unobserve(entry.target); }
+        });
+      }, { threshold: 0.25 });
+      bands.forEach(function(b) { bandObs.observe(b); });
+    })();
     (function() {
       // Desktop reveal for the room cards.
       // Mobile uses the carousel script instead, so only run above the breakpoint.
@@ -3069,25 +3142,6 @@
           ticking = true;
         }
       }, { passive: true });
-    })();
-  </script>
-  <script>
-    (function() {
-      var facade = document.getElementById('mapFacade');
-      if (!facade) return;
-      facade.addEventListener('click', function() {
-        var src = facade.getAttribute('data-map-src');
-        var iframe = document.createElement('iframe');
-        iframe.src = src;
-        iframe.width = '100%';
-        iframe.height = '100%';
-        iframe.style.cssText = 'border:0;display:block;min-height:360px;';
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('loading', 'lazy');
-        iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-        iframe.setAttribute('title', 'Safari Ember location — Bogoria Avenue, Thika');
-        facade.replaceWith(iframe);
-      });
     })();
   </script>
   <script>
