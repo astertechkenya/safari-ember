@@ -411,12 +411,12 @@
     /* Once settled, only the elephant stays: the "SAFARI EMBER" wordmark fades out as the logo
        shrinks. Elper.svg is one image, so CSS can't reach the wordmark inside it. Instead a mask
        covers the image: fully visible above the line at --mark-end, and below it at --wordmark
-       strength (1 = shown, 0 = gone). Measured in Elper.svg: the elephant ends 57% of the way
-       down, the wordmark starts at 68%, so the line sits in the gap at 62%.
+       strength (1 = shown, 0 = gone). Measured in Elper.svg: the elephant ends 59% of the way
+       down, the wordmark starts at 67%, so the line sits in the gap at 63%.
        @property lets the browser animate --wordmark smoothly; in a browser without it the
        wordmark just disappears at the settle instead of fading. */
     @property --wordmark { syntax: '<number>'; inherits: false; initial-value: 1; }
-    .hero { --mark-end: 0.62; }
+    .hero { --mark-end: 0.63; }
     .hero__logo-lockup img {
       --wordmark: 1;
       -webkit-mask-image: linear-gradient(#000 0 calc(var(--mark-end) * 100%), rgb(0 0 0 / var(--wordmark)) 0);
