@@ -88,19 +88,28 @@ describe('logs', () => {
 });
 
 describe('settings', () => {
-  const base = { DATABASE_URL: 'postgresql://ember_app:x@db.example/ember?sslmode=verify-full', SESSION_SECRET: 'z'.repeat(40) };
+  const base = { DATABASE_URL: 'postgresql://ember_app:x@db.example/ember_prod?sslmode=verify-full', SESSION_SECRET: 'z'.repeat(40) };
   it('refuse to start without a session secret, or with a short one', () => {
     expect(() => loadConfig({ DATABASE_URL: base.DATABASE_URL })).toThrow(/SESSION_SECRET/);
     expect(() => loadConfig({ ...base, SESSION_SECRET: 'short' })).toThrow(/at least 32/);
   });
   it('refuse a production database login that could drop tables, or an unverified connection', () => {
     expect(() => loadConfig({ ...base, NODE_ENV: 'production' })).not.toThrow();
-    expect(() => loadConfig({ ...base, NODE_ENV: 'production', DATABASE_URL: 'postgresql://neondb_owner:x@db.example/ember?sslmode=verify-full' })).toThrow(/limited app login/);
-    expect(() => loadConfig({ ...base, NODE_ENV: 'production', DATABASE_URL: 'postgresql://ember_app:x@db.example/ember?sslmode=require' })).toThrow(/verify-full/);
+    expect(() => loadConfig({ ...base, NODE_ENV: 'production', DATABASE_URL: 'postgresql://neondb_owner:x@db.example/ember_prod?sslmode=verify-full' })).toThrow(/limited app login/);
+    expect(() => loadConfig({ ...base, NODE_ENV: 'production', DATABASE_URL: 'postgresql://ember_app:x@db.example/ember_prod?sslmode=require' })).toThrow(/verify-full/);
   });
   it('check the booking rules are sensible numbers', () => {
     expect(() => loadConfig({ ...base, DEPOSIT_PERCENT: '0' })).toThrow(/DEPOSIT_PERCENT/);
     expect(() => loadConfig({ ...base, DEPOSIT_PERCENT: '' })).not.toThrow();     // empty = default
     expect(loadConfig(base).DEPOSIT_PERCENT).toBe(30);
+  });
+
+  it('only connects to Safari Ember databases, and the tests only to a _test one', () => {
+    const at = (name, env = {}) => () => loadConfig({ ...base, DATABASE_URL: `postgresql://u:x@db.example/${name}?sslmode=require`, ...env });
+    expect(at('nura_prod')).toThrow(/"nura_prod".*ember_/);
+    expect(at('neondb')).toThrow(/"neondb"/);
+    expect(at('ember_dev')).not.toThrow();
+    expect(at('ember_dev', { NODE_ENV: 'test' })).toThrow(/isn't a _test database/);
+    expect(at('ember_test', { NODE_ENV: 'test' })).not.toThrow();
   });
 });

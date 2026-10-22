@@ -4,6 +4,7 @@
 // server refuses to start and says exactly what is wrong. That is much better than
 // starting "fine" and failing halfway through a booking because a setting was never made.
 import { z } from 'zod';
+import { readFileSync } from 'node:fs';
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -84,6 +85,21 @@ function load(env) {
     throw new Error(`Invalid environment configuration:\n${problems}\nSee api/.env.example.`);
   }
   const c = parsed.data;
+
+  // WHICH database. Every Safari Ember database is named ember_… (ember_dev, ember_test, later
+  // ember_prod). Anything else is another project's, most often because a terminal window still
+  // holds a DATABASE_URL set for it (a variable set in the window beats .env). Refusing here
+  // stops the API, migrations, the seed and the tests, before a single query.
+  const dbName = decodeURIComponent(new URL(c.DATABASE_URL).pathname.slice(1));
+  if (!/^ember_[a-z0-9_]+$/.test(dbName)) {
+    throw new Error(`Invalid environment configuration:\n  - DATABASE_URL: points at a database called "${dbName}", `
+      + 'but Safari Ember\'s are named ember_… (ember_dev, ember_test). If .env is right, this terminal still '
+      + 'has a DATABASE_URL from something else: close it and open a new window (check with: $env:DATABASE_URL).');
+  }
+  // The tests wipe their database at the start of every run: only ever one named …_test.
+  if (c.NODE_ENV === 'test' && !dbName.endsWith('_test')) {
+    throw new Error(`Invalid environment configuration:\n  - DATABASE_URL: the tests wipe their database, and "${dbName}" isn't a _test database`);
+  }
   if (c.NODE_ENV === 'production') {
     const db = new URL(c.DATABASE_URL);
     const rules = [];
@@ -107,5 +123,28 @@ function load(env) {
   return Object.freeze({ ...c, isProd: c.NODE_ENV === 'production', isTest: c.NODE_ENV === 'test', mpesaEnabled, cardEnabled });
 }
 
+/**
+ * On your laptop only: two things in api/.env that cause silent surprises. Warns, never stops.
+ *   - a key written twice: the LAST one wins, so an empty copy further down switches a feature off
+ *   - DATABASE_URL set in the terminal too: the terminal's wins and .env's is ignored
+ * Names only, never values.
+ */
+function checkEnvFile(env) {
+  let text;
+  try { text = readFileSync('.env', 'utf8'); } catch { return; }      // no .env: nothing to check
+  const seen = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (m) seen.set(m[1], { count: (seen.get(m[1])?.count ?? 0) + 1, value: m[2].trim().replace(/^(['"])(.*)\1$/, '$2') });
+  }
+  const twice = [...seen].filter(([, v]) => v.count > 1).map(([k]) => k);
+  if (twice.length) console.warn(`[config] api/.env sets these more than once (the last one wins): ${twice.join(', ')}`);
+  const fileDb = seen.get('DATABASE_URL')?.value;
+  if (fileDb && env.DATABASE_URL && env.DATABASE_URL !== fileDb) {
+    console.warn('[config] DATABASE_URL is set in this terminal, so the one in api/.env is ignored. Open a new window to use .env.');
+  }
+}
+
+if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') checkEnvFile(process.env);
 export const config = load(process.env);
 export { load as loadConfig }; // exported for tests
