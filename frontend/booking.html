@@ -26,6 +26,8 @@
       --cream: #f5e8d0; --warm-mid: #c4a882; --warm-dim: #a99379;
       --line: rgba(232, 149, 74, .35); --line-soft: rgba(200, 120, 42, .18);
       --ok: #9fd3a0; --bad: #f0a090;
+      /* Fields: the homepage's sand, dark-brown labels and dark text (as on Get in Touch) */
+      --field: #dcd2c3; --field-label: #522b0a; --field-ink: #1c1610; --field-bad: #a3271b;
       --serif: 'Playfair Display', Georgia, serif;
       --accent: 'Cormorant Garamond', Georgia, serif;
       --sans: 'Jost', system-ui, sans-serif;
@@ -37,6 +39,10 @@
     button, input, select, textarea { font: inherit; color: inherit; }
     h1, h2, h3 { font-weight: 400; margin: 0; }
     :focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 3px; }
+    /* <main> takes focus only so screen readers announce each new step (focusMain). It isn't
+       something you click or type into, so it needs no visible outline, which otherwise drew a
+       bright frame around the whole page after every update. */
+    main:focus, main:focus-visible { outline: none; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .num { font-variant-numeric: tabular-nums; }
     [hidden] { display: none !important; }
@@ -46,11 +52,9 @@
     .rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 22px; }
 
     /* ── Top bar ─────────────────────────────────────────────────────────── */
-    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--line-soft); }
-    .top__brand { display: flex; align-items: center; gap: 10px; color: var(--cream); text-decoration: none; font-family: var(--serif); font-size: 18px; }
-    .top__brand img { width: 34px; height: 34px; }
-    .top__back { color: var(--warm-mid); text-decoration: none; font-size: 14px; }
-    .top__back:hover { color: var(--cream); }
+    .top { display: flex; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line-soft); }
+    .top__brand { display: inline-flex; padding: 4px; margin: -4px; }   /* a slightly larger tap target */
+    .top__brand img { display: block; width: 34px; height: 34px; }
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 96px; }
     .head { text-align: center; margin-bottom: 32px; }
@@ -67,13 +71,21 @@
     .steps [aria-current="step"] b { border-color: var(--ember); color: var(--ember-glow); }
     .steps .done b { background: var(--ember); border-color: var(--ember); color: #120c06; }
 
-    /* ── Search bar (same as the homepage's) ─────────────────────────────── */
-    .search { display: grid; grid-template-columns: 1fr 1fr 1fr auto; border: 1px solid var(--line); max-width: 900px; margin: 0 auto; }
-    .search__field { padding: 16px 22px; border-right: 1px solid var(--line-soft); }
-    .search__field:focus-within { background: rgba(200, 120, 42, .06); }
-    .search__field label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); margin-bottom: 4px; }
-    .search__field input, .search__field select { background: transparent; border: 0; width: 100%; color: var(--cream); font-family: var(--accent); font-size: 18px; color-scheme: dark; outline: none; }
-    .search__field select option { background: var(--black-mid); }
+    /* ── Search bar (same as the homepage's: sand, dark-brown labels, black edge when in use) ── */
+    /* minmax(0, 1fr): let the columns shrink below a date field's natural width, so nothing
+       can push the bar wider than its box */
+    .search { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; background: var(--field); border: 1px solid var(--field); max-width: 900px; margin: 0 auto; }
+    .search__field { padding: 16px 22px; border-right: 1px solid rgba(28, 22, 16, .14); }
+    .search__field:focus-within { background: rgba(255, 250, 242, .45); box-shadow: inset 0 0 0 2px var(--black); }
+    .search__field label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--field-label); margin-bottom: 4px; }
+    .search__field input, .search__field select { background: transparent; border: 0; width: 100%; color: var(--field-ink); font-family: var(--accent); font-size: 18px; color-scheme: light; outline: none; }
+    .search__field select option { background: #fffaf2; color: var(--field-ink); }
+    /* iPhone Safari only (-webkit-touch-callout exists only there): an empty date field collapses to
+       no height and the date is centred. Give it a full line and line the date up with the label. */
+    @supports (-webkit-touch-callout: none) {
+      .search__field input[type="date"] { -webkit-appearance: none; display: block; min-height: 1.6em; text-align: left; }
+      .search__field input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+    }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 28px; border: 1px solid var(--ember); background: var(--ember); color: #120c06;
            font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: background .25s ease; }
     .btn:hover { background: var(--ember-glow); border-color: var(--ember-glow); }
@@ -113,14 +125,26 @@
     .details { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: start; margin-top: 8px; }
     .form { display: grid; gap: 20px; }
     .form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .field { display: grid; gap: 6px; }
-    .field label { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
-    .field label span { color: var(--warm-dim); letter-spacing: 1px; text-transform: none; font-weight: 300; }
-    .input { width: 100%; min-height: 48px; padding: 11px 14px; background: transparent; border: 1px solid var(--line-soft); color: var(--cream); font-size: 16px; }
-    .input:focus { border-color: var(--ember-glow); outline: none; box-shadow: 0 0 0 3px rgba(232, 149, 74, .2); }
-    .input[aria-invalid="true"] { border-color: var(--bad); }
-    textarea.input { min-height: 96px; resize: vertical; }
-    .hint { font-size: 13px; color: var(--warm-dim); margin: 0; }
+    /* Fields, like the homepage booking bar: each label sits inside its sand box, in dark brown,
+       above what's typed. The label is still a real <label> (positioned, not replaced), so it stays
+       linked to its input for screen readers and clicking it still focuses the box. */
+    .field { display: grid; gap: 6px; position: relative; }
+    .field > label { position: absolute; top: 9px; left: 15px; z-index: 1; pointer-events: none;
+                     font-size: 11px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; color: var(--field-label); }
+    .field > label span { color: #5e4a38; letter-spacing: 1px; text-transform: none; font-weight: 400; }   /* 5.6:1 on the sand */
+    .input { width: 100%; min-height: 62px; padding: 29px 14px 9px; background: var(--field); border: 1px solid var(--field);
+             color: var(--field-ink); font-family: var(--sans); font-weight: 400; font-size: 16px; }
+    .input::placeholder { color: #5e4a38; opacity: 1; }
+    .input:focus { border-color: var(--black); outline: none; box-shadow: inset 0 0 0 1px var(--black); }
+    /* A field with a problem: a dark red edge (the light error red is for text on the black) */
+    .input[aria-invalid="true"] { border-color: var(--field-bad); box-shadow: inset 0 0 0 1px var(--field-bad); }
+    /* Browser autofill paints its own pale blue: keep the sand and the dark text instead */
+    .input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px var(--field) inset; -webkit-text-fill-color: var(--field-ink); caret-color: var(--field-ink); }
+    textarea.input { min-height: 104px; padding-top: 33px; resize: vertical; }
+    /* The M-Pesa number's label is too long to fit inside its box, so there it stays above */
+    .pay__way .field > label { position: static; font-size: 12px; letter-spacing: 3px; color: var(--ember); }
+    .pay__way .field > label span { color: var(--warm-dim); }
+    .pay__way .input { min-height: 48px; padding: 11px 14px; }
     .field .error { font-size: 14px; margin: 0; }
     .form__foot { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
     .fine { font-size: 13px; color: var(--warm-dim); margin: 0; }
@@ -135,7 +159,9 @@
     .linkbtn { background: none; border: 0; padding: 0; color: var(--ember-glow); cursor: pointer; text-decoration: underline; font-size: 14px; }
 
     /* ── Step 3: the hold / the guest's booking ──────────────────────────── */
-    .hold { max-width: 720px; margin: 0 auto; border: 1px solid var(--line); padding: 40px 36px; text-align: center; }
+    .hold { max-width: 720px; margin: 0 auto; border: 1px solid var(--line); padding: 40px 36px; text-align: center; transition: border-color .6s ease; }
+    /* Confirmed (or stayed): the card's frame turns the same green as the CONFIRMED badge */
+    .hold--ok { border-color: var(--ok); }
     .hold .rule { margin: 18px auto 24px; }
     .hold h2 { font-family: var(--serif); font-size: clamp(26px, 3.4vw, 34px); line-height: 1.25; }
     .hold h2 em { font-style: italic; color: var(--ember); }
@@ -184,10 +210,13 @@
       .summary { position: static; order: -1; }
     }
     @media (max-width: 700px) {
-      .search { grid-template-columns: 1fr 1fr; }
-      .search__field:nth-child(2) { border-right: 0; }
-      .search__field:nth-child(3) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line-soft); }
-      .search .btn { grid-column: 1 / -1; }
+      /* Phones: the homepage's layout. Each field gets a full-width row (side by side, the dates
+         were too cramped for their calendar icons), and the button spans the bottom. */
+      .search { grid-template-columns: minmax(0, 1fr); }
+      .search__field { padding: 18px 24px; border-right: 0; border-bottom: 1px solid rgba(28, 22, 16, .14); }
+      .search__field label { margin-bottom: 6px; }
+      .search__field input, .search__field select { font-size: 17px; }
+      .search .btn { width: 100%; min-height: 56px; }
       .form__row { grid-template-columns: 1fr; }
       .steps li { padding: 0 6px; font-size: 11px; letter-spacing: 1px; }
       .steps li + li::before { width: 14px; margin-right: 6px; }
@@ -202,8 +231,8 @@
 </head>
 <body>
   <header class="top">
-    <a class="top__brand" href="index.html"><img src="mark.webp" alt="" />Safari Ember</a>
-    <a class="top__back" href="index.html#booking">← Back to the site</a>
+    <!-- Just the mark, linking home. No visible text, so aria-label names the link for screen readers. -->
+    <a class="top__brand" href="index.html" aria-label="Safari Ember home"><img src="mark.webp" alt="" /></a>
   </header>
 
   <main class="wrap" id="main" tabindex="-1">
@@ -241,10 +270,10 @@
             <div class="field"><label for="firstName">First name</label><input class="input" id="firstName" name="firstName" autocomplete="given-name" maxlength="60" required aria-describedby="firstName-err" /><p class="error" id="firstName-err" hidden></p></div>
             <div class="field"><label for="lastName">Last name</label><input class="input" id="lastName" name="lastName" autocomplete="family-name" maxlength="60" required aria-describedby="lastName-err" /><p class="error" id="lastName-err" hidden></p></div>
           </div>
-          <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="email-hint email-err" />
-            <p class="hint" id="email-hint">Your confirmation goes here.</p><p class="error" id="email-err" hidden></p></div>
-          <div class="field"><label for="phone">Mobile number</label><input class="input" id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" required aria-describedby="phone-hint phone-err" />
-            <p class="hint" id="phone-hint">Kenyan (0712 345 678) or international with + and the country code.</p><p class="error" id="phone-err" hidden></p></div>
+          <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="email-err" />
+            <p class="error" id="email-err" hidden></p></div>
+          <div class="field"><label for="phone">Mobile number</label><input class="input" id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" required aria-describedby="phone-err" />
+            <p class="error" id="phone-err" hidden></p></div>
           <div class="field"><label for="requests">Special requests <span>(optional)</span></label><textarea class="input" id="requests" name="requests" maxlength="1000" aria-describedby="requests-err"></textarea><p class="error" id="requests-err" hidden></p></div>
           <p class="error" id="formError" role="alert" hidden></p>
           <div class="form__foot">
@@ -581,7 +610,8 @@
       var again = 'booking.html?' + new URLSearchParams({ checkIn: b.checkIn, checkOut: b.checkOut, guests: b.guests });
       var p = b.payment;
       var paid = p && p.status === 'PAID';
-      $('step-hold').innerHTML = '<div class="hold">' +
+      var ok = b.status === 'CONFIRMED' || b.status === 'COMPLETED';
+      $('step-hold').innerHTML = '<div class="hold' + (ok ? ' hold--ok' : '') + '">' +
         '<span class="status status--' + esc(b.status) + '">' + (STATUS[b.status] || esc(b.status)) + '</span>' +
         '<div class="rule" role="presentation"></div>' +
         '<h2>' + (held ? 'Your room is <em>held</em>, ' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +

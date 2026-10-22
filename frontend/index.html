@@ -182,9 +182,7 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      /* One transition list: a second "transition:" line would replace this one, not add to it
-         (that's why the hide-on-scroll used to snap instead of slide). */
-      transition: transform 0.3s ease, background var(--transition);
+      transition: background var(--transition);
     }
 
     .nav__logo {
@@ -1412,73 +1410,69 @@
     /* ============================================================
        MOBILE NAVIGATION MENU (off-canvas)
     ============================================================ */
+    /* Menu (Oct 2026): a full-screen panel that slides in from the right. It's a dialog: opening it moves focus inside
+       and keeps it there, Escape or × shuts it, and focus returns to the menu button.
+       visibility (not display) hides it, so the slide can play both ways; hidden, it's also out
+       of the keyboard's reach. */
     .mobile-menu {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(8,7,5,0.85);
-      backdrop-filter: blur(8px);
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
+      position: fixed; inset: 0; z-index: 200;
+      visibility: hidden; pointer-events: none;
+      transition: visibility 0s linear .45s;              /* stay visible until the slide-out ends */
     }
-
-    .mobile-menu.is-open {
-      display: flex;
+    .mobile-menu.is-open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+    .mobile-menu__panel {
+      position: absolute; inset: 0;
+      background: var(--black);
+      display: flex; flex-direction: column;
+      padding: 14px 24px 28px;
+      overflow-y: auto;                                   /* short screens: scroll rather than clip */
+      transform: translateX(100%);                       /* waits off the right edge */
+      transition: transform .45s cubic-bezier(.22, .61, .36, 1);
     }
-
-    .mobile-menu__links {
-      border: 1px solid rgba(200,120,42,0.8);
-      padding: 48px 80px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 32px;
+    .mobile-menu.is-open .mobile-menu__panel { transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .mobile-menu, .mobile-menu__panel { transition: none; }
     }
-    .mobile-menu a {
-      font-family: var(--font-serif);
-      font-size: 28px;
-      font-weight: 400;
-      font-style: normal;
-      color: var(--cream);
-      letter-spacing: 2px;
-      transition: color var(--transition);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+    /* Wider screens: the links, button and icons sit in a centred 640px column */
+    @media (min-width: 701px) {
+      .mobile-menu__panel { padding: 18px 40px 32px; }
+      .mobile-menu__links, .mobile-menu__foot { max-width: 640px; margin-left: auto; margin-right: auto; }
     }
-    .mobile-menu a::after {
-      content: '';
-      display: block;
-      width: 24px;
-      height: 1px;
-      background: var(--ember);
-      opacity: 0.6;
-      transition: width var(--transition), opacity var(--transition);
-    }
-    .mobile-menu a:hover::after {
-      width: 48px;
-      opacity: 1;
-    }
-
-    .mobile-menu a:hover {
-      color: var(--ember);
-    }
-
+    .mobile-menu__top { display: flex; justify-content: flex-end; align-items: center; }   /* just the ×, on the right */
     .mobile-menu__close {
-      position: absolute;
-      top: 24px;
-      right: 40px;
-      background: none;
-      border: none;
-      color: var(--warm-mid);
-      font-size: 28px;
-      cursor: pointer;
-      line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; margin-right: -10px;     /* a full-size tap target, lined up with the edge */
+      background: none; border: 0; cursor: pointer;
+      font-size: 32px; line-height: 1; color: var(--warm-mid);
     }
+    .mobile-menu__close:hover { color: var(--cream); }
+    .mobile-menu__links {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      gap: 14px; width: 100%; padding: 28px 0;
+    }
+    .mobile-menu__links a {
+      display: flex; align-items: baseline; gap: 16px;
+      font-family: var(--font-serif); font-size: 28px; line-height: 1.15; color: var(--cream);
+      border-bottom: 1px solid rgba(200,120,42,.18);
+      padding-bottom: 14px;
+      transition: color var(--transition);
+    }
+    @media (min-width: 701px) { .mobile-menu__links a { font-size: 32px; } }
+    .mobile-menu__links a small { min-width: 24px; font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; color: var(--ember); }
+    .mobile-menu__links a:hover { color: var(--ember-glow); }
+    .mobile-menu__foot { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    .mobile-menu__reserve {
+      display: flex; justify-content: center; align-items: center; height: 56px;
+      background: var(--ember); color: var(--black);
+      font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase;
+      transition: background var(--transition);
+    }
+    .mobile-menu__reserve:hover { background: var(--ember-glow); }
+    /* The contact icons, spread evenly across the width under the button */
+    .mobile-menu__icons { display: flex; justify-content: space-around; list-style: none; margin: 0; padding: 0; }
+    .mobile-menu__icons a { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; color: var(--ember-glow); }
+    .mobile-menu__icons svg { width: 24px; height: 24px; }
+    .mobile-menu a:focus-visible, .mobile-menu button:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 4px; }
 
     /* ============================================================
        RESPONSIVE BREAKPOINTS
@@ -1713,7 +1707,6 @@
       #tPrev { left: max(0px, calc(50% - 380px - 120px - 44px)); }
       #tNext { right: max(0px, calc(50% - 380px - 120px - 44px)); }
     }
-    .nav--hidden { transform: translateY(-100%); }
     /* Over the hero, the big logo is the brand, so the small one in the nav stays hidden and
        fades in once the hero has scrolled away (the script after the nav script toggles it).
        visibility (not just opacity) also takes the hidden link out of the keyboard's Tab order. */
@@ -1959,9 +1952,9 @@
       #dishTrack .cul-dish__body, #roomTrack .room-card__body { padding: 8px 0; }
     }
     /* The header bar, everywhere on the page and on every device: see-through, so the film
-       runs right to the top of the screen and the page scrolls up behind it. A faint shade at
-       the very top keeps the menu button visible over bright film. (Defined last so it wins
-       over the bar's original solid background further up.) */
+       runs right to the top of the screen. A faint shade at the very top keeps the logo and menu
+       button visible over bright film. (Defined last so it wins over the bar's original solid
+       background further up.) */
     .nav {
       background: linear-gradient(to bottom, rgba(8,7,5,.33), rgba(8,7,5,0)) no-repeat;
       /* no-repeat: the gradient is sized to the inside of the bar and would otherwise repeat
@@ -1998,15 +1991,27 @@
     </div>
   </nav>
 
-  <!-- Mobile full-screen menu -->
-  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation" aria-modal="true">
-    <button class="mobile-menu__close" id="menuClose" aria-label="Close menu">&times;</button>
-    <div class="mobile-menu__links">
-      <a href="#explore"            onclick="closeMobileMenu()">Experiences</a>
-      <a href="#rooms-suites"       onclick="closeMobileMenu()">Rooms</a>
-      <a href="#signature-dishes"      onclick="closeMobileMenu()">Dining</a>
-      <a href="#contact"     onclick="closeMobileMenu()">Contact</a>
-      <a href="#booking"     onclick="closeMobileMenu()" style="color:var(--ember);font-style:italic;">Reserve</a>
+  <!-- Full-screen menu: a dialog. Links close it as they're followed (see the script). -->
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Menu">
+    <!-- The sliding panel -->
+    <div class="mobile-menu__panel">
+      <div class="mobile-menu__top">
+        <button class="mobile-menu__close" id="menuClose" type="button" aria-label="Close menu"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <nav class="mobile-menu__links" aria-label="Sections">
+        <a href="#explore"><small aria-hidden="true">01</small>Experiences</a>
+        <a href="#rooms-suites"><small aria-hidden="true">02</small>Rooms</a>
+        <a href="#signature-dishes"><small aria-hidden="true">03</small>Dining</a>
+        <a href="#contact"><small aria-hidden="true">04</small>Contact</a>
+      </nav>
+      <div class="mobile-menu__foot">
+        <a class="mobile-menu__reserve" href="#booking">Reserve</a>
+        <ul class="mobile-menu__icons" aria-label="Contact">
+          <li><a href="tel:+254705439631" aria-label="Call us"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a></li>
+          <li><a href="https://wa.me/254705439631" rel="noopener" aria-label="Message us on WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a></li>
+          <li><a href="mailto:stay@safariember.com" aria-label="Email us"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="m3 6 9 7 9-7"/></svg></a></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -2576,25 +2581,38 @@
     const mobileMenu = document.getElementById('mobileMenu');
     const menuClose  = document.getElementById('menuClose');
 
+    // The menu is a dialog: on open, focus moves inside it and Tab cycles within it (the page
+    // behind can't be reached); Escape or Close shuts it, and focus returns to the menu button.
+    function menuFocusables() {
+      return Array.prototype.slice.call(mobileMenu.querySelectorAll('a[href], button'));
+    }
     function openMobileMenu() {
       mobileMenu.classList.add('is-open');
-      // Prevent body scroll while menu is open
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';            // no page scrolling behind the menu
       menuToggle.setAttribute('aria-expanded', 'true');
+      menuClose.focus();
     }
-
-    function closeMobileMenu() {
+    function closeMobileMenu(returnFocus) {
+      if (!mobileMenu.classList.contains('is-open')) return;
       mobileMenu.classList.remove('is-open');
       document.body.style.overflow = '';
       menuToggle.setAttribute('aria-expanded', 'false');
+      if (returnFocus) menuToggle.focus();
     }
 
     menuToggle.addEventListener('click', openMobileMenu);
-    menuClose.addEventListener('click', closeMobileMenu);
-
-    // Close mobile menu on Escape key — good for accessibility
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeMobileMenu();
+    menuClose.addEventListener('click', function () { closeMobileMenu(true); });
+    // Following any link in the menu closes it (the page then scrolls to that section)
+    mobileMenu.addEventListener('click', function (e) {
+      if (e.target.closest('a[href^="#"]')) closeMobileMenu(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!mobileMenu.classList.contains('is-open')) return;
+      if (e.key === 'Escape') { closeMobileMenu(true); return; }
+      if (e.key !== 'Tab') return;
+      var f = menuFocusables(), first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
 
     // ---- Booking bar: check the dates here, then hand over to booking.html ----
@@ -3122,71 +3140,6 @@
       window.addEventListener('resize', function () {
         if (nav.offsetHeight !== lastH) { lastH = nav.offsetHeight; watch(); }
       });
-    })();
-  </script>
-  <script>
-    (function() {
-      var nav = document.querySelector('.nav');
-      var lastY = 0;
-      var ticking = false;
-      var threshold = 12;
-      var hideTimer = null;
-
-      // Scrolling up brings the header back; if nothing else happens it slips away again after
-      // 2 seconds, in case the scroll up wasn't meant to call it. It stays while it's being used:
-      // the menu is open, the pointer is over it, or keyboard focus is inside it (so keyboard
-      // users never lose the link they're on), and it always stays near the top of the page.
-      function scheduleHide() {
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(function () {
-          var inUse = document.querySelector('.mobile-menu.is-open') ||
-                      nav.matches(':hover') || nav.contains(document.activeElement);
-          if (inUse || window.scrollY <= 80) return;
-          nav.classList.add('nav--hidden');
-        }, 2000);
-      }
-      // When the pointer leaves or focus moves out, start the 2 seconds again
-      nav.addEventListener('mouseleave', function () { if (!nav.classList.contains('nav--hidden')) scheduleHide(); });
-      nav.addEventListener('focusout', function () { if (!nav.classList.contains('nav--hidden')) scheduleHide(); });
-
-      window.addEventListener('scroll', function() {
-        if (!ticking) {
-          requestAnimationFrame(function() {
-            var currentY = window.scrollY;
-            var menuOpen = document.querySelector('.mobile-menu.is-open');
-            var delta = currentY - lastY;
-            var isDesktop = window.innerWidth > 768;
-
-            if (menuOpen) {
-              // Never hide while menu is open
-            } else if (currentY <= 80) {
-              nav.classList.remove('nav--hidden');
-            } else if (isDesktop) {
-              // Desktop: require threshold to avoid mouse wheel jitter
-              if (delta > threshold) {
-                nav.classList.add('nav--hidden');
-              } else if (delta < -threshold) {
-                nav.classList.remove('nav--hidden');
-              }
-            } else {
-              // Mobile: original behaviour, any direction change triggers
-              if (delta > 0) {
-                nav.classList.add('nav--hidden');
-              } else {
-                nav.classList.remove('nav--hidden');
-              }
-            }
-
-            // Visible after this scroll (and not at the top)? Count 2 seconds of stillness.
-            clearTimeout(hideTimer);
-            if (!nav.classList.contains('nav--hidden') && currentY > 80) scheduleHide();
-
-            lastY = currentY;
-            ticking = false;
-          });
-          ticking = true;
-        }
-      }, { passive: true });
     })();
   </script>
   <script>

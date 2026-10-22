@@ -35,20 +35,14 @@ body {
 }
 .skip:focus { top: 16px; }
 
-/* ── Header: the mark links home ── */
+/* ── Header: just the mark, linking home ── */
 .legal-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  display: flex; align-items: center;
   max-width: 1100px; margin: 0 auto; padding: 24px;
   border-bottom: 1px solid var(--border);
 }
-.legal-head__home { display: inline-flex; align-items: center; gap: 12px; color: var(--cream); text-decoration: none; }
+.legal-head__home { display: inline-flex; padding: 4px; margin: -4px; }   /* a slightly larger tap target */
 .legal-head__home img { display: block; width: 40px; height: 40px; }
-.legal-head__name { font-family: var(--font-serif); font-size: 17px; letter-spacing: 3px; text-transform: uppercase; }
-.legal-head__back {
-  font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--ember-glow); text-decoration: none; padding: 8px 0;   /* a comfortable tap target */
-}
-.legal-head__back:hover { text-decoration: underline; text-underline-offset: 6px; }
 
 /* ── The text ── */
 main { max-width: 720px; margin: 0 auto; padding: 72px 24px 96px; }
@@ -104,7 +98,6 @@ a:focus-visible, .legal-head__home:focus-visible { outline: 2px solid var(--embe
 
 @media (max-width: 600px) {
   main { padding: 48px 20px 72px; }
-  .legal-head__name { display: none; }      /* the mark alone on small screens */
   .legal__toc ol { columns: 1; }
   .legal-foot { justify-content: center; text-align: center; }
   .legal-foot ul { justify-content: center; }
