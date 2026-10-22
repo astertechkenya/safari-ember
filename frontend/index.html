@@ -1757,14 +1757,21 @@
        space in the layout, and the photo (which comes later in the stacking order) covers its
        lower-right part (lower-left for photos on the right). The figure doesn't clip, so the
        frame can sit outside it. */
-    .chapter__img { --offset: 12px; position: relative; margin: 0; aspect-ratio: 4 / 3; }
+    .chapter__img { --offset: 10px; position: relative; margin: 0; aspect-ratio: 4 / 3; }
     .chapter__img::before {
       content: ''; position: absolute; pointer-events: none;
       inset: calc(var(--offset) * -1) var(--offset) var(--offset) calc(var(--offset) * -1);   /* top right bottom left */
       border: 1px solid rgba(232,149,74,.35);
     }
     .chapter__window { position: relative; }   /* stacks the photo above the frame */
-    @media (max-width: 700px) { .chapter__img { margin: 12px 0 0 12px; } }   /* room for the frame inside the page gutter */
+    /* Phones: the frame sits closer (8px), with matching room for it inside the page gutter */
+    @media (max-width: 700px) {
+      .chapter__img { --offset: 8px; margin: 8px 0 0 8px; }
+    }
+    /* Phones and tablets (photo stacked above the words, below 900px): more air between them */
+    @media (max-width: 899px) {
+      .chapter { gap: 44px; }
+    }
     /* The photo's own box: it clips the photo at the picture's edge (not at the frame line), so
        during the entrance the photo can rise into place from below, out of nowhere. */
     .chapter__window { display: block; width: 100%; height: 100%; overflow: hidden; }
@@ -1774,8 +1781,10 @@
     .chapter__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 0 28px; }
     .chapter__name { font-family: var(--font-serif); font-size: clamp(26px, 3.4vw, 40px); font-weight: 400; line-height: 1.2; color: var(--cream); margin-bottom: 18px; }
     .chapter__desc { font-size: 17px; font-weight: 300; line-height: 1.9; color: var(--warm-mid); max-width: 480px; }
-    /* Desktop: picture and words side by side, swapping sides each chapter */
-    @media (min-width: 900px) {
+    /* Desktop, and phones held sideways: picture and words side by side, swapping sides each
+       chapter. A sideways phone is wide but short (under 500px tall); stacked, the photo alone
+       would be taller than the screen and the 480px-wide text would stop part-way across. */
+    @media (min-width: 900px), (orientation: landscape) and (max-height: 500px) {
       .chapter { grid-template-columns: 1.15fr 1fr; gap: 72px; }
       .chapter:nth-child(even) .chapter__img { order: 2; }
       /* Mirror the frame for photos on the right: it shifts up and to the right, so every photo
@@ -1933,6 +1942,32 @@
       .chapter .chapter__label,
       .cul-dish .card__label,
       .room-card .card__label { font-size: 9.6px; letter-spacing: 3.2px; }
+    }
+    /* ── Phones held sideways (landscape, under 500px tall) ── */
+    @media (orientation: landscape) and (max-height: 500px) {
+      /* Chapters: a narrower gap between picture and words than desktop's 72px */
+      .chapter { gap: 40px; }
+      /* A slimmer header: a short screen can't spare a 64px band */
+      .nav { height: 52px; }
+    }
+    /* Food and room cards on narrow phones held sideways (the one-card carousel, 768px wide or
+       less): photo beside the words instead of above them. Stacked, the 4:3 photo spans the whole
+       width and is taller than the screen on its own. */
+    @media (orientation: landscape) and (max-height: 500px) and (max-width: 768px) {
+      #dishTrack > .cul-dish, #roomTrack > .room-card { flex-direction: row; align-items: center; gap: 28px; }
+      #dishTrack .cul-dish__image, #roomTrack .room-card__image { flex: 0 0 42%; }
+      #dishTrack .cul-dish__body, #roomTrack .room-card__body { padding: 8px 0; }
+    }
+    /* The header bar, everywhere on the page and on every device: see-through, so the film
+       runs right to the top of the screen and the page scrolls up behind it. A faint shade at
+       the very top keeps the menu button visible over bright film. (Defined last so it wins
+       over the bar's original solid background further up.) */
+    .nav {
+      background: linear-gradient(to bottom, rgba(8,7,5,.33), rgba(8,7,5,0)) no-repeat;
+      /* no-repeat: the gradient is sized to the inside of the bar and would otherwise repeat
+         under the 1px see-through border, showing its dark top as a hairline */
+      border-bottom-color: transparent;
+      -webkit-backdrop-filter: none; backdrop-filter: none;
     }
   </style>
 </head>
@@ -2164,12 +2199,12 @@
 
       <!-- Chef quote: the same format as Ophelia's in Get in Touch -->
       <figure class="person person--chef">
-        <img class="person__face" src="chef.webp" alt="Safari Ember's executive chef in his whites, smiling in the kitchen"
+        <img class="person__face" src="chef.webp" alt="Lancel Oburu, Safari Ember's executive chef, in his whites, smiling in the kitchen"
              width="423" height="529" loading="lazy" decoding="async" />
         <blockquote>
           <p class="person__text">&ldquo;We cook with fire, memory, and the land itself. Every plate is a love letter to Kenya.&rdquo;</p>
         </blockquote>
-        <figcaption class="person__who">Executive Chef &middot; Safari Ember</figcaption>
+        <figcaption class="person__who">Lancel Oburu &middot; Executive Chef</figcaption>
       </figure>
 
     </section>
@@ -2629,18 +2664,6 @@
       openAvailPopup();
     });
 
-    // ---- Scroll-based nav background --------------------------------
-    // The nav starts nearly transparent and becomes more solid on scroll.
-    // This is already handled by the CSS backdrop-filter, but we can
-    // add a class for extra emphasis if needed.
-    window.addEventListener('scroll', function() {
-      const nav = document.querySelector('.nav');
-      if (window.scrollY > 80) {
-        nav.style.background = 'rgba(8,7,5,0.98)';
-      } else {
-        nav.style.background = 'rgba(8,7,5,0.92)';
-      }
-    }, { passive: true }); // passive: true improves scroll performance
 
   </script>
 
@@ -3107,6 +3130,24 @@
       var lastY = 0;
       var ticking = false;
       var threshold = 12;
+      var hideTimer = null;
+
+      // Scrolling up brings the header back; if nothing else happens it slips away again after
+      // 2 seconds, in case the scroll up wasn't meant to call it. It stays while it's being used:
+      // the menu is open, the pointer is over it, or keyboard focus is inside it (so keyboard
+      // users never lose the link they're on), and it always stays near the top of the page.
+      function scheduleHide() {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () {
+          var inUse = document.querySelector('.mobile-menu.is-open') ||
+                      nav.matches(':hover') || nav.contains(document.activeElement);
+          if (inUse || window.scrollY <= 80) return;
+          nav.classList.add('nav--hidden');
+        }, 2000);
+      }
+      // When the pointer leaves or focus moves out, start the 2 seconds again
+      nav.addEventListener('mouseleave', function () { if (!nav.classList.contains('nav--hidden')) scheduleHide(); });
+      nav.addEventListener('focusout', function () { if (!nav.classList.contains('nav--hidden')) scheduleHide(); });
 
       window.addEventListener('scroll', function() {
         if (!ticking) {
@@ -3135,6 +3176,10 @@
                 nav.classList.remove('nav--hidden');
               }
             }
+
+            // Visible after this scroll (and not at the top)? Count 2 seconds of stillness.
+            clearTimeout(hideTimer);
+            if (!nav.classList.contains('nav--hidden') && currentY > 80) scheduleHide();
 
             lastY = currentY;
             ticking = false;
