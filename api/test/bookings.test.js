@@ -1,10 +1,10 @@
 // The booking engine against a real Postgres: availability, holds, overbooking, expiry, closures.
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { sql, eq } from 'drizzle-orm';
 import { createApp } from '../src/app.js';
 import { db, pool } from '../src/db/client.js';
 import { roomTypes, seasonalRates, closures, bookings } from '../src/db/schema.js';
-import { expireHolds, createHold } from '../src/services/bookings.js';
+import { expireHolds, createHold, largestParty } from '../src/services/bookings.js';
 import { freeUnits } from '../src/services/availability.js';
 import { addDays } from '../src/lib/dates.js';
 import { as, inDays } from './helpers.js';
@@ -19,12 +19,16 @@ beforeAll(async () => {
   [solo] = await db.insert(roomTypes).values({ slug: 'test-solo', name: 'Test Solo', kind: 'Test', description: 'x', sleeps: 4, units: 1, baseRateKes: 50_000, sort: 91 }).returning();
 });
 beforeEach(async () => {
-  await db.execute(sql`truncate bookings, booking_nights, closures restart identity cascade`);
+  await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities, closures restart identity cascade`);
 });
 
 const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.com', phone: '0712345678' };
+// One room of one type, the simplest booking. bookRooms() sends several.
 const book = (room, checkIn, checkOut, extra = {}) =>
-  as(app).post('/api/bookings').send({ room, checkIn, checkOut, guests: 2, ...guest, ...extra });
+  as(app).post('/api/bookings').send({ rooms: [{ room, units: 1 }], checkIn, checkOut, guests: 2, ...guest, ...extra });
+const bookRooms = (rooms, checkIn, checkOut, extra = {}) =>
+  as(app).post('/api/bookings').send({ rooms: Object.entries(rooms).map(([room, units]) => ({ room, units })), checkIn, checkOut, guests: 2, ...guest, ...extra });
+const unitsHeld = async (rt) => (await db.execute(sql`select coalesce(sum(units), 0)::int as n from booking_rooms where room_type_id = ${rt.id}`)).rows[0].n;
 const search = (checkIn, checkOut, guests = 2) =>
   as(app).get(`/api/availability?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
 const roomIn = (res, slug) => res.body.rooms.find((r) => r.slug === slug);
@@ -36,7 +40,7 @@ describe('availability search', () => {
     expect(res.headers['cache-control']).toBe('no-store');
     expect(res.body.nights).toBe(3);
     expect(res.body.rooms.map((r) => r.slug)).toEqual(expect.arrayContaining(['hearthside-room', 'coalbed-suite', 'ember-penthouse', 'test-pair']));
-    expect(roomIn(res, 'test-pair')).toMatchObject({ available: true, fits: true, totalKes: 30_000, depositKes: 9_000, balanceKes: 21_000 });
+    expect(roomIn(res, 'test-pair')).toMatchObject({ available: true, maxUnits: 2, totalKes: 30_000, depositKes: 9_000, balanceKes: 21_000 });
   });
 
   it('says how many are left only when few are', async () => {
@@ -45,13 +49,13 @@ describe('availability search', () => {
     expect(roomIn(res, 'hearthside-room').left).toBeNull();   // 12 units: not advertised
   });
 
-  it('marks rooms too small for the party, and asks for more rooms when nothing fits', async () => {
+  it('offers small rooms to a big party too (they can take several), and says when no mix fits', async () => {
     const three = await search(inDays(40), inDays(42), 3);
-    expect(roomIn(three, 'test-pair')).toMatchObject({ fits: false, available: false });
-    expect(roomIn(three, 'test-solo')).toMatchObject({ fits: true, available: true });
-    expect(three.body.needsMoreRooms).toBe(false);
-    const five = await search(inDays(40), inDays(42), 5);
-    expect(five.body.needsMoreRooms).toBe(true);
+    expect(roomIn(three, 'test-pair')).toMatchObject({ available: true, maxUnits: 2 });
+    expect(three.body).toMatchObject({ partyFits: true, maxRooms: 6 });
+    // With every room closed, not even one guest fits.
+    await db.insert(closures).values({ roomTypeId: null, startsOn: inDays(45), endsOn: inDays(46), reason: 'Closed' });
+    expect((await search(inDays(45), inDays(46), 1)).body.partyFits).toBe(false);
   });
 
   it('refuses impossible stays with a readable reason', async () => {
@@ -81,9 +85,10 @@ describe('holding a room', () => {
     const res = await book('test-pair', inDays(50), inDays(52));
     expect(res.status).toBe(201);
     const b = res.body.booking;
-    expect(b).toMatchObject({ status: 'HELD', nights: 2, guests: 2, totalKes: 20_000, depositKes: 6_000, balanceKes: 14_000, room: { slug: 'test-pair' } });
+    expect(b).toMatchObject({ status: 'HELD', nights: 2, guests: 2, totalKes: 20_000, depositKes: 6_000, balanceKes: 14_000, roomsKes: 20_000, activitiesKes: 0, activities: [] });
+    expect(b.rooms).toEqual([{ slug: 'test-pair', name: 'Test Pair', kind: 'Test', units: 1, totalKes: 20_000,
+      nightly: [{ night: inDays(50), rateKes: 10_000 }, { night: inDays(51), rateKes: 10_000 }] }]);
     expect(b.ref).toMatch(/^SE-[23456789A-HJKMNP-Z]{6}$/);
-    expect(b.nightly).toHaveLength(2);
     expect(new Date(b.holdExpiresAt).getTime() - Date.now()).toBeGreaterThan(14 * 60_000);
     expect(res.body.url).toBe(`http://localhost:8000/booking.html#${b.ref}.${res.body.token}`);
     // The link carries the guest's name, not their contact details (links get forwarded).
@@ -125,8 +130,7 @@ describe('holding a room', () => {
     const statuses = results.map((r) => r.status).sort();
     expect(statuses.filter((s) => s === 201)).toHaveLength(1);
     expect(statuses.filter((s) => s === 409)).toHaveLength(9);
-    const { rows: [{ n }] } = await db.execute(sql`select count(*)::int as n from bookings where room_type_id = ${solo.id}`);
-    expect(n).toBe(1);
+    expect(await unitsHeld(solo)).toBe(1);
   });
 
   it('never double-books even when two bookings collide mid-way (forced race)', async () => {
@@ -134,13 +138,12 @@ describe('holding a room', () => {
     // bookings pause for 300 ms right after counting free units: exactly where, without the
     // lock, both would see "1 free" and both insert. With the lock, the second can't even count
     // until the first has committed, so it sees 0 free.
-    const input = { room: 'test-solo', checkIn: inDays(75), checkOut: inDays(76), guests: 2, ...guest, phone: '+254712345678' };
+    const input = { rooms: [{ room: 'test-solo', units: 1 }], checkIn: inDays(75), checkOut: inDays(76), guests: 2, ...guest, phone: '+254712345678' };
     const pause = () => new Promise((r) => setTimeout(r, 300));
     const results = await Promise.allSettled([createHold(input, { afterCount: pause }), createHold(input, { afterCount: pause })]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(results.find((r) => r.status === 'rejected').reason.status).toBe(409);
-    const { rows: [{ n }] } = await db.execute(sql`select count(*)::int as n from bookings where room_type_id = ${solo.id}`);
-    expect(n).toBe(1);
+    expect(await unitsHeld(solo)).toBe(1);
   });
 
   it("doesn't make other room types wait or fail", async () => {
@@ -157,7 +160,7 @@ describe('holding a room', () => {
     try {
       const { body } = await as(app).get(`/api/bookings/${res.body.booking.ref}`).set('x-booking-token', res.body.token);
       expect(body.booking.totalKes).toBe(20_000);
-      expect(body.booking.nightly.map((n) => n.rateKes)).toEqual([10_000, 10_000]);
+      expect(body.booking.rooms[0].nightly.map((n) => n.rateKes)).toEqual([10_000, 10_000]);
     } finally {
       await db.update(roomTypes).set({ baseRateKes: 10_000 }).where(eq(roomTypes.id, pair.id));
     }
@@ -167,7 +170,7 @@ describe('holding a room', () => {
     const [s] = await db.insert(seasonalRates).values({ roomTypeId: pair.id, label: 'Test season', startsOn: inDays(101), endsOn: inDays(102), nightlyRateKes: 15_000 }).returning();
     try {
       const res = await book('test-pair', inDays(100), inDays(103));
-      expect(res.body.booking.nightly.map((n) => n.rateKes)).toEqual([10_000, 15_000, 10_000]);
+      expect(res.body.booking.rooms[0].nightly.map((n) => n.rateKes)).toEqual([10_000, 15_000, 10_000]);
       expect(res.body.booking.totalKes).toBe(35_000);
       expect(res.body.booking.depositKes).toBe(10_500);
     } finally {
@@ -175,10 +178,10 @@ describe('holding a room', () => {
     }
   });
 
-  it('checks the party fits the room', async () => {
+  it('checks the party fits the rooms', async () => {
     const res = await book('test-pair', inDays(50), inDays(51), { guests: 3 });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Test Pair sleeps at most 2');
+    expect(res.body.error).toBe('Those rooms sleep 2 at most, for 3 guests. Please add a room.');
   });
 
   it('refuses unknown or inactive rooms', async () => {
@@ -215,6 +218,73 @@ describe('holding a room', () => {
   });
 });
 
+describe('booking several rooms', () => {
+  it('holds a mix of room types in one booking, one reference and one deposit', async () => {
+    const res = await bookRooms({ 'test-pair': 2, 'test-solo': 1 }, inDays(200), inDays(202), { guests: 7 });
+    expect(res.status).toBe(201);
+    const b = res.body.booking;
+    // 2 nights × (2 × 10,000 + 1 × 50,000) = 140,000; deposit 30%
+    expect(b).toMatchObject({ guests: 7, totalKes: 140_000, roomsKes: 140_000, depositKes: 42_000, balanceKes: 98_000 });
+    expect(b.rooms.map((r) => [r.slug, r.units, r.totalKes])).toEqual([['test-pair', 2, 40_000], ['test-solo', 1, 100_000]]);
+    // Every unit of both types is now taken for those nights.
+    const after = await search(inDays(200), inDays(202));
+    expect(roomIn(after, 'test-pair')).toMatchObject({ available: false, maxUnits: 0 });
+    expect(roomIn(after, 'test-solo').available).toBe(false);
+  });
+
+  it('counts units, not bookings: two rooms in one booking leave none of two', async () => {
+    await bookRooms({ 'test-pair': 2 }, inDays(205), inDays(206), { guests: 4 });
+    expect(roomIn(await search(inDays(205), inDays(206)), 'test-pair').available).toBe(false);
+    expect((await book('test-pair', inDays(205), inDays(206))).status).toBe(409);
+  });
+
+  it('says how many are left when the guest asks for more than that', async () => {
+    await book('test-pair', inDays(210), inDays(211));
+    const res = await bookRooms({ 'test-pair': 2 }, inDays(210), inDays(211), { guests: 4 });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Only 1 Test Pair is left for those dates. Please choose other dates or rooms.');
+  });
+
+  it('checks the whole party fits the rooms chosen', async () => {
+    const res = await bookRooms({ 'test-pair': 1, 'test-solo': 1 }, inDays(212), inDays(213), { guests: 7 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Those rooms sleep 6 at most, for 7 guests. Please add a room.');
+  });
+
+  it('caps a booking at MAX_ROOMS rooms, and wants each type listed once', async () => {
+    const seven = await bookRooms({ 'hearthside-room': 7 }, inDays(214), inDays(215));
+    expect(seven.status).toBe(400);
+    const tooMany = await bookRooms({ 'hearthside-room': 4, 'coalbed-suite': 3 }, inDays(214), inDays(215));
+    expect(tooMany.body.error).toBe('rooms: at most 6 rooms in one booking; for larger groups please send an enquiry');
+    const twice = await as(app).post('/api/bookings').send({ rooms: [{ room: 'test-pair', units: 1 }, { room: 'test-pair', units: 1 }], checkIn: inDays(214), checkOut: inDays(215), guests: 2, ...guest });
+    expect(twice.body.error).toBe('rooms: list each room type once, with how many');
+    const none = await as(app).post('/api/bookings').send({ rooms: [], checkIn: inDays(214), checkOut: inDays(215), guests: 2, ...guest });
+    expect(none.body.error).toBe('rooms: choose at least one room');
+  });
+
+  it('never deadlocks when two group bookings want the same rooms in opposite order', async () => {
+    // A asks for pair then solo, B for solo then pair, and both pause mid-way while holding
+    // their locks. Without a fixed lock order each could hold one type and wait forever for the
+    // other. With it, B simply waits for A: exactly one wins (there's one solo), and neither
+    // fails with a database error.
+    const pause = () => new Promise((r) => setTimeout(r, 300));
+    const base = { checkIn: inDays(220), checkOut: inDays(221), guests: 4, ...guest, phone: '+254712345678' };
+    const a = createHold({ ...base, rooms: [{ room: 'test-pair', units: 1 }, { room: 'test-solo', units: 1 }] }, { afterCount: pause });
+    const b = createHold({ ...base, rooms: [{ room: 'test-solo', units: 1 }, { room: 'test-pair', units: 1 }] }, { afterCount: pause });
+    const results = await Promise.allSettled([a, b]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.find((r) => r.status === 'rejected').reason.status).toBe(409);
+    expect(await unitsHeld(solo)).toBe(1);
+  });
+
+  it('works out the largest party a few rooms can sleep', () => {
+    const types = [{ sleeps: 2, free: 12 }, { sleeps: 3, free: 6 }, { sleeps: 4, free: 1 }];
+    expect(largestParty(types, 6)).toBe(4 + 5 * 3);       // the 4-bed, then five 3-beds
+    expect(largestParty(types, 1)).toBe(4);
+    expect(largestParty([{ sleeps: 2, free: 0 }], 6)).toBe(0);
+  });
+});
+
 describe('expired holds', () => {
   const lapse = (ref) => db.update(bookings).set({ holdExpiresAt: sql`now() - interval '1 second'` }).where(eq(bookings.ref, ref));
 
@@ -234,6 +304,22 @@ describe('expired holds', () => {
     const [row] = await db.select().from(bookings).where(eq(bookings.ref, res.body.booking.ref));
     expect(row.status).toBe('EXPIRED');
     expect(await expireHolds()).toBe(0);
+  });
+
+  it("go by the database's clock, even when this server's clock is behind it", async () => {
+    // Render's clock and Neon's clock are never exactly in step. Holds are created, counted and
+    // expired by the database's clock, so "has it run out?" must be too. Here the API's clock
+    // runs five minutes slow: the guest must still see EXPIRED, because the room is already free.
+    const res = await book('test-pair', inDays(110), inDays(111));
+    await lapse(res.body.booking.ref);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.now() - 5 * 60_000));   // this server five minutes slow
+    try {
+      const view = await as(app).get(`/api/bookings/${res.body.booking.ref}`).set('x-booking-token', res.body.token);
+      expect(view.body.booking).toMatchObject({ status: 'EXPIRED', holdExpiresAt: null });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("aren't touched while still running", async () => {
@@ -292,7 +378,7 @@ describe('reading a booking', () => {
 
 describe('the database itself', () => {
   it('refuses impossible rows even if the API had a bug', async () => {
-    const base = { ref: 'SE-TESTXX', roomTypeId: pair.id, guests: 2, totalKes: 10_000, depositKes: 3_000, status: 'CONFIRMED', ...guest };
+    const base = { ref: 'SE-TESTXX', guests: 2, totalKes: 10_000, depositKes: 3_000, status: 'CONFIRMED', ...guest };
     const insert = (over) => db.insert(bookings).values({ ...base, checkIn: addDays(inDays(5), 0), checkOut: inDays(6), nights: 1, ...over });
     await expect(insert({ checkOut: inDays(5), nights: 0 })).rejects.toThrow();            // no nights
     await expect(insert({ nights: 3 })).rejects.toThrow();                                  // nights don't match the dates

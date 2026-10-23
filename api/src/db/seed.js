@@ -1,4 +1,5 @@
-// seed.js: the starting data: the three room types on the site and their seasonal prices.
+// seed.js: the starting data: the three room types on the site, their seasonal prices, and the
+// trips guests can add to a stay.
 //
 //   npm run db:seed
 //
@@ -12,7 +13,7 @@
 import { fileURLToPath } from 'node:url';
 import { eq, sql } from 'drizzle-orm';
 import { db, pool } from './client.js';
-import { roomTypes, seasonalRates } from './schema.js';
+import { roomTypes, seasonalRates, activities } from './schema.js';
 
 export const ROOM_TYPES = [
   {
@@ -26,6 +27,27 @@ export const ROOM_TYPES = [
   {
     slug: 'ember-penthouse', name: 'The Ember Penthouse', kind: 'Penthouse', sleeps: 4, units: 1, baseRateKes: 120_000, sort: 3,
     description: 'Our crown jewel. Panoramic floor-to-ceiling views, a dedicated private butler, bespoke in-room dining, and a rooftop terrace for exclusive use.',
+  },
+];
+
+// Trips the lodge runs from Thika: transport and a guide, at set departure times. Placeholder
+// prices for the portfolio. Entry fees belong to the places themselves (Kenya Wildlife Service,
+// the Giraffe Centre) and are paid at the gate, so they're not in the price; each summary says so.
+export const ACTIVITIES = [
+  {
+    slug: 'nairobi-national-park', name: 'Nairobi National Park game drive', sort: 1,
+    summary: 'A guided game drive in an open safari vehicle: lions, rhinos and giraffes with the city skyline behind them. Park entry fees are paid at the gate.',
+    durationMinutes: 300, priceKes: 9_500, seats: 6, departureTimes: ['06:30', '14:30'], weekdays: [1, 2, 3, 4, 5, 6, 7],
+  },
+  {
+    slug: 'giraffe-centre', name: 'Giraffe Centre', sort: 2,
+    summary: 'Meet the endangered Rothschild’s giraffes at eye level from the raised platform. Return transfer and a guide; the centre’s entry fee is paid at the door.',
+    durationMinutes: 240, priceKes: 5_500, seats: 10, departureTimes: ['09:30', '13:30'], weekdays: [1, 2, 3, 4, 5, 6, 7],
+  },
+  {
+    slug: 'nairobi-safari-walk', name: 'Nairobi Safari Walk', sort: 3,
+    summary: 'A raised boardwalk through wetland, savannah and forest, past animals rescued and cared for by Kenya Wildlife Service. Return transfer and a guide; entry is paid at the gate.',
+    durationMinutes: 240, priceKes: 5_000, seats: 10, departureTimes: ['09:00', '14:00'], weekdays: [1, 2, 3, 4, 5, 6, 7],
   },
 ];
 
@@ -57,6 +79,11 @@ export async function seed({ log = console.log, years } = {}) {
       await db.insert(seasonalRates).values(seasonsFor(row.baseRateKes, years).map((s) => ({ ...s, roomTypeId: row.id })));
     }
     log(`${inserted ? 'added  ' : 'kept   '} ${rt.name}${n === 0 ? ' (+ seasonal rates)' : ''}`);
+  }
+  // Activities already present (by slug) are left alone, like room types.
+  for (const a of ACTIVITIES) {
+    const [inserted] = await db.insert(activities).values(a).onConflictDoNothing({ target: activities.slug }).returning();
+    log(`${inserted ? 'added  ' : 'kept   '} ${a.name}`);
   }
 }
 

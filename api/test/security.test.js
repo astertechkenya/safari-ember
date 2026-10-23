@@ -58,7 +58,7 @@ describe('rate limits', () => {
     // Invalid bookings still count (they're stopped by validation after the limiter), so this
     // doesn't need to use up real rooms.
     const ip = '10.201.0.1';
-    const hold = () => as(app, ip).post('/api/bookings').send({ room: 'hearthside-room', checkIn: inDays(10), checkOut: inDays(11), guests: 2 });
+    const hold = () => as(app, ip).post('/api/bookings').send({ rooms: [{ room: 'hearthside-room', units: 1 }], checkIn: inDays(10), checkOut: inDays(11), guests: 2 });
     for (let i = 0; i < 8; i += 1) expect((await hold()).status).toBe(400);
     expect((await hold()).status).toBe(429);
   });

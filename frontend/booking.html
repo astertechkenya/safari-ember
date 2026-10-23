@@ -121,7 +121,38 @@
     .room__left { font-size: 13px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--ember-glow); margin: 0 0 10px; }
     .room__why { font-size: 14px; color: var(--warm-dim); margin: 0; }
 
-    /* ── Step 2: details ─────────────────────────────────────────────────── */
+    /* Room counter: how many of this type ("− 2 +") */
+    .count { display: flex; align-items: center; gap: 0; border: 1px solid var(--line); width: fit-content; }
+    .count__btn { width: 48px; height: 48px; background: none; border: 0; color: var(--ember-glow); font-size: 22px; cursor: pointer; }
+    .count__btn:disabled { color: var(--warm-dim); opacity: .45; cursor: default; }
+    .count__btn:hover:not(:disabled) { background: rgba(200, 120, 42, .1); }
+    .count__n { min-width: 44px; text-align: center; font-family: var(--serif); font-size: 22px; }
+    .room.is-picked { border-color: var(--ember); }
+    /* The running selection, pinned to the bottom of the screen while choosing */
+    .pick { position: sticky; bottom: 0; z-index: 5; margin: 32px -24px 0; padding: 16px 24px;
+            background: rgba(8, 7, 5, .96); border-top: 1px solid var(--line);
+            display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .pick__text { margin: 0; color: var(--warm-mid); font-size: 15px; }
+    .pick__text b { color: var(--cream); font-weight: 400; }
+    .pick__text .warn { color: var(--ember-glow); }
+
+    /* ── Step 2: experiences ─────────────────────────────────────────────── */
+    .xp { border: 1px solid var(--line); padding: 26px; margin-bottom: 20px; }
+    .xp h2 { font-family: var(--serif); font-size: 24px; line-height: 1.25; margin-bottom: 6px; }
+    .xp__meta { font-size: 14px; color: var(--ember-glow); margin: 0 0 12px; }
+    .xp__sum { color: var(--warm-mid); font-size: 15px; line-height: 1.8; margin: 0 0 18px; }
+    .xp__add { display: grid; grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; }
+    .xp__add .btn { min-height: 62px; }
+    .xp__add select.input { padding-right: 34px; }
+    .xp__none { color: var(--warm-dim); font-size: 14px; margin: 0; }
+    .summary .lines { list-style: none; padding: 0; margin: 14px 0 0; font-size: 15px; }
+    .summary .lines li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+    .summary .lines li > :last-child { white-space: nowrap; }   /* keep "KES 22,000" on one line */
+    .summary .lines small { display: block; color: var(--warm-dim); font-size: 13px; }
+    .summary .lines button { background: none; border: 0; color: var(--ember-glow); cursor: pointer; padding: 0; font: inherit; font-size: 13px; text-decoration: underline; }
+    .summary .actions { display: grid; gap: 10px; margin-top: 22px; }
+
+    /* ── Step 3: details ─────────────────────────────────────────────────── */
     .details { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: start; margin-top: 8px; }
     .form { display: grid; gap: 20px; }
     .form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -171,6 +202,7 @@
     .hold__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; text-align: left; margin: 30px 0 0; border-top: 1px solid var(--line-soft); padding-top: 24px; }
     .hold__grid dt { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
     .hold__grid dd { margin: 4px 0 0; }
+    .hold__grid .span2 { grid-column: 1 / -1; }   /* the experiences list takes the full width */
     .next { margin-top: 28px; padding: 18px 20px; border-left: 2px solid var(--ember); background: rgba(200, 120, 42, .06); text-align: left; color: var(--warm-mid); font-size: 15px; }
     .next b { color: var(--cream); font-weight: 500; }
     .hold__actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
@@ -225,6 +257,12 @@
       .hold { padding: 30px 20px; }
       .hold__grid { grid-template-columns: 1fr; }
       .pay__ways { grid-template-columns: 1fr; }
+      .xp { padding: 20px; }
+      /* Departure gets the full width (its text is the longest); people + Add share the next row */
+      .xp__add { grid-template-columns: 1fr 1fr; }
+      .xp__add > :first-child { grid-column: 1 / -1; }
+      .pick { margin: 24px -24px 0; }
+      .pick .btn { width: 100%; }
       .wrap { padding-top: 28px; }
     }
   </style>
@@ -243,25 +281,41 @@
     </div>
 
     <ol class="steps" id="steps" aria-label="Booking steps">
-      <li data-step="1"><b>1</b><span>Room</span></li>
-      <li data-step="2"><b>2</b><span>Your details</span></li>
-      <li data-step="3"><b>3</b><span>Deposit</span></li>
+      <li data-step="1"><b>1</b><span>Rooms</span></li>
+      <li data-step="2"><b>2</b><span>Experiences</span></li>
+      <li data-step="3"><b>3</b><span>Your details</span></li>
+      <li data-step="4"><b>4</b><span>Deposit</span></li>
     </ol>
 
-    <!-- STEP 1 · choose a room -->
+    <!-- STEP 1 · choose rooms: any mix of types, up to MAX_ROOMS -->
     <section id="step-rooms" aria-labelledby="title">
       <form class="search" id="search" novalidate aria-describedby="searchNote">
         <div class="search__field"><label for="checkIn">Check in</label><input type="date" id="checkIn" name="checkIn" required /></div>
         <div class="search__field"><label for="checkOut">Check out</label><input type="date" id="checkOut" name="checkOut" required /></div>
         <div class="search__field"><label for="guests">Guests</label>
-          <select id="guests" name="guests"><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 or more</option></select></div>
+          <select id="guests" name="guests"><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 guests</option><option value="6">6 guests</option><option value="7">7 guests</option><option value="8">8 guests</option><option value="9">9 guests</option><option value="10">10 guests</option><option value="11">11 guests</option><option value="12">12 guests</option></select></div>
         <button class="btn" type="submit">Update</button>
       </form>
       <p class="note" id="searchNote" aria-live="polite"></p>
       <div id="results" aria-live="polite" aria-busy="false"></div>
+      <!-- The running selection: rooms chosen, how many they sleep, the price, Continue -->
+      <div class="pick" id="pick" hidden>
+        <p class="pick__text" id="pickText" aria-live="polite"></p>
+        <button class="btn" type="button" id="toExperiences">Continue</button>
+      </div>
     </section>
 
-    <!-- STEP 2 · guest details -->
+    <!-- STEP 2 · experiences: optional trips on days of the stay -->
+    <section id="step-xp" hidden aria-labelledby="xpTitle">
+      <h2 class="sr-only" id="xpTitle">Add experiences</h2>
+      <p class="note" id="xpNote" aria-live="polite">Optional trips from the lodge, with transport and a guide. Add any you like, or skip this step.</p>
+      <div class="details">
+        <div id="xpList" aria-busy="false"></div>
+        <aside class="summary" id="xpSummary" aria-label="Your stay"></aside>
+      </div>
+    </section>
+
+    <!-- STEP 3 · guest details -->
     <section id="step-details" hidden aria-labelledby="detailsTitle">
       <h2 class="sr-only" id="detailsTitle">Your details</h2>
       <div class="details">
@@ -277,16 +331,16 @@
           <div class="field"><label for="requests">Special requests <span>(optional)</span></label><textarea class="input" id="requests" name="requests" maxlength="1000" aria-describedby="requests-err"></textarea><p class="error" id="requests-err" hidden></p></div>
           <p class="error" id="formError" role="alert" hidden></p>
           <div class="form__foot">
-            <button class="btn" type="submit" id="holdBtn">Hold my room</button>
-            <button class="btn btn--ghost" type="button" id="backToRooms">Change room</button>
+            <button class="btn" type="submit" id="holdBtn">Hold my booking</button>
+            <button class="btn btn--ghost" type="button" id="backToRooms">Back</button>
           </div>
-          <p class="fine">We hold the room for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
+          <p class="fine">We hold your rooms and seats for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
         </form>
         <aside class="summary" id="summary" aria-label="Your stay"></aside>
       </div>
     </section>
 
-    <!-- STEP 3 · the hold, and the guest's booking link -->
+    <!-- STEP 4 · the hold, and the guest's booking link -->
     <section id="step-hold" hidden aria-live="polite"></section>
   </main>
 
@@ -345,19 +399,44 @@
     }
 
     /* ── State and steps ─────────────────────────────────────────────────────────────────── */
-    var S = { stay: null, results: null, room: null };
+    //   stay     { checkIn, checkOut, guests }
+    //   results  the availability answer (rooms, prices per room, maxRooms)
+    //   picks    { slug: units } the rooms chosen
+    //   acts     the experiences offered for this stay (null until loaded)
+    //   trips    [{ activity, name, day, time, people, priceKes }] the experiences added
+    //   flash    a message to show once the next screen has loaded (after a "just booked" 409)
+    var S = { stay: null, results: null, picks: {}, acts: null, trips: [], flash: '' };
+    var STEPS = { 1: 'step-rooms', 2: 'step-xp', 3: 'step-details', 4: 'step-hold' };
+    var TITLES = { 1: 'Reserve Your <em>Stay</em>', 2: 'Add <em>Experiences</em>', 3: 'Your <em>Details</em>', 4: 'Your <em>Booking</em>' };
 
     function showStep(n) {
-      $('step-rooms').hidden = n !== 1; $('step-details').hidden = n !== 2; $('step-hold').hidden = n !== 3;
+      Object.keys(STEPS).forEach(function (k) { $(STEPS[k]).hidden = Number(k) !== n; });
       document.querySelectorAll('#steps li').forEach(function (li) {
         var k = Number(li.dataset.step);
         li.classList.toggle('done', k < n);
         if (k === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
       });
-      $('title').innerHTML = n === 1 ? 'Reserve Your <em>Stay</em>' : n === 2 ? 'Your <em>Details</em>' : 'Your <em>Booking</em>';
+      $('title').innerHTML = TITLES[n];
     }
     // Move focus to the new content, like a page load, so keyboard and screen-reader users follow
     function focusMain() { $('main').focus({ preventScroll: true }); window.scrollTo(0, 0); }
+
+    /* ── Prices, from the API's figures (the API prices it all again when holding) ────────── */
+    function chosenRooms() {
+      return (S.results ? S.results.rooms : []).filter(function (r) { return S.picks[r.slug] > 0; })
+        .map(function (r) { return { room: r, units: S.picks[r.slug] }; });
+    }
+    function totals() {
+      var rooms = chosenRooms();
+      var units = rooms.reduce(function (n, x) { return n + x.units; }, 0);
+      var beds = rooms.reduce(function (n, x) { return n + x.units * x.room.sleeps; }, 0);
+      var roomsKes = rooms.reduce(function (n, x) { return n + x.units * x.room.totalKes; }, 0);
+      var tripsKes = S.trips.reduce(function (n, t) { return n + t.people * t.priceKes; }, 0);
+      var total = roomsKes + tripsKes;
+      var pct = S.results && S.results.rooms[0] ? S.results.rooms[0].depositPercent : 30;
+      var deposit = Math.min(total, Math.max(1, Math.floor((total * pct + 99) / 100)));   // same rounding as the API
+      return { rooms: rooms, units: units, beds: beds, roomsKes: roomsKes, tripsKes: tripsKes, total: total, deposit: deposit, pct: pct };
+    }
 
     /* ── STEP 1: search and rooms ────────────────────────────────────────────────────────── */
     var f = { in: $('checkIn'), out: $('checkOut'), guests: $('guests') };
@@ -367,7 +446,6 @@
     });
 
     function stayProblem(st) {
-      if (st.guests >= 5) return 'For five or more guests we\'ll arrange two rooms for you: <a href="index.html#inquiry">send us an enquiry</a>.';
       if (!st.checkIn || !st.checkOut) return 'Choose your check-in and check-out dates.';
       if (st.checkIn < TODAY) return 'Check-in can\'t be in the past.';
       if (st.checkIn > HORIZON) return 'We take bookings up to 18 months ahead.';
@@ -381,8 +459,10 @@
     function search(st, pushHistory) {
       var p = stayProblem(st);
       var note = $('searchNote');
-      if (p) { note.innerHTML = p; note.classList.add('is-error'); $('results').innerHTML = ''; return; }
+      if (p) { note.innerHTML = p; note.classList.add('is-error'); $('results').innerHTML = ''; $('pick').hidden = true; return; }
       note.classList.remove('is-error'); note.textContent = stayLine(st);
+      // New dates or party: the earlier picks and trips no longer apply.
+      if (!S.stay || S.stay.checkIn !== st.checkIn || S.stay.checkOut !== st.checkOut || S.stay.guests !== st.guests) { S.picks = {}; S.trips = []; S.acts = null; }
       S.stay = st;
       // Keep the dates in the address, so refresh, back and sharing all work
       var url = 'booking.html?' + new URLSearchParams({ checkIn: st.checkIn, checkOut: st.checkOut, guests: st.guests });
@@ -390,41 +470,73 @@
       var box = $('results');
       box.setAttribute('aria-busy', 'true');
       box.innerHTML = '<p class="loading">Checking availability…</p>';
+      $('pick').hidden = true;
       api('/availability?' + new URLSearchParams({ checkIn: st.checkIn, checkOut: st.checkOut, guests: st.guests }))
-        .then(function (data) { S.results = data; box.innerHTML = roomsHtml(data); })
+        .then(function (data) {
+          S.results = data;
+          // Keep earlier picks that still fit what's free now
+          data.rooms.forEach(function (r) { if (S.picks[r.slug] > r.maxUnits) S.picks[r.slug] = r.maxUnits; });
+          box.innerHTML = roomsHtml(data);
+          updatePick();
+          if (S.flash) { note.textContent = S.flash; note.classList.add('is-error'); S.flash = ''; }
+        })
         .catch(function (e) { box.innerHTML = problemHtml(e); })
         .then(function () { box.setAttribute('aria-busy', 'false'); });
     }
 
     function roomsHtml(data) {
-      if (data.needsMoreRooms) return '<div class="notice"><h2>A bigger party?</h2><p>No single room sleeps ' + data.guests + '. We\'ll happily arrange two rooms: <a href="index.html#inquiry">send us an enquiry</a>.</p></div>';
-      var any = data.rooms.some(function (r) { return r.available; });
-      return (any ? '' : '<div class="notice"><h2>Fully booked</h2><p>Nothing is free for every night of these dates. Try moving your stay by a day or two.</p></div>') +
-        '<div class="rooms">' + data.rooms.map(function (r) {
-          var why = !r.fits ? 'Sleeps ' + r.sleeps + ': too small for ' + data.guests + ' guests.' : !r.available ? 'Fully booked for these dates.' : '';
-          return '<article class="room' + (r.available ? '' : ' is-off') + '">' +
-            '<div class="room__img"><img src="' + esc(ROOM_PHOTOS[r.slug] || '') + '" alt="" loading="lazy" /></div>' +
-            '<div class="room__body">' +
-              '<span class="label">' + esc(r.kind) + '</span><div class="rule" role="presentation"></div>' +
-              '<h2>' + esc(r.name) + '</h2>' +
-              '<p class="room__desc">' + esc(r.description) + '</p>' +
-              '<p class="room__facts">Sleeps ' + r.sleeps + '</p>' +
-              '<div class="room__price">' +
-                (r.left ? '<p class="room__left">Only ' + r.left + ' left</p>' : '') +
-                '<div class="room__total num">' + money(r.totalKes) + ' <small>for ' + plural(data.nights, 'night') + '</small></div>' +
-                '<p class="room__deposit num">' + money(r.depositKes) + ' deposit to confirm (' + r.depositPercent + '%)</p>' +
-                '<details><summary>Price per night</summary><ul>' + r.nightly.map(function (n) {
-                  return '<li><span>' + day(n.night) + (n.season ? ' · ' + esc(n.season) : '') + '</span><span class="num">' + money(n.rateKes) + '</span></li>';
-                }).join('') + '</ul></details>' +
-                (r.available
-                  ? '<button class="btn" type="button" data-room="' + esc(r.slug) + '">Choose this room</button>'
-                  : '<p class="room__why">' + why + '</p>') +
-              '</div></div></article>';
-        }).join('') + '</div>';
+      if (!data.partyFits) {
+        return '<div class="notice"><h2>Not enough rooms free</h2><p>We can\'t sleep ' + plural(data.guests, 'guest') + ' in up to ' + data.maxRooms +
+          ' rooms on these dates. Try moving your stay, or <a href="index.html#inquiry">send us an enquiry</a> and we\'ll find a way.</p></div>';
+      }
+      return '<div class="rooms">' + data.rooms.map(function (r) {
+        var n = S.picks[r.slug] || 0;
+        return '<article class="room' + (r.available ? '' : ' is-off') + (n ? ' is-picked' : '') + '" data-card="' + esc(r.slug) + '">' +
+          '<div class="room__img"><img src="' + esc(ROOM_PHOTOS[r.slug] || '') + '" alt="" loading="lazy" /></div>' +
+          '<div class="room__body">' +
+            '<span class="label">' + esc(r.kind) + '</span><div class="rule" role="presentation"></div>' +
+            '<h2>' + esc(r.name) + '</h2>' +
+            '<p class="room__desc">' + esc(r.description) + '</p>' +
+            '<p class="room__facts">Sleeps ' + r.sleeps + ' per room</p>' +
+            '<div class="room__price">' +
+              (r.left ? '<p class="room__left">Only ' + r.left + ' left</p>' : '') +
+              '<div class="room__total num">' + money(r.totalKes) + ' <small>per room, ' + plural(data.nights, 'night') + '</small></div>' +
+              '<details><summary>Price per night</summary><ul>' + r.nightly.map(function (x) {
+                return '<li><span>' + day(x.night) + (x.season ? ' · ' + esc(x.season) : '') + '</span><span class="num">' + money(x.rateKes) + '</span></li>';
+              }).join('') + '</ul></details>' +
+              (r.available
+                ? '<div class="count" role="group" aria-label="How many ' + esc(r.name) + ' rooms">' +
+                    '<button class="count__btn" type="button" data-dec="' + esc(r.slug) + '" aria-label="One fewer ' + esc(r.name) + '">&minus;</button>' +
+                    '<output class="count__n num" id="n-' + esc(r.slug) + '">' + n + '</output>' +
+                    '<button class="count__btn" type="button" data-inc="' + esc(r.slug) + '" aria-label="One more ' + esc(r.name) + '">+</button></div>'
+                : '<p class="room__why">Fully booked for these dates.</p>') +
+            '</div></div></article>';
+      }).join('') + '</div>';
     }
     function problemHtml(e) {
       return '<div class="notice notice--error" role="alert"><h2>We couldn\'t check availability</h2><p>' + esc(e.message) + '</p>' +
         '<p><button class="btn btn--ghost" type="button" data-retry="1">Try again</button></p></div>';
+    }
+
+    // The counters and the bar below the rooms, updated in place (no re-drawing the photos)
+    function updatePick() {
+      var data = S.results; if (!data || !data.partyFits) { $('pick').hidden = true; return; }
+      var t = totals(), full = t.units >= data.maxRooms;
+      data.rooms.forEach(function (r) {
+        var n = S.picks[r.slug] || 0, out = $('n-' + r.slug); if (!out) return;
+        out.textContent = n;
+        document.querySelector('[data-dec="' + r.slug + '"]').disabled = n === 0;
+        document.querySelector('[data-inc="' + r.slug + '"]').disabled = full || n >= r.maxUnits;
+        document.querySelector('[data-card="' + r.slug + '"]').classList.toggle('is-picked', n > 0);
+      });
+      var short = S.stay.guests - t.beds, text;
+      if (!t.units) text = 'Choose your rooms: you can mix room types, up to ' + data.maxRooms + ' rooms.';
+      else if (short > 0) text = '<b>' + plural(t.units, 'room') + '</b> ' + (t.units === 1 ? 'sleeps ' : 'sleep ') + t.beds + '. <span class="warn">Add room for ' + plural(short, 'more guest') + '.</span>';
+      else text = '<b>' + plural(t.units, 'room') + '</b> for ' + plural(S.stay.guests, 'guest') + ' · <b class="num">' + money(t.roomsKes) + '</b> for ' + plural(data.nights, 'night');
+      if (t.units && full) text += ' <span class="warn">That\'s the most for one booking; for more, <a href="index.html#inquiry">send an enquiry</a>.</span>';
+      $('pickText').innerHTML = text;
+      $('toExperiences').disabled = !t.units || short > 0;
+      $('pick').hidden = false;
     }
 
     $('search').addEventListener('submit', function (e) {
@@ -433,31 +545,114 @@
     });
     $('results').addEventListener('click', function (e) {
       if (e.target.closest('[data-retry]')) return search(S.stay, false);
-      var b = e.target.closest('[data-room]'); if (!b) return;
-      S.room = S.results.rooms.find(function (r) { return r.slug === b.dataset.room; });
-      history.pushState({ step: 2, room: S.room.slug }, '', location.href);
-      openDetails();
+      var inc = e.target.closest('[data-inc]'), dec = e.target.closest('[data-dec]');
+      if (!inc && !dec) return;
+      var slug = (inc || dec).dataset[inc ? 'inc' : 'dec'];
+      S.picks[slug] = Math.max(0, (S.picks[slug] || 0) + (inc ? 1 : -1));
+      updatePick();
+    });
+    $('toExperiences').addEventListener('click', function () {
+      history.pushState({ step: 2 }, '', location.href);
+      openExperiences();
     });
 
-    /* ── STEP 2: details ─────────────────────────────────────────────────────────────────── */
-    function openDetails() {
-      var r = S.room, st = S.stay, n = nightsBetween(st.checkIn, st.checkOut);
-      $('summary').innerHTML =
-        '<span class="label">Your stay</span><div class="rule" role="presentation"></div>' +
-        '<h2>' + esc(r.name) + '</h2>' +
-        '<dl class="num">' +
-          '<dt>Check in</dt><dd>' + day(st.checkIn) + ', from 14:00</dd>' +
-          '<dt>Check out</dt><dd>' + day(st.checkOut) + ', by 11:00</dd>' +
-          '<dt>Guests</dt><dd>' + st.guests + '</dd>' +
-          '<dt>' + plural(n, 'night') + '</dt><dd>' + money(r.totalKes) + '</dd>' +
+    /* ── STEP 2: experiences ─────────────────────────────────────────────────────────────── */
+    // The summary beside steps 2 and 3: every room and trip, and the money.
+    function summaryHtml(withRemove) {
+      var st = S.stay, t = totals(), n = nightsBetween(st.checkIn, st.checkOut);
+      return '<span class="label">Your stay</span><div class="rule" role="presentation"></div>' +
+        '<p style="margin:0;color:var(--warm-mid)">' + day(st.checkIn) + ' → ' + day(st.checkOut) + ' · ' + plural(st.guests, 'guest') + '</p>' +
+        '<ul class="lines num">' + t.rooms.map(function (x) {
+          return '<li><span>' + x.units + ' × ' + esc(x.room.name) + '<small>' + plural(n, 'night') + '</small></span><span>' + money(x.units * x.room.totalKes) + '</span></li>';
+        }).join('') + S.trips.map(function (tr, i) {
+          return '<li><span>' + esc(tr.name) + '<small>' + day(tr.day) + ', ' + tr.time + ' · ' + plural(tr.people, 'person', 'people') +
+            (withRemove ? ' · <button type="button" data-remove="' + i + '">Remove</button>' : '') + '</small></span><span>' + money(tr.people * tr.priceKes) + '</span></li>';
+        }).join('') + '</ul>' +
+        '<dl class="num" style="margin-top:12px">' +
           '<span class="sep" role="presentation"></span>' +
-          '<dt>Deposit to confirm</dt><dd class="big">' + money(r.depositKes) + '</dd>' +
-          '<dt>Balance at the lodge</dt><dd>' + money(r.balanceKes) + '</dd>' +
-        '</dl>' +
-        '<p style="margin:18px 0 0"><button class="linkbtn" type="button" id="changeStay">Change dates or room</button></p>';
+          '<dt>Total</dt><dd>' + money(t.total) + '</dd>' +
+          '<dt>Deposit to confirm</dt><dd class="big">' + money(t.deposit) + '</dd>' +
+          '<dt>Balance at the lodge</dt><dd>' + money(t.total - t.deposit) + '</dd>' +
+        '</dl>';
+    }
+
+    function openExperiences() {
+      showStep(2); focusMain();
+      drawXpSummary();
+      if (S.acts) { drawExperiences(); return; }
+      var box = $('xpList');
+      box.setAttribute('aria-busy', 'true');
+      box.innerHTML = '<p class="loading">Finding experiences for your dates…</p>';
+      api('/activities?' + new URLSearchParams({ checkIn: S.stay.checkIn, checkOut: S.stay.checkOut }))
+        .then(function (data) { S.acts = data.activities; drawExperiences(); })
+        .catch(function (e) { box.innerHTML = '<div class="notice notice--error" role="alert"><h2>We couldn\'t load the experiences</h2><p>' + esc(e.message) + '</p></div>'; })
+        .then(function () { box.setAttribute('aria-busy', 'false'); });
+    }
+    function drawXpSummary() {
+      $('xpSummary').innerHTML = summaryHtml(true) +
+        '<div class="actions"><button class="btn" type="button" id="toDetails">' + (S.trips.length ? 'Continue' : 'Skip and continue') + '</button>' +
+        '<button class="linkbtn" type="button" id="xpBack">Change rooms</button></div>';
+      $('toDetails').onclick = function () { history.pushState({ step: 3 }, '', location.href); openDetails(); };
+      $('xpBack').onclick = function () { history.back(); };
+    }
+    function hours(min) { var h = Math.floor(min / 60), m = min % 60; return (h ? plural(h, 'hour') : '') + (m ? (h ? ' ' : '') + m + ' min' : ''); }
+    function drawExperiences() {
+      var note = $('xpNote');
+      if (S.flash) { note.textContent = S.flash; note.classList.add('is-error'); S.flash = ''; }
+      if (!S.acts.length) { $('xpList').innerHTML = '<p class="xp__none">No experiences are running on your dates.</p>'; return; }
+      $('xpList').innerHTML = S.acts.map(function (a, i) {
+        var taken = S.trips.filter(function (t) { return t.activity === a.slug; });
+        var byDay = {};
+        a.departures.forEach(function (d) { (byDay[d.day] = byDay[d.day] || []).push(d); });
+        var options = Object.keys(byDay).map(function (dy) {
+          return '<optgroup label="' + esc(day(dy)) + '">' + byDay[dy].map(function (d) {
+            var added = taken.some(function (t) { return t.day === d.day && t.time === d.time; });
+            var label = d.time + (d.seatsLeft ? ' · ' + plural(d.seatsLeft, 'seat') + ' left' : ' · full') + (added ? ' · added' : '');
+            return '<option value="' + d.day + '|' + d.time + '"' + (d.seatsLeft && !added ? '' : ' disabled') + '>' + esc(label) + '</option>';
+          }).join('') + '</optgroup>';
+        }).join('');
+        var people = '';
+        for (var k = 1; k <= S.stay.guests; k++) people += '<option value="' + k + '"' + (k === S.stay.guests ? ' selected' : '') + '>' + k + '</option>';
+        return '<article class="xp" data-xp="' + i + '">' +
+          '<h2>' + esc(a.name) + '</h2>' +
+          '<p class="xp__meta num">' + money(a.priceKes) + ' per person · about ' + hours(a.durationMinutes) + ' from the lodge</p>' +
+          '<p class="xp__sum">' + esc(a.summary) + '</p>' +
+          (a.departures.length
+            ? '<div class="xp__add">' +
+                '<div class="field"><label for="dep-' + i + '">Departure</label><select class="input" id="dep-' + i + '"><option value="">Choose a day and time</option>' + options + '</select></div>' +
+                '<div class="field"><label for="ppl-' + i + '">People</label><select class="input" id="ppl-' + i + '">' + people + '</select></div>' +
+                '<button class="btn" type="button" data-add="' + i + '">Add</button>' +
+              '</div><p class="error" id="xpErr-' + i + '" role="alert" hidden></p>'
+            : '<p class="xp__none">No departures left on your dates.</p>') +
+        '</article>';
+      }).join('');
+    }
+    $('xpList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-add]'); if (!b) return;
+      var i = Number(b.dataset.add), a = S.acts[i], err = $('xpErr-' + i);
+      var pick = $('dep-' + i).value, people = Number($('ppl-' + i).value);
+      err.hidden = true;
+      if (!pick) { err.textContent = 'Choose a day and time.'; err.hidden = false; $('dep-' + i).focus(); return; }
+      var parts = pick.split('|'), dep = a.departures.find(function (d) { return d.day === parts[0] && d.time === parts[1]; });
+      if (people > dep.seatsLeft) { err.textContent = 'Only ' + plural(dep.seatsLeft, 'seat') + ' left on that departure.'; err.hidden = false; return; }
+      S.trips.push({ activity: a.slug, name: a.name, day: dep.day, time: dep.time, people: people, priceKes: a.priceKes });
+      S.trips.sort(function (x, y) { return (x.day + x.time) < (y.day + y.time) ? -1 : 1; });
+      drawExperiences(); drawXpSummary();
+      $('toDetails').focus();
+    });
+    $('xpSummary').addEventListener('click', function (e) {
+      var r = e.target.closest('[data-remove]'); if (!r) return;
+      S.trips.splice(Number(r.dataset.remove), 1);
+      drawExperiences(); drawXpSummary();
+    });
+
+    /* ── STEP 3: details ─────────────────────────────────────────────────────────────────── */
+    function openDetails() {
+      $('summary').innerHTML = summaryHtml(false) +
+        '<p style="margin:18px 0 0"><button class="linkbtn" type="button" id="changeStay">Change rooms or experiences</button></p>';
       $('changeStay').onclick = function () { history.back(); };
       clearErrors(); $('formError').hidden = true;
-      showStep(2); focusMain();
+      showStep(3); focusMain();
       setTimeout(function () { $('firstName').focus(); }, 0);
     }
     $('backToRooms').addEventListener('click', function () { history.back(); });
@@ -502,9 +697,11 @@
       if (first) { $(first).focus(); return; }
 
       sending = true;
-      var btn = $('holdBtn'); btn.disabled = true; btn.textContent = 'Holding your room…';
+      var btn = $('holdBtn'); btn.disabled = true; btn.textContent = 'Holding your booking…';
       var body = {
-        room: S.room.slug, checkIn: S.stay.checkIn, checkOut: S.stay.checkOut, guests: S.stay.guests,
+        rooms: chosenRooms().map(function (x) { return { room: x.room.slug, units: x.units }; }),
+        activities: S.trips.map(function (t) { return { activity: t.activity, day: t.day, time: t.time, people: t.people }; }),
+        checkIn: S.stay.checkIn, checkOut: S.stay.checkOut, guests: S.stay.guests,
         firstName: $('firstName').value.trim(), lastName: $('lastName').value.trim(),
         email: $('email').value.trim(), phone: $('phone').value.trim(),
       };
@@ -514,7 +711,7 @@
         .then(function (res) {
           // Go to the guest's private link. Replace (not push): "back" shouldn't reopen a filled form.
           var hash = res.url.split('#')[1];
-          history.replaceState({ step: 3 }, '', 'booking.html#' + hash);
+          history.replaceState({ step: 4 }, '', 'booking.html#' + hash);
           LINK = { ref: res.booking.ref, token: res.token };
           viewBooking(res.booking);
         })
@@ -523,13 +720,15 @@
           var m = /^(firstName|lastName|email|phone|requests): (.+)$/.exec(err.message);
           if (err.status === 400 && m) { setError(m[1], m[2].charAt(0).toUpperCase() + m[2].slice(1) + '.'); $(m[1]).focus(); }
           else if (err.status === 409) {
-            // Someone else took the last one a moment ago: back to the rooms, with fresh availability
-            history.back();
-            setTimeout(function () { search(S.stay, false); $('searchNote').textContent = err.message; $('searchNote').classList.add('is-error'); }, 50);
+            // Someone else took the last room or seats a moment ago. Back to that step, with fresh
+            // numbers, and the reason shown there (S.flash).
+            S.flash = err.message;
+            if (/seat|full/.test(err.message)) { S.acts = null; history.back(); }   // → experiences, reloaded
+            else history.go(-2);                                                     // → rooms, searched again
           }
           else { $('formError').textContent = err.message; $('formError').hidden = false; }
         })
-        .then(function () { sending = false; btn.disabled = false; btn.textContent = 'Hold my room'; });
+        .then(function () { sending = false; btn.disabled = false; btn.textContent = 'Hold my booking'; });
     });
 
     /* ── STEP 3: the hold, also the guest's private link ─────────────────────────────────── */
@@ -611,25 +810,29 @@
       var p = b.payment;
       var paid = p && p.status === 'PAID';
       var ok = b.status === 'CONFIRMED' || b.status === 'COMPLETED';
+      var rooms = b.rooms.reduce(function (n, r) { return n + r.units; }, 0);
       $('step-hold').innerHTML = '<div class="hold' + (ok ? ' hold--ok' : '') + '">' +
         '<span class="status status--' + esc(b.status) + '">' + (STATUS[b.status] || esc(b.status)) + '</span>' +
         '<div class="rule" role="presentation"></div>' +
-        '<h2>' + (held ? 'Your room is <em>held</em>, ' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +
+        '<h2>' + (held ? (rooms > 1 ? 'Your rooms are <em>held</em>, ' : 'Your room is <em>held</em>, ') : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +
           (b.status === 'EXPIRED' ? '' : esc(b.guest.firstName)) + '</h2>' +
         '<p style="margin:14px 0 0;color:var(--warm-mid)">Booking reference</p><div class="ref">' + esc(b.ref) + '</div>' +
         (held ? '<p class="timer" id="timer">Held for <b>15:00</b></p>' : '') +
         '<dl class="hold__grid num">' +
-          '<div><dt>Room</dt><dd>' + esc(b.room.name) + '</dd></div>' +
+          '<div><dt>' + (rooms > 1 ? 'Rooms' : 'Room') + '</dt><dd>' + b.rooms.map(function (r) { return (r.units > 1 ? r.units + ' × ' : '') + esc(r.name); }).join('<br>') + '</dd></div>' +
           '<div><dt>Guests</dt><dd>' + b.guests + '</dd></div>' +
           '<div><dt>Check in</dt><dd>' + day(b.checkIn, true) + '<br><small style="color:var(--warm-dim)">from 14:00</small></dd></div>' +
           '<div><dt>Check out</dt><dd>' + day(b.checkOut, true) + '<br><small style="color:var(--warm-dim)">by 11:00</small></dd></div>' +
+          (b.activities.length ? '<div class="span2"><dt>Experiences</dt><dd>' + b.activities.map(function (t) {
+              return esc(t.name) + ' <small style="color:var(--warm-dim)">· ' + day(t.day) + ', ' + t.time + ' · ' + plural(t.people, 'person', 'people') + '</small>';
+            }).join('<br>') + '</dd></div>' : '') +
           '<div><dt>Total</dt><dd>' + money(b.totalKes) + ' · ' + plural(b.nights, 'night') + '</dd></div>' +
           (b.status === 'CONFIRMED' && paid
             ? '<div><dt>Deposit paid</dt><dd>' + money(b.depositKes) + '</dd></div><div><dt>Balance</dt><dd>' + money(b.balanceKes) + '</dd></div>'
             : '<div><dt>Deposit to confirm</dt><dd>' + money(b.depositKes) + '</dd></div>') +
         '</dl>' +
         (held ? payHtml(b) : '') +
-        (b.status === 'CONFIRMED' ? '<div class="paid"><b>Your deposit is in and your room is yours.</b>' +
+        (b.status === 'CONFIRMED' ? '<div class="paid"><b>Your deposit is in and your ' + (rooms > 1 ? 'rooms are' : 'room is') + ' yours.</b>' +
             (paid && p.receipt ? ' Receipt <span class="num">' + esc(p.receipt) + '</span>.' : '') +
             (refund ? ' A second payment also reached us for this booking; we\'ll refund it and be in touch.' : '') + '</div>' : '') +
         (b.status === 'EXPIRED' && refund ? '<div class="next next--bad"><b>Your deposit arrived after the hold ran out, and the room had been booked by then.</b> We\'re sorry. We\'ll refund it in full and be in touch by email.' +
@@ -640,7 +843,7 @@
           ((b.status === 'EXPIRED' || b.status === 'CANCELLED') ? '<a class="btn" href="' + esc(again) + '">Check these dates again</a>' : '') +
           '<a class="btn btn--ghost" href="index.html">Back to Safari Ember</a></div>' +
       '</div>';
-      showStep(3);
+      showStep(4);
       if (!quiet) focusMain();
       if (held && b.holdExpiresAt) {
         var end = new Date(b.holdExpiresAt).getTime();
@@ -745,9 +948,9 @@
       var m = /^#(SE-[A-Z0-9]{6})\.(\d{10}\.[A-Za-z0-9_-]{43})(?:[?&].*)?$/.exec(location.hash);
       if (!m) return false;
       var clean = '#' + m[1] + '.' + m[2];
-      if (location.hash !== clean) history.replaceState({ step: 3 }, '', location.pathname + clean);
+      if (location.hash !== clean) history.replaceState({ step: 4 }, '', location.pathname + clean);
       LINK = { ref: m[1], token: m[2] };
-      showStep(3);
+      showStep(4);
       $('step-hold').innerHTML = '<p class="loading">Opening your booking…</p>';
       api('/bookings/' + m[1], { headers: { Accept: 'application/json', 'X-Booking-Token': m[2] } })
         .then(function (res) { viewBooking(res.booking); })     // the API answers { booking }
@@ -761,7 +964,7 @@
     /* ── Start: a booking link, or a search from the address ─────────────────────────────── */
     function fromAddress() {
       var q = new URLSearchParams(location.search);
-      var st = { checkIn: q.get('checkIn') || '', checkOut: q.get('checkOut') || '', guests: Math.min(5, Math.max(1, Number(q.get('guests')) || 2)) };
+      var st = { checkIn: q.get('checkIn') || '', checkOut: q.get('checkOut') || '', guests: Math.min(12, Math.max(1, Number(q.get('guests')) || 2)) };
       f.in.value = st.checkIn; f.out.value = st.checkOut; f.guests.value = String(st.guests);
       if (st.checkIn) f.out.min = addDays(st.checkIn, 1);
       showStep(1);
@@ -771,7 +974,8 @@
     // Back/forward between steps 1 and 2 (the browser's own buttons)
     window.addEventListener('popstate', function (e) {
       var st = e.state || {};
-      if (st.step === 2 && S.room) { openDetails(); return; }
+      if (st.step === 3 && S.results) { openDetails(); return; }
+      if (st.step === 2 && S.results) { openExperiences(); return; }
       if (loadFromLink()) return;
       // Back to the rooms: check again, since availability may have changed (or this guest just held one)
       if (S.stay) { showStep(1); focusMain(); search(S.stay, false); } else fromAddress();

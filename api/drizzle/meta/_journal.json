@@ -15,6 +15,13 @@
       "when": 1792004685627,
       "tag": "0001_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792737002486,
+      "tag": "0002_multiroom_activities",
+      "breakpoints": true
     }
   ]
 }

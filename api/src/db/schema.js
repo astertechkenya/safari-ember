@@ -77,15 +77,16 @@ export const closures = pgTable('closures', {
 // A booking takes a unit while HELD (and not past its hold) or CONFIRMED.
 export const bookingStatus = pgEnum('booking_status', ['HELD', 'CONFIRMED', 'EXPIRED', 'CANCELLED', 'COMPLETED']);
 
+// One booking = one reference, one hold, one deposit. Its rooms are in booking_rooms (one or
+// more room types, each with a number of units) and its trips in booking_activities.
 export const bookings = pgTable('bookings', {
   id: serial().primaryKey(),
   ref: varchar({ length: 12 }).notNull(),             // 'SE-7K3QXM': what the guest sees and quotes
-  roomTypeId: integer().notNull().references(() => roomTypes.id, { onDelete: 'restrict' }),
   checkIn: date({ mode: 'string' }).notNull(),
   checkOut: date({ mode: 'string' }).notNull(),
   nights: integer().notNull(),
-  guests: integer().notNull(),
-  totalKes: integer().notNull(),
+  guests: integer().notNull(),                       // the whole party, across all its rooms
+  totalKes: integer().notNull(),                      // rooms + activities
   depositKes: integer().notNull(),
   status: bookingStatus().notNull().default('HELD'),
   holdExpiresAt: timestamp({ withTimezone: true }),   // only meaningful while HELD
@@ -102,8 +103,8 @@ export const bookings = pgTable('bookings', {
   refundDue: boolean().notNull().default(false),
 }, (t) => [
   uniqueIndex('bookings_ref_key').on(t.ref),
-  // Availability asks "which bookings of this type overlap these nights and still hold a unit?"
-  index('bookings_room_dates_idx').on(t.roomTypeId, t.checkIn, t.checkOut),
+  // Availability asks "which bookings overlap these nights and still hold their rooms?"
+  index('bookings_dates_idx').on(t.checkIn, t.checkOut),
   index('bookings_status_idx').on(t.status, t.holdExpiresAt),
   check('bookings_dates_check', sql`${t.checkOut} > ${t.checkIn}`),
   check('bookings_nights_check', sql`${t.nights} = ${t.checkOut} - ${t.checkIn}`),
@@ -112,15 +113,73 @@ export const bookings = pgTable('bookings', {
   check('bookings_hold_check', sql`${t.status} <> 'HELD' or ${t.holdExpiresAt} is not null`),
 ]);
 
-// Each night's price, frozen when the guest books: changing a rate later never changes what an
-// existing guest owes, and the confirmation can show the price night by night.
+// The rooms of a booking: which room types, and how many units of each. Two Hearthside Rooms
+// and a Coalbed Suite is two rows: (hearthside, 2) and (coalbed, 1). Every room shares the
+// booking's dates.
+export const bookingRooms = pgTable('booking_rooms', {
+  bookingId: integer().notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  roomTypeId: integer().notNull().references(() => roomTypes.id, { onDelete: 'restrict' }),
+  units: integer().notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.bookingId, t.roomTypeId] }),
+  // Availability asks "how many units of this type are held on these nights?"
+  index('booking_rooms_room_idx').on(t.roomTypeId),
+  check('booking_rooms_units_check', sql`${t.units} between 1 and 20`),
+]);
+
+// Each night's price per unit of each room type, frozen when the guest books: changing a rate
+// later never changes what an existing guest owes, and the confirmation can show it night by night.
 export const bookingNights = pgTable('booking_nights', {
   bookingId: integer().notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  roomTypeId: integer().notNull().references(() => roomTypes.id, { onDelete: 'restrict' }),
   night: date({ mode: 'string' }).notNull(),
-  rateKes: integer().notNull(),
+  rateKes: integer().notNull(),                       // for ONE unit; the booking_rooms row says how many
 }, (t) => [
-  primaryKey({ columns: [t.bookingId, t.night] }),
+  primaryKey({ columns: [t.bookingId, t.roomTypeId, t.night] }),
   check('booking_nights_rate_check', sql`${t.rateKes} > 0`),
+]);
+
+// ── Activities (add-ons to a stay) ─────────────────────────────────────────────────────────
+// Trips the lodge runs: transport and a guide to Nairobi National Park, the Giraffe Centre…
+// Each leaves at set times on set weekdays, with a number of seats (one vehicle). Seats are
+// counted like rooms: a held or confirmed booking takes them.
+export const activities = pgTable('activities', {
+  id: serial().primaryKey(),
+  slug: varchar({ length: 60 }).notNull(),            // 'nairobi-national-park'
+  name: varchar({ length: 100 }).notNull(),
+  summary: text().notNull(),                          // what's included, and what isn't (gate fees)
+  durationMinutes: integer().notNull(),               // door to door, from the lodge
+  priceKes: integer().notNull(),                      // per person
+  seats: integer().notNull(),                         // per departure
+  departureTimes: varchar({ length: 5 }).array().notNull(),   // ['06:30', '15:00'], Nairobi time
+  weekdays: integer().array().notNull(),              // 1 = Monday … 7 = Sunday
+  sort: integer().notNull().default(0),
+  active: boolean().notNull().default(true),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('activities_slug_key').on(t.slug),
+  check('activities_price_check', sql`${t.priceKes} > 0`),
+  check('activities_seats_check', sql`${t.seats} between 1 and 100`),
+  check('activities_duration_check', sql`${t.durationMinutes} between 15 and 1440`),
+]);
+
+// The activities on a booking: which trip, which day and departure, how many people, and the
+// price per person frozen at booking time.
+export const bookingActivities = pgTable('booking_activities', {
+  id: serial().primaryKey(),
+  bookingId: integer().notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  activityId: integer().notNull().references(() => activities.id, { onDelete: 'restrict' }),
+  day: date({ mode: 'string' }).notNull(),
+  departs: varchar({ length: 5 }).notNull(),          // 'HH:MM', one of the activity's departure times
+  people: integer().notNull(),
+  priceKes: integer().notNull(),                      // per person, frozen
+}, (t) => [
+  uniqueIndex('booking_activities_once_key').on(t.bookingId, t.activityId, t.day, t.departs),
+  // Seats asks "how many people are booked on this departure?"
+  index('booking_activities_departure_idx').on(t.activityId, t.day, t.departs),
+  check('booking_activities_people_check', sql`${t.people} between 1 and 100`),
+  check('booking_activities_price_check', sql`${t.priceKes} > 0`),
+  check('booking_activities_departs_check', sql`${t.departs} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
 ]);
 
 // ── Payments (Phase 3) ─────────────────────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 // availability.js: how many units of a room type are free for EVERY night of a stay.
 //
 // For each night of the stay, per room type:
-//     free = units − bookings holding a unit that night − units closed that night
+//     free = units − units held by bookings that night − units closed that night
+// (a booking can hold several units of a type: booking_rooms.units)
 // and a stay is possible only if the SMALLEST of those is at least 1: one fully booked night
 // in the middle blocks the whole stay.
 //
@@ -31,9 +32,10 @@ export async function freeUnits({ checkIn, checkOut, roomTypeId = null, executor
       from room_types rt
      cross join nights
      cross join lateral (
-            select count(*)::int as n
-              from bookings b
-             where b.room_type_id = rt.id
+            select coalesce(sum(br.units), 0)::int as n
+              from booking_rooms br
+              join bookings b on b.id = br.booking_id
+             where br.room_type_id = rt.id
                and b.check_in <= nights.night and b.check_out > nights.night
                and (b.status = 'CONFIRMED' or (b.status = 'HELD' and b.hold_expires_at > now()))
           ) taken

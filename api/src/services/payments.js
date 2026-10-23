@@ -22,13 +22,13 @@
 //   a different amount than we asked         → payment FLAGGED, booking unchanged: a person decides
 import { and, desc, eq, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { bookings, payments, roomTypes } from '../db/schema.js';
+import { bookings, payments } from '../db/schema.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { httpError } from '../middleware/errors.js';
 import { normalisePhone, isKenyanMobile } from '../lib/phone.js';
 import { bookingUrl } from '../lib/bookingLink.js';
-import { freeUnits } from './availability.js';
+import { bookingStillFits, withHoldRunning } from './capacity.js';
 import { amountToRequest, stkPush, stkQuery } from './daraja.js';
 import { initialize, verify } from './paystack.js';
 
@@ -65,19 +65,22 @@ async function recentPushes(phone, tx = db) {
 /**
  * Makes sure the booking holds its room for at least PAYMENT_GRACE_MINUTES more, inside the
  * caller's transaction (the booking row is already locked). A hold that already ran out is
- * renewed only if the room is still free, checked under the room type's lock exactly like a
- * new booking (services/bookings.js), so this can never overbook.
+ * renewed only if all its rooms and activity seats are still free, checked under the same locks
+ * as a new booking (services/capacity.js), so this can never overbook.
  */
 async function keepHeld(tx, b) {
-  const graceEnds = new Date(Date.now() + config.PAYMENT_GRACE_MINUTES * 60_000);
-  const running = b.status === 'HELD' && b.holdExpiresAt > new Date();
-  if (!running) {
-    await tx.select({ id: roomTypes.id }).from(roomTypes).where(eq(roomTypes.id, b.roomTypeId)).for('update');
-    const free = (await freeUnits({ checkIn: b.checkIn, checkOut: b.checkOut, roomTypeId: b.roomTypeId, executor: tx })).get(b.roomTypeId) ?? 0;
-    if (free < 1) throw httpError(409, 'Your hold ran out and the room has since been booked. Please choose other dates or another room.');
+  // Both questions are answered by the database's clock (see withHoldRunning in capacity.js).
+  const grace = sql`now() + make_interval(mins => ${config.PAYMENT_GRACE_MINUTES})`;
+  const { rows: [t] } = await tx.execute(sql`
+    select (${bookings.status} = 'HELD' and ${bookings.holdExpiresAt} > now()) as running,
+           coalesce(${bookings.holdExpiresAt} < ${grace}, true) as "endsSoon"
+      from ${bookings} where ${bookings.id} = ${b.id}`);
+  if (!t.running) {
+    const short = await bookingStillFits(tx, b);
+    if (short) throw httpError(409, `Your hold ran out and something has since been booked: ${short} Please start a new booking.`);
   }
-  if (!running || b.holdExpiresAt < graceEnds) {
-    await tx.update(bookings).set({ status: 'HELD', holdExpiresAt: graceEnds }).where(eq(bookings.id, b.id));
+  if (!t.running || t.endsSoon) {
+    await tx.update(bookings).set({ status: 'HELD', holdExpiresAt: grace }).where(eq(bookings.id, b.id));
   }
 }
 
@@ -240,15 +243,15 @@ async function markPaid(paymentId, from = {}) {
     }).where(eq(payments.id, p.id));
     if (wrongAmount) return { flagged: true, paymentId };
 
-    // Lock order: payment → booking → room type. Booking creation locks only the room type and
-    // inserts; nothing locks a booking then waits on a payment, so these can't deadlock.
-    const [b] = await tx.select().from(bookings).where(eq(bookings.id, p.bookingId)).for('update');
+    // Lock order: payment → booking → room types → activities (services/capacity.js). Booking
+    // creation locks only room types and activities; nothing locks a booking then waits on a
+    // payment, so these can't deadlock.
+    // holdRunning is judged by the database's clock, the one that freed the rooms (withHoldRunning).
+    const [b] = await tx.select(withHoldRunning).from(bookings).where(eq(bookings.id, p.bookingId)).for('update');
     const confirm = () => tx.update(bookings).set({ status: 'CONFIRMED', confirmedAt: now, holdExpiresAt: null }).where(eq(bookings.id, b.id));
-    if (b.status === 'HELD' && b.holdExpiresAt > now) { await confirm(); return { confirmed: b.ref }; }
+    if (b.holdRunning) { await confirm(); return { confirmed: b.ref }; }
     if (b.status === 'HELD' || b.status === 'EXPIRED') {
-      await tx.select({ id: roomTypes.id }).from(roomTypes).where(eq(roomTypes.id, b.roomTypeId)).for('update');
-      const free = (await freeUnits({ checkIn: b.checkIn, checkOut: b.checkOut, roomTypeId: b.roomTypeId, executor: tx })).get(b.roomTypeId) ?? 0;
-      if (free >= 1) { await confirm(); return { confirmed: b.ref, late: true }; }
+      if (!(await bookingStillFits(tx, b))) { await confirm(); return { confirmed: b.ref, late: true }; }
     }
     await tx.update(bookings).set({ refundDue: true, ...(b.status === 'HELD' ? { status: 'EXPIRED' } : {}) }).where(eq(bookings.id, b.id));
     return { refundDue: b.ref, status: b.status };

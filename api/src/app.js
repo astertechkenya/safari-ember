@@ -16,6 +16,7 @@ import { sameOrigin } from './middleware/sameOrigin.js';
 import { notFound, errorHandler } from './middleware/errors.js';
 import { roomsRouter } from './routes/rooms.js';
 import { availabilityRouter } from './routes/availability.js';
+import { activitiesRouter } from './routes/activities.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { enquiriesRouter } from './routes/enquiries.js';
 import { paymentsRouter } from './routes/payments.js';
@@ -73,6 +74,7 @@ export function createApp() {
 
   app.use('/api/rooms', roomsRouter);
   app.use('/api/availability', availabilityRouter);
+  app.use('/api/activities', activitiesRouter);
   app.use('/api/bookings', bookingsRouter);
   app.use('/api/enquiries', enquiriesRouter);
 

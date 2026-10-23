@@ -10,7 +10,8 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     const field = issue.path.join('.');
-    const unknown = issue.code === 'unrecognized_keys' ? `Unknown field: ${issue.keys.join(', ')}` : null;
+    // Inside a list, say where: 'activities.0.priceKes', not just 'priceKes'.
+    const unknown = issue.code === 'unrecognized_keys' ? `Unknown field: ${issue.keys.map((k) => (field ? `${field}.${k}` : k)).join(', ')}` : null;
     return next(httpError(400, unknown ?? (field ? `${field}: ${issue.message}` : issue.message)));
   }
   req.valid = { ...req.valid, [source]: parsed.data };

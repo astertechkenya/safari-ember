@@ -7,6 +7,8 @@
 //     "Christmas week" inside a long "high season" is the more specific price.
 //     (Same start? The one added later, i.e. the higher id.)
 //   - Total = sum of the nights. A stay that crosses into a season is priced night by night.
+//   - A booking's total = every room's nights × its units, plus each activity's price per person
+//     × people. The deposit is taken on that whole total.
 //   - Deposit = DEPOSIT_PERCENT of the total, rounded UP to the next shilling (never under-collect),
 //     and never more than the total.
 // Money is whole shillings throughout. The deposit maths stays in integers too:
@@ -41,4 +43,17 @@ export function quote(roomType, checkIn, checkOut, seasons, depositPercent) {
   const totalKes = nightly.reduce((sum, n) => sum + n.rateKes, 0);
   const depositKes = depositFor(totalKes, depositPercent);
   return { nightly, totalKes, depositKes, balanceKes: totalKes - depositKes, depositPercent };
+}
+
+/**
+ * The price of a whole booking: several rooms and any activities.
+ * @param rooms       [{ units, nightly }]   nightly from priceNights(), for ONE unit
+ * @param activities  [{ people, priceKes }] priceKes per person
+ */
+export function quoteBooking({ rooms, activities = [], depositPercent }) {
+  const roomsKes = rooms.reduce((sum, r) => sum + r.units * r.nightly.reduce((s, n) => s + n.rateKes, 0), 0);
+  const activitiesKes = activities.reduce((sum, a) => sum + a.people * a.priceKes, 0);
+  const totalKes = roomsKes + activitiesKes;
+  const depositKes = depositFor(totalKes, depositPercent);
+  return { roomsKes, activitiesKes, totalKes, depositKes, balanceKes: totalKes - depositKes, depositPercent };
 }

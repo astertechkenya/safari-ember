@@ -1,7 +1,7 @@
 // Deposits (Phase 3) against fake Safaricom and Paystack servers and a real Postgres.
 // What matters most here: nothing is confirmed on a callback's word, a payment settles once,
 // a late deposit never overbooks, and every odd case ends somewhere a person can see it.
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { sql, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
@@ -26,12 +26,12 @@ beforeAll(async () => {
 afterAll(async () => {
   await daraja.close();
   await paystack.close();
-  await db.execute(sql`truncate bookings, booking_nights, payments restart identity cascade`);
+  await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities, payments restart identity cascade`);
   await db.delete(roomTypes).where(eq(roomTypes.id, room.id));
   await pool.end();
 });
 beforeEach(async () => {
-  await db.execute(sql`truncate bookings, booking_nights, payments restart identity cascade`);
+  await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities, payments restart identity cascade`);
   daraja.fake.pushes.length = 0;
   daraja.fake.queries.length = 0;
   paystack.fake.inits.length = 0;
@@ -41,7 +41,7 @@ beforeEach(async () => {
 const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.com', phone: '0712345678' };
 let nextStay = 100;                   // each booking on its own dates unless a test says otherwise
 async function hold(extra = {}, at = nextStay++ * 3) {
-  const res = await as(app).post('/api/bookings').send({ room: 'test-pay', checkIn: inDays(at), checkOut: inDays(at + 2), guests: 2, ...guest, ...extra });
+  const res = await as(app).post('/api/bookings').send({ rooms: [{ room: 'test-pay', units: 1 }], checkIn: inDays(at), checkOut: inDays(at + 2), guests: 2, ...guest, ...extra });
   expect(res.status).toBe(201);
   return { ref: res.body.booking.ref, token: res.body.token, checkIn: inDays(at) };
 }
@@ -329,7 +329,7 @@ describe('time running out', () => {
     await hold({ email: 'other@example.com' }, 520);              // the only unit, same nights
     const res = await pay(b, { method: 'mpesa' });
     expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/has since been booked/);
+    expect(res.body.error).toMatch(/has since been booked: Test Pay has just been booked/);
   });
 
   it('confirms a late deposit when the room is still free', async () => {
@@ -349,6 +349,38 @@ describe('time running out', () => {
     daraja.fake.outcome.set(lastPushId(), { state: 'paid' });
     await forgetLastCheck();
     expect((await look(b)).body.booking).toMatchObject({ status: 'EXPIRED', refundDue: true, payment: { status: 'PAID' } });
+    expect((await bookingRow(other.ref)).status).toBe('HELD');
+  });
+
+  it("never overbooks when this server's clock is behind the database's", async () => {
+    // The hold ran out by the DATABASE's clock and the room went to someone else; the API's own
+    // clock, five minutes slow, would still call the hold running. The database's clock must win.
+    const b = await hold({}, 535);
+    await pay(b, { method: 'mpesa' });
+    await lapse(b.ref);
+    const other = await hold({ email: 'other@example.com' }, 535);
+    daraja.fake.outcome.set(lastPushId(), { state: 'paid' });
+    await forgetLastCheck();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.now() - 5 * 60_000));   // this server five minutes slow
+    try {
+      expect((await look(b)).body.booking).toMatchObject({ status: 'EXPIRED', refundDue: true, payment: { status: 'PAID' } });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect((await bookingRow(other.ref)).status).toBe('HELD');
+  });
+
+  it('refunds a late deposit on a group booking when even one of its rooms was taken', async () => {
+    // Two rooms: the only Test Pay unit and a Hearthside (plenty free). Only Test Pay goes to
+    // someone else, which is enough: the booking can't be confirmed without all its rooms.
+    const b = await hold({ rooms: [{ room: 'test-pay', units: 1 }, { room: 'hearthside-room', units: 1 }], guests: 3 }, 530);
+    await pay(b, { method: 'mpesa' });
+    await lapse(b.ref);
+    const other = await hold({ email: 'other@example.com' }, 530);
+    daraja.fake.outcome.set(lastPushId(), { state: 'paid' });
+    await forgetLastCheck();
+    expect((await look(b)).body.booking).toMatchObject({ status: 'EXPIRED', refundDue: true });
     expect((await bookingRow(other.ref)).status).toBe('HELD');
   });
 

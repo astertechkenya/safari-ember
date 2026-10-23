@@ -2404,7 +2404,14 @@
             <option value="2" selected>2 guests</option>
             <option value="3">3 guests</option>
             <option value="4">4 guests</option>
-            <option value="5">5 or more</option>
+            <option value="5">5 guests</option>
+            <option value="6">6 guests</option>
+            <option value="7">7 guests</option>
+            <option value="8">8 guests</option>
+            <option value="9">9 guests</option>
+            <option value="10">10 guests</option>
+            <option value="11">11 guests</option>
+            <option value="12">12 guests</option>
           </select>
         </div>
         <button type="submit" class="booking__submit">Check Availability</button>
@@ -2636,7 +2643,6 @@
       // Returns a problem to show, or '' when the stay is fine
       function problem() {
         var a = inEl.value, b = outEl.value;
-        if (guestsEl.value === '5') return 'For five or more guests we\'ll arrange two rooms for you: <a href="#inquiry">send us an enquiry</a>.';
         if (!a || !b) return 'Choose your check-in and check-out dates.';
         if (a < today) return 'Check-in can\'t be in the past.';
         if (a > horizon) return 'We take bookings up to 18 months ahead.';
@@ -2650,8 +2656,7 @@
         if (inEl.value && outEl.value && !problem()) {
           var n = nights(inEl.value, outEl.value);
           say(nice(inEl.value) + ' → ' + nice(outEl.value) + ' · ' + n + (n === 1 ? ' night' : ' nights'));
-        } else if (guestsEl.value === '5') say(problem());
-        else say('');
+        } else say('');
       }
       [inEl, outEl, guestsEl].forEach(function (el) { el.addEventListener('change', update); });
 
@@ -2660,7 +2665,7 @@
         var p = problem();
         if (p) {
           say(p, true);
-          (guestsEl.value === '5' ? guestsEl : !inEl.value ? inEl : outEl).focus();
+          (!inEl.value ? inEl : outEl).focus();
           return;
         }
         location.href = 'booking.html?' + new URLSearchParams({ checkIn: inEl.value, checkOut: outEl.value, guests: guestsEl.value });

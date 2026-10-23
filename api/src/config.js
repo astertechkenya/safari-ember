@@ -40,6 +40,11 @@ const schema = z.object({
   // Show "only N left" when this few units or fewer are free. Above it, just "available":
   // a lodge doesn't want to advertise exactly how empty it is.
   FEW_LEFT: z.coerce.number().int().min(0).max(20).default(3),
+  // Most rooms in one booking (all types together). Bigger groups use the enquiry form.
+  MAX_ROOMS: z.coerce.number().int().min(1).max(20).default(6),
+  // An activity can be added up to this long before it departs (the lodge needs time to
+  // arrange the vehicle and guide).
+  ACTIVITY_CUTOFF_MINUTES: z.coerce.number().int().min(0).max(2880).default(120),
 
   // ── Deposits (Phase 3, adapted from NURA) ──────────────────────────────────────────────────
   // M-Pesa through Safaricom's Daraja API. Offered only when all four DARAJA_* values,

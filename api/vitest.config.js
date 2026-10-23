@@ -43,6 +43,8 @@ export default defineConfig({
       MAX_NIGHTS: '30',
       BOOKING_HORIZON_MONTHS: '18',
       FEW_LEFT: '3',
+      MAX_ROOMS: '6',
+      ACTIVITY_CUTOFF_MINUTES: '120',
       // M-Pesa against a FAKE Daraja (test/fakeDaraja.js, this port). Sandbox mode: prompts ask for KES 1.
       DARAJA_ENV: 'sandbox',
       DARAJA_BASE_URL: 'http://127.0.0.1:4599',
