@@ -1,6 +1,6 @@
 // activities.js: GET /api/activities?checkIn=2026-12-20&checkOut=2026-12-23
 // The trips a guest can add to that stay: each with its price per person and every departure
-// from check-in to check-out (inclusive) that's still far enough ahead, with the seats left.
+// from check-in to check-out (inclusive) that's still far enough ahead.
 import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
@@ -16,6 +16,6 @@ activitiesRouter.get('/',
   limit({ windowMs: 60_000, max: 60 }),
   validate(query, 'query'),
   async (req, res) => {
-    res.set('Cache-Control', 'no-store');   // seats change as people book
+    res.set('Cache-Control', 'no-store');   // departures drop off as their cut-off passes
     res.json({ activities: await activitiesFor(req.valid.query) });
   });

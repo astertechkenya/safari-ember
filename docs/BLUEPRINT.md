@@ -59,7 +59,7 @@ All money is whole Kenyan shillings, stored as integers. No floating point anywh
 **Deposit.** 30% of the total, rounded up to the next shilling, paid online to confirm. The
 balance is paid at the lodge. (Setting: `DEPOSIT_PERCENT`.)
 
-**Holds.** Starting a booking *holds* its rooms (and trip seats) for 15 minutes while the guest pays. Paid in
+**Holds.** Starting a booking *holds* its rooms for 15 minutes while the guest pays. Paid in
 time: the booking is confirmed. Not paid: the hold expires and the unit is free again.
 A held unit counts as taken, so two guests can never pay for the same last room.
 
@@ -94,7 +94,7 @@ bookings         id, ref, check_in, check_out, guests, nights, total_kes, deposi
                  created_at, confirmed_at, cancelled_at, refund_due
 booking_rooms    booking_id, room_type_id, units    (which rooms, how many of each)
 booking_nights   booking_id, room_type_id, night, rate_kes   (price of one unit that night, frozen)
-activities       id, slug, name, summary, duration_minutes, price_kes (per person), seats,
+activities       id, slug, name, summary, duration_minutes, price_kes (per person), seats (one vehicle, for staff: not a limit),
                  departure_times (HH:MM[]), weekdays (1 = Mon … 7 = Sun), sort, active
 booking_activities id, booking_id, activity_id, day, departs, people, price_kes (frozen)
 payments         id, booking_id, provider (DARAJA | PAYSTACK), status, amount_kes, received_kes,
@@ -117,7 +117,7 @@ never changes what an existing guest owes.
 |---|---|
 | `GET /api/rooms` | Room types with their "from" price |
 | `GET /api/availability?checkIn=…&checkOut=…&guests=…` | Each room type: available or not, units left (when few), nightly prices, total, deposit |
-| `GET /api/activities?checkIn=…&checkOut=…` | Trips that can be added to that stay, each departure with seats left |
+| `GET /api/activities?checkIn=…&checkOut=…` | Trips that can be added to that stay, with their departures (no seat counts) |
 | `POST /api/bookings` | Hold rooms (`rooms: [{ room, units }]`) plus optional trips (`activities: [{ activity, day, time, people }]`), dates, guests, guest details → reference, amount due, hold expiry, signed link |
 | `GET /api/bookings/:ref` (signed link) | The booking's status, for the confirmation page |
 | `POST /api/bookings/:ref/pay` (signed link) | Start the deposit payment: `{ method: 'mpesa', phone? }` sends a prompt; `{ method: 'card' }` returns Paystack's page address |
@@ -138,16 +138,16 @@ quick taps can't make two). Six attempts per booking, five M-Pesa prompts per nu
 Switching from an unfinished card page to M-Pesa first checks the card wasn't paid after all.
 
 **Settles once.** Every status change is a conditional update (`… where status = 'PENDING'`)
-under a row lock, taken in a fixed order (payment → booking → room types by id → activities
-by id, see `services/capacity.js`), so racing answers can't settle a payment twice or deadlock.
+under a row lock, taken in a fixed order (payment → booking → room types by id, see
+`services/capacity.js`), so racing answers can't settle a payment twice or deadlock.
 
 **What a paid deposit does:**
 
 | Booking when the money arrives | Result |
 |---|---|
 | `HELD`, hold still running | `CONFIRMED` |
-| Hold ran out, rooms and seats still free | `CONFIRMED` (re-checked under the same locks as a new booking) |
-| Hold ran out, a room or seat taken meanwhile | `EXPIRED` with `refund_due`; the guest's page says a refund is coming |
+| Hold ran out, rooms still free | `CONFIRMED` (re-checked under the same locks as a new booking) |
+| Hold ran out, a room taken meanwhile | `EXPIRED` with `refund_due`; the guest's page says a refund is coming |
 | Already `CONFIRMED` or `CANCELLED` | `refund_due` (a duplicate or late deposit) |
 | Different amount or currency | Payment `FLAGGED`, booking unchanged: a person decides |
 
@@ -176,17 +176,20 @@ guest may pick (`maxUnits`) and whether the free rooms can sleep the party at al
 
 **Experiences are add-ons.** Trips (Nairobi National Park game drive, Giraffe Centre, Nairobi
 Safari Walk) can only be added to a room booking, never booked alone. Each leaves at set times
-on set weekdays (Nairobi time), with a fixed number of seats per departure. Rules:
+on set weekdays (Nairobi time). Rules:
 
 - Any day from check-in to check-out *inclusive* (a morning drive before an 11:00 check-out).
 - Bookable until `ACTIVITY_CUTOFF_MINUTES` (default 120) before it leaves.
 - People per trip: 1 up to the party size. Priced per person, frozen at booking time.
-- Seats count exactly like rooms: taken while `CONFIRMED` or `HELD` with a live hold.
+- **No seat limit, and no seat counts shown** (decided Oct 2026). Guests pick a time and how many
+  people; if a departure outgrows one vehicle (`seats`, kept for staff), the lodge adds a vehicle
+  or offers another time and staff tell the guest. The booking page says the lodge will confirm
+  the arrangements before arrival.
 - Gate and entry fees are paid at the gate, not to the lodge; the summaries say so.
 
 **Deadlocks.** A booking now locks several rows, so every path takes them in one order:
-payment → booking → room types (by id) → activities (by id). Tests fire two bookings that
-want the same two room types in opposite orders, and the last seats from two sides at once.
+payment → booking → room types (by id). Activities take no lock, having no limit to protect.
+Tests fire two bookings that want the same two room types in opposite orders.
 
 **Migration `0002_multiroom_activities`** moves each existing booking's room into
 `booking_rooms` (1 unit) and stamps its nights with that type before dropping

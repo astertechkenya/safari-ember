@@ -1,10 +1,9 @@
-// Activities added to a stay: listing departures, pricing, seats, schedule rules and races.
+// Activities added to a stay: listing departures, pricing, schedule rules, and no seat limit.
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { sql, eq } from 'drizzle-orm';
 import { createApp } from '../src/app.js';
 import { db, pool } from '../src/db/client.js';
-import { roomTypes, activities, bookings } from '../src/db/schema.js';
-import { createHold } from '../src/services/bookings.js';
+import { roomTypes, activities } from '../src/db/schema.js';
 import { bookable, weekdayOf, tripDays } from '../src/services/activities.js';
 import { as, inDays } from './helpers.js';
 
@@ -32,7 +31,6 @@ const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.co
 const book = (trips, { checkIn = inDays(60), checkOut = inDays(62), guests = 2, ...extra } = {}) =>
   as(app).post('/api/bookings').send({ rooms: [{ room: 'test-trip-room', units: 1 }], activities: trips, checkIn, checkOut, guests, ...guest, ...extra });
 const listFor = (checkIn, checkOut) => as(app).get(`/api/activities?checkIn=${checkIn}&checkOut=${checkOut}`);
-const departure = (res, slug, day, time) => res.body.activities.find((a) => a.slug === slug).departures.find((d) => d.day === day && d.time === time);
 const nextMonday = (from) => { let d = from; while (weekdayOf(inDays(d)) !== 1) d += 1; return d; };
 
 describe('listing activities for a stay', () => {
@@ -45,14 +43,11 @@ describe('listing activities for a stay', () => {
     expect(res.body.activities[0].summary).toMatch(/paid at the gate/);
   });
 
-  it('offers every departure from check-in to check-out inclusive, with seats left', async () => {
+  it('offers every departure from check-in to check-out inclusive, with no seat counts', async () => {
     const res = await listFor(inDays(60), inDays(62));
     const t = res.body.activities.find((a) => a.slug === 'test-trip');
     expect(t).toMatchObject({ name: 'Test Trip', priceKes: 2_000, durationMinutes: 120 });
-    expect(t.departures.map((d) => `${d.day} ${d.time}`)).toEqual([
-      `${inDays(60)} 10:00`, `${inDays(60)} 15:00`, `${inDays(61)} 10:00`, `${inDays(61)} 15:00`, `${inDays(62)} 10:00`, `${inDays(62)} 15:00`,
-    ]);
-    expect(t.departures.every((d) => d.seatsLeft === 3)).toBe(true);
+    expect(t.departures).toEqual([60, 61, 62].flatMap((n) => ['10:00', '15:00'].map((time) => ({ day: inDays(n), time }))));
   });
 
   it('only lists weekdays the trip runs', async () => {
@@ -79,17 +74,14 @@ describe('adding activities to a booking', () => {
     expect(b.activities).toEqual([{ slug: 'test-trip', name: 'Test Trip', durationMinutes: 120, day: inDays(61), time: '10:00', people: 2, priceKes: 2_000, totalKes: 4_000 }]);
   });
 
-  it('takes seats while held, and gives them back the moment a hold lapses', async () => {
+  it('has no seat limit: staff arrange vehicles for however many book a departure', async () => {
+    // Test Trip's vehicle seats 3. Four people on one departure is fine: the lodge adds a
+    // vehicle or offers another time, and staff tell the guests (services/activities.js).
     const first = await book([{ activity: 'test-trip', day: inDays(61), time: '10:00', people: 2 }]);
-    expect(departure(await listFor(inDays(60), inDays(62)), 'test-trip', inDays(61), '10:00').seatsLeft).toBe(1);
-    const full = await book([{ activity: 'test-trip', day: inDays(61), time: '10:00', people: 2 }]);
-    expect(full.status).toBe(409);
-    expect(full.body.error).toBe(`Test Trip at 10:00 on ${inDays(61)} has only 1 seat left. Please choose other dates or rooms.`);
-    // Other departures are unaffected.
-    expect((await book([{ activity: 'test-trip', day: inDays(61), time: '15:00', people: 2 }])).status).toBe(201);
-
-    await db.update(bookings).set({ holdExpiresAt: sql`now() - interval '1 second'` }).where(eq(bookings.ref, first.body.booking.ref));
-    expect(departure(await listFor(inDays(60), inDays(62)), 'test-trip', inDays(61), '10:00').seatsLeft).toBe(3);
+    const second = await book([{ activity: 'test-trip', day: inDays(61), time: '10:00', people: 2 }]);
+    expect([first.status, second.status]).toEqual([201, 201]);
+    const { rows: [{ n }] } = await db.execute(sql`select sum(people)::int as n from booking_activities where activity_id = ${trip.id}`);
+    expect(n).toBe(4);
   });
 
   it('keeps each trip to the schedule and the party', async () => {
@@ -121,19 +113,6 @@ describe('adding activities to a booking', () => {
     } finally {
       await db.update(activities).set({ active: true }).where(eq(activities.id, trip.id));
     }
-  });
-
-  it('never oversells the last seats, even when bookings collide mid-way', async () => {
-    const pause = () => new Promise((r) => setTimeout(r, 300));
-    const input = {
-      rooms: [{ room: 'test-trip-room', units: 1 }], checkIn: inDays(80), checkOut: inDays(81), guests: 2, ...guest, phone: '+254712345678',
-      activities: [{ activity: 'test-trip', day: inDays(80), time: '15:00', people: 2 }],
-    };
-    const results = await Promise.allSettled([createHold(input, { afterCount: pause }), createHold(input, { afterCount: pause })]);
-    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-    expect(results.find((r) => r.status === 'rejected').reason.status).toBe(409);
-    const { rows: [{ n }] } = await db.execute(sql`select coalesce(sum(people), 0)::int as n from booking_activities where activity_id = ${trip.id}`);
-    expect(n).toBe(2);
   });
 
   it('freezes the price per person at booking time', async () => {

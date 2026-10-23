@@ -5,19 +5,21 @@
 // WHY THE LOCKS, AND WHY THE ORDER
 // To stop two guests buying the same last room, a booking locks each room type it uses
 // (SELECT … FOR UPDATE), then counts, then inserts (the full story is at the top of
-// services/bookings.js). A booking can now use several room types and activities, so it takes
-// several locks. If one booking locked Hearthside then Coalbed while another locked Coalbed then
+// services/bookings.js). A booking can use several room types, so it takes several locks. If one booking locked Hearthside then Coalbed while another locked Coalbed then
 // Hearthside, each could end up holding one lock and waiting forever for the other: a DEADLOCK
 // (Postgres would notice and fail one of them). The cure is a fixed order everyone follows:
 //
-//     payment → booking → room types (by id) → activities (by id)
+//     payment → booking → room types (by id)
 //
 // Two bookings needing overlapping things then always queue for them in the same order, so one
 // simply waits for the other to finish.
+//
+// Activities take no lock: they have no limit to protect. How many people go on a departure is
+// the lodge's to arrange (more vehicles, another time) and staff tell the guest; see
+// services/activities.js.
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
-import { bookings, roomTypes, bookingRooms, bookingActivities, activities } from '../db/schema.js';
+import { bookings, roomTypes, bookingRooms } from '../db/schema.js';
 import { freeUnits } from './availability.js';
-import { seatsTaken } from './activities.js';
 
 /**
  * Select every booking column plus holdRunning: "HELD, and the hold hasn't run out", judged by
@@ -47,22 +49,12 @@ export async function lockRoomTypes(tx, ids, { activeOnly = false } = {}) {
   return locked;
 }
 
-/** Locks activities one at a time in id order. */
-export async function lockActivityRows(tx, ids) {
-  const locked = [];
-  for (const id of [...new Set(ids)].sort((a, b) => a - b)) {
-    const [a] = await tx.select().from(activities).where(eq(activities.id, id)).for('update');
-    if (a) locked.push(a);
-  }
-  return locked;
-}
-
 /**
- * The first thing in `need` that no longer fits, as a message for the guest, or null if it all
- * fits. Call only with the room types and activities already locked.
- *   need: { checkIn, checkOut, rooms: [{ roomType, units }], trips: [{ activity, day, departs, people }] }
+ * The first room in `need` that no longer fits, as a message for the guest, or null if they all
+ * fit. Call only with the room types already locked.
+ *   need: { checkIn, checkOut, rooms: [{ roomType, units }] }
  */
-export async function shortfall(tx, { checkIn, checkOut, rooms, trips }) {
+export async function shortfall(tx, { checkIn, checkOut, rooms }) {
   const free = await freeUnits({ checkIn, checkOut, executor: tx });
   for (const { roomType, units } of rooms) {
     const left = free.get(roomType.id) ?? 0;
@@ -72,37 +64,20 @@ export async function shortfall(tx, { checkIn, checkOut, rooms, trips }) {
         : `Only ${left} ${roomType.name}${left === 1 ? ' is' : 's are'} left for those dates.`;
     }
   }
-  if (trips.length) {
-    const days = trips.map((t) => t.day).sort();
-    const taken = await seatsTaken({ activityIds: trips.map((t) => t.activity.id), from: days[0], to: days.at(-1), executor: tx });
-    for (const t of trips) {
-      const left = t.activity.seats - (taken.get(`${t.activity.id}|${t.day}|${t.departs}`) ?? 0);
-      if (left < t.people) {
-        return left <= 0
-          ? `${t.activity.name} at ${t.departs} on ${t.day} is now full.`
-          : `${t.activity.name} at ${t.departs} on ${t.day} has only ${left} seat${left === 1 ? '' : 's'} left.`;
-      }
-    }
-  }
   return null;
 }
 
 /**
- * For a booking that lost its hold (or never had one confirmed): lock everything it needs in the
- * standard order and check it still fits. The booking row itself must already be locked.
+ * For a booking that lost its hold (or never had one confirmed): lock its room types in the
+ * standard order and check they're still free. The booking row itself must already be locked.
  * Returns null if it fits, else the reason.
  */
 export async function bookingStillFits(tx, b) {
   const roomRows = await tx.select().from(bookingRooms).where(eq(bookingRooms.bookingId, b.id));
-  const tripRows = await tx.select().from(bookingActivities).where(eq(bookingActivities.bookingId, b.id));
   const types = await lockRoomTypes(tx, roomRows.map((r) => r.roomTypeId));
-  const acts = await lockActivityRows(tx, tripRows.map((t) => t.activityId));
   const typeById = new Map(types.map((t) => [t.id, t]));
-  const actById = new Map(acts.map((a) => [a.id, a]));
   return shortfall(tx, {
     checkIn: b.checkIn, checkOut: b.checkOut,
     rooms: roomRows.map((r) => ({ roomType: typeById.get(r.roomTypeId), units: r.units })),
-    trips: tripRows.map((t) => ({ activity: actById.get(t.activityId), day: t.day, departs: t.departs, people: t.people })),
   });
 }
-

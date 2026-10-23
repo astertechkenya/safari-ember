@@ -25,7 +25,7 @@ import { httpError } from '../middleware/errors.js';
 import { freeUnits } from './availability.js';
 import { checkBookingPayment, paymentSummary, paymentMethods } from './payments.js';
 import { quote, priceNights, quoteBooking } from './pricing.js';
-import { lockRoomTypes, lockActivityRows, shortfall, withHoldRunning } from './capacity.js';
+import { lockRoomTypes, shortfall, withHoldRunning } from './capacity.js';
 import { tripDays, weekdayOf, bookable } from './activities.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
@@ -130,7 +130,8 @@ export async function createHold({ rooms, activities: trips = [], checkIn, check
     const beds = lines.reduce((sum, l) => sum + l.units * l.roomType.sleeps, 0);
     if (guests > beds) throw httpError(400, `Those rooms sleep ${beds} at most, for ${plural(guests, 'guest')}. Please add a room.`);
 
-    // 2. The activities: check each against its schedule, then lock them (after the room types).
+    // 2. The activities: check each against its schedule. No seat count: the lodge arranges
+    //    vehicles for however many come (services/activities.js), so there's nothing to lock.
     const tripList = [];
     if (trips.length) {
       const found = await tx.select().from(activities)
@@ -148,12 +149,10 @@ export async function createHold({ rooms, activities: trips = [], checkIn, check
         if (t.people > guests) throw httpError(400, `${a.name}: at most ${plural(guests, 'guest')}, the size of your party`);
         tripList.push({ activity: a, day: t.day, departs: t.time, people: t.people });
       }
-      const locked = new Map((await lockActivityRows(tx, found.map((a) => a.id))).map((a) => [a.id, a]));
-      for (const t of tripList) t.activity = locked.get(t.activity.id);   // the locked, current row
     }
 
-    // 3. Count, now that nobody else can take these rooms or seats until we're done.
-    const short = await shortfall(tx, { checkIn, checkOut, rooms: lines, trips: tripList });
+    // 3. Count, now that nobody else can take these rooms until we're done.
+    const short = await shortfall(tx, { checkIn, checkOut, rooms: lines });
     if (short) throw httpError(409, `${short} Please choose other dates or rooms.`);
     if (afterCount) await afterCount();
 

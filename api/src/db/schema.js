@@ -141,8 +141,8 @@ export const bookingNights = pgTable('booking_nights', {
 
 // ── Activities (add-ons to a stay) ─────────────────────────────────────────────────────────
 // Trips the lodge runs: transport and a guide to Nairobi National Park, the Giraffe Centre…
-// Each leaves at set times on set weekdays, with a number of seats (one vehicle). Seats are
-// counted like rooms: a held or confirmed booking takes them.
+// Each leaves at set times on set weekdays. No seat limit is enforced: staff arrange vehicles
+// for however many book (see services/activities.js).
 export const activities = pgTable('activities', {
   id: serial().primaryKey(),
   slug: varchar({ length: 60 }).notNull(),            // 'nairobi-national-park'
@@ -150,7 +150,7 @@ export const activities = pgTable('activities', {
   summary: text().notNull(),                          // what's included, and what isn't (gate fees)
   durationMinutes: integer().notNull(),               // door to door, from the lodge
   priceKes: integer().notNull(),                      // per person
-  seats: integer().notNull(),                         // per departure
+  seats: integer().notNull(),                         // one vehicle's seats: for staff planning, not a limit
   departureTimes: varchar({ length: 5 }).array().notNull(),   // ['06:30', '15:00'], Nairobi time
   weekdays: integer().array().notNull(),              // 1 = Monday … 7 = Sunday
   sort: integer().notNull().default(0),

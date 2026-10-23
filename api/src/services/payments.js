@@ -65,7 +65,7 @@ async function recentPushes(phone, tx = db) {
 /**
  * Makes sure the booking holds its room for at least PAYMENT_GRACE_MINUTES more, inside the
  * caller's transaction (the booking row is already locked). A hold that already ran out is
- * renewed only if all its rooms and activity seats are still free, checked under the same locks
+ * renewed only if all its rooms are still free, checked under the same locks
  * as a new booking (services/capacity.js), so this can never overbook.
  */
 async function keepHeld(tx, b) {
@@ -243,8 +243,8 @@ async function markPaid(paymentId, from = {}) {
     }).where(eq(payments.id, p.id));
     if (wrongAmount) return { flagged: true, paymentId };
 
-    // Lock order: payment → booking → room types → activities (services/capacity.js). Booking
-    // creation locks only room types and activities; nothing locks a booking then waits on a
+    // Lock order: payment → booking → room types (services/capacity.js). Booking
+    // creation locks only room types; nothing locks a booking then waits on a
     // payment, so these can't deadlock.
     // holdRunning is judged by the database's clock, the one that freed the rooms (withHoldRunning).
     const [b] = await tx.select(withHoldRunning).from(bookings).where(eq(bookings.id, p.bookingId)).for('update');

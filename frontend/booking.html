@@ -57,7 +57,7 @@
     .top__brand img { display: block; width: 34px; height: 34px; }
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 96px; }
-    .head { text-align: center; margin-bottom: 32px; }
+    .head { text-align: center; margin-bottom: 40px; }
     .head h1 { font-family: var(--serif); font-size: clamp(28px, 4vw, 42px); line-height: 1.2; }
     .head h1 em { font-style: italic; color: var(--ember); }
     .head .rule { margin: 18px auto 0; }
@@ -97,7 +97,7 @@
 
     /* Messages: loading, problems */
     .notice { max-width: 760px; margin: 32px auto 0; border: 1px solid var(--line-soft); padding: 22px 26px; text-align: center; color: var(--warm-mid); }
-    .notice h2 { font-family: var(--serif); font-size: 22px; color: var(--cream); margin-bottom: 8px; }
+    .notice h2 { font-family: var(--serif); font-size: 22px; color: var(--cream); margin-bottom: 12px; }
     .notice--error { border-color: rgba(240, 160, 144, .4); }
 
     /* ── Step 1: rooms ───────────────────────────────────────────────────── */
@@ -107,7 +107,7 @@
     .room__img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--black-light); }
     .room__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .room__body { padding: 26px 12px 12px; display: flex; flex-direction: column; flex: 1; }
-    .room h2 { font-family: var(--serif); font-size: clamp(22px, 2.2vw, 26px); line-height: 1.2; margin-bottom: 10px; }
+    .room h2 { font-family: var(--serif); font-size: clamp(22px, 2.2vw, 26px); line-height: 1.2; margin-bottom: 14px; }
     .room__desc { color: var(--warm-mid); font-size: 15px; line-height: 1.8; margin: 0 0 14px; }
     .room__facts { font-size: 14px; color: var(--warm-dim); margin: 0 0 18px; }
     .room__price { border-top: 1px solid var(--line-soft); padding-top: 16px; margin-top: auto; }
@@ -137,16 +137,19 @@
     .pick__text .warn { color: var(--ember-glow); }
 
     /* ── Step 2: experiences ─────────────────────────────────────────────── */
-    .xp { border: 1px solid var(--line); padding: 26px; margin-bottom: 20px; }
-    .xp h2 { font-family: var(--serif); font-size: 24px; line-height: 1.25; margin-bottom: 6px; }
-    .xp__meta { font-size: 14px; color: var(--ember-glow); margin: 0 0 12px; }
+    .xp { border: 1px solid var(--line); padding: 14px; margin-bottom: 20px; }
+    .xp__img { aspect-ratio: 2 / 1; overflow: hidden; background: var(--black-light); }
+    .xp__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .xp__body { padding: 24px 12px 12px; }
+    .xp h2 { font-family: var(--serif); font-size: 24px; line-height: 1.25; margin-bottom: 10px; }
+    .xp__meta { font-size: 14px; color: var(--ember-glow); margin: 0 0 16px; }
     .xp__sum { color: var(--warm-mid); font-size: 15px; line-height: 1.8; margin: 0 0 18px; }
     .xp__add { display: grid; grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; }
     .xp__add .btn { min-height: 62px; }
     .xp__add select.input { padding-right: 34px; }
     .xp__none { color: var(--warm-dim); font-size: 14px; margin: 0; }
     .summary .lines { list-style: none; padding: 0; margin: 14px 0 0; font-size: 15px; }
-    .summary .lines li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+    .summary .lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; }
     .summary .lines li > :last-child { white-space: nowrap; }   /* keep "KES 22,000" on one line */
     .summary .lines small { display: block; color: var(--warm-dim); font-size: 13px; }
     .summary .lines button { background: none; border: 0; color: var(--ember-glow); cursor: pointer; padding: 0; font: inherit; font-size: 13px; text-decoration: underline; }
@@ -181,8 +184,8 @@
     .fine { font-size: 13px; color: var(--warm-dim); margin: 0; }
 
     .summary { border: 1px solid var(--line); padding: 26px; position: sticky; top: 24px; }
-    .summary h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 4px; }
-    .summary dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 18px 0 0; font-size: 15px; }
+    .summary h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 10px; }
+    .summary dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; margin: 22px 0 0; font-size: 15px; }
     .summary dt { color: var(--warm-mid); }
     .summary dd { margin: 0; text-align: right; }
     .summary .sep { grid-column: 1 / -1; border-top: 1px solid var(--line-soft); margin: 6px 0; }
@@ -199,9 +202,9 @@
     .ref { display: inline-block; margin: 6px 0 4px; font-family: var(--sans); font-weight: 500; font-size: 26px; letter-spacing: 4px; color: var(--cream); font-variant-numeric: tabular-nums; }
     .timer { font-size: 15px; color: var(--warm-mid); margin: 8px 0 0; }
     .timer b { color: var(--ember-glow); font-weight: 500; font-variant-numeric: tabular-nums; }
-    .hold__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; text-align: left; margin: 30px 0 0; border-top: 1px solid var(--line-soft); padding-top: 24px; }
+    .hold__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; text-align: left; margin: 30px 0 0; border-top: 1px solid var(--line-soft); padding-top: 24px; }
     .hold__grid dt { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
-    .hold__grid dd { margin: 4px 0 0; }
+    .hold__grid dd { margin: 8px 0 0; }
     .hold__grid .span2 { grid-column: 1 / -1; }   /* the experiences list takes the full width */
     .next { margin-top: 28px; padding: 18px 20px; border-left: 2px solid var(--ember); background: rgba(200, 120, 42, .06); text-align: left; color: var(--warm-mid); font-size: 15px; }
     .next b { color: var(--cream); font-weight: 500; }
@@ -212,7 +215,7 @@
 
     /* ── Paying the deposit (inside step 3) ──────────────────────────────── */
     .pay { margin-top: 30px; border-top: 1px solid var(--line-soft); padding-top: 26px; text-align: left; }
-    .pay__title { font-family: var(--serif); font-size: 22px; text-align: center; margin-bottom: 4px; }
+    .pay__title { font-family: var(--serif); font-size: 22px; text-align: center; margin-bottom: 10px; }
     .pay__sub { text-align: center; color: var(--warm-mid); margin: 0 0 22px; font-size: 15px; }
     .pay__ways { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .pay__way { border: 1px solid var(--line-soft); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -222,7 +225,7 @@
     .pay__problem { margin: 0 0 18px; padding: 14px 18px; border-left: 2px solid var(--bad); background: rgba(240, 160, 144, .06); color: var(--cream); font-size: 15px; }
     /* Waiting for the guest's PIN / the card result */
     .wait { margin-top: 28px; padding: 22px; border: 1px solid var(--line); text-align: center; }
-    .wait h3 { font-family: var(--serif); font-size: 22px; margin-bottom: 6px; }
+    .wait h3 { font-family: var(--serif); font-size: 22px; margin-bottom: 10px; }
     .wait p { margin: 6px 0 0; color: var(--warm-mid); font-size: 15px; }
     .wait .hold__actions { margin-top: 18px; }
     /* A slow ember pulse while waiting. Still for anyone who prefers reduced motion. */
@@ -257,7 +260,8 @@
       .hold { padding: 30px 20px; }
       .hold__grid { grid-template-columns: 1fr; }
       .pay__ways { grid-template-columns: 1fr; }
-      .xp { padding: 20px; }
+      .xp__img { aspect-ratio: 16 / 10; }
+      .xp__body { padding: 20px 6px 6px; }
       /* Departure gets the full width (its text is the longest); people + Add share the next row */
       .xp__add { grid-template-columns: 1fr 1fr; }
       .xp__add > :first-child { grid-column: 1 / -1; }
@@ -308,7 +312,7 @@
     <!-- STEP 2 · experiences: optional trips on days of the stay -->
     <section id="step-xp" hidden aria-labelledby="xpTitle">
       <h2 class="sr-only" id="xpTitle">Add experiences</h2>
-      <p class="note" id="xpNote" aria-live="polite">Optional trips from the lodge, with transport and a guide. Add any you like, or skip this step.</p>
+      <p class="note" id="xpNote" aria-live="polite">Optional trips from the lodge, with transport and a guide. Add any you like, or skip this step. We’ll confirm the arrangements with you before you arrive.</p>
       <div class="details">
         <div id="xpList" aria-busy="false"></div>
         <aside class="summary" id="xpSummary" aria-label="Your stay"></aside>
@@ -334,7 +338,7 @@
             <button class="btn" type="submit" id="holdBtn">Hold my booking</button>
             <button class="btn btn--ghost" type="button" id="backToRooms">Back</button>
           </div>
-          <p class="fine">We hold your rooms and seats for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
+          <p class="fine">We hold your rooms for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
         </form>
         <aside class="summary" id="summary" aria-label="Your stay"></aside>
       </div>
@@ -365,6 +369,12 @@
       'hearthside-room': 'Hearthside_room.webp',
       'coalbed-suite': 'coalbed-suite-1200.webp',
       'ember-penthouse': 'ember-penthouse.webp',
+    };
+    // Trip photos by slug. object-position keeps each photo's subject in frame when it's cropped.
+    var XP_PHOTOS = {
+      'nairobi-national-park': { src: 'xp-natpark.webp', pos: '50% 70%' },   // the zebras sit low
+      'giraffe-centre': { src: 'xp-gcentre.webp', pos: '50% 45%' },
+      'nairobi-safari-walk': { src: 'xp-safwalk.webp', pos: '50% 50%' },
     };
     var HOLD_MINUTES = 15;        // matches the API's HOLD_MINUTES (the hold's real end comes from the API)
 
@@ -607,13 +617,17 @@
         var options = Object.keys(byDay).map(function (dy) {
           return '<optgroup label="' + esc(day(dy)) + '">' + byDay[dy].map(function (d) {
             var added = taken.some(function (t) { return t.day === d.day && t.time === d.time; });
-            var label = d.time + (d.seatsLeft ? ' · ' + plural(d.seatsLeft, 'seat') + ' left' : ' · full') + (added ? ' · added' : '');
-            return '<option value="' + d.day + '|' + d.time + '"' + (d.seatsLeft && !added ? '' : ' disabled') + '>' + esc(label) + '</option>';
+            // Just the time. Seats and vehicles are the lodge's to arrange; staff tell the guest.
+            return '<option value="' + d.day + '|' + d.time + '"' + (added ? ' disabled' : '') + '>' + esc(d.time + (added ? ' · added' : '')) + '</option>';
           }).join('') + '</optgroup>';
         }).join('');
         var people = '';
         for (var k = 1; k <= S.stay.guests; k++) people += '<option value="' + k + '"' + (k === S.stay.guests ? ' selected' : '') + '>' + k + '</option>';
+        var photo = XP_PHOTOS[a.slug];
         return '<article class="xp" data-xp="' + i + '">' +
+          // alt="": the heading right below names the trip, so a description adds nothing for a screen reader
+          (photo ? '<div class="xp__img"><img src="' + photo.src + '" alt="" loading="lazy" style="object-position:' + photo.pos + '" /></div>' : '') +
+          '<div class="xp__body">' +
           '<h2>' + esc(a.name) + '</h2>' +
           '<p class="xp__meta num">' + money(a.priceKes) + ' per person · about ' + hours(a.durationMinutes) + ' from the lodge</p>' +
           '<p class="xp__sum">' + esc(a.summary) + '</p>' +
@@ -624,7 +638,7 @@
                 '<button class="btn" type="button" data-add="' + i + '">Add</button>' +
               '</div><p class="error" id="xpErr-' + i + '" role="alert" hidden></p>'
             : '<p class="xp__none">No departures left on your dates.</p>') +
-        '</article>';
+          '</div></article>';
       }).join('');
     }
     $('xpList').addEventListener('click', function (e) {
@@ -634,7 +648,6 @@
       err.hidden = true;
       if (!pick) { err.textContent = 'Choose a day and time.'; err.hidden = false; $('dep-' + i).focus(); return; }
       var parts = pick.split('|'), dep = a.departures.find(function (d) { return d.day === parts[0] && d.time === parts[1]; });
-      if (people > dep.seatsLeft) { err.textContent = 'Only ' + plural(dep.seatsLeft, 'seat') + ' left on that departure.'; err.hidden = false; return; }
       S.trips.push({ activity: a.slug, name: a.name, day: dep.day, time: dep.time, people: people, priceKes: a.priceKes });
       S.trips.sort(function (x, y) { return (x.day + x.time) < (y.day + y.time) ? -1 : 1; });
       drawExperiences(); drawXpSummary();
@@ -720,11 +733,10 @@
           var m = /^(firstName|lastName|email|phone|requests): (.+)$/.exec(err.message);
           if (err.status === 400 && m) { setError(m[1], m[2].charAt(0).toUpperCase() + m[2].slice(1) + '.'); $(m[1]).focus(); }
           else if (err.status === 409) {
-            // Someone else took the last room or seats a moment ago. Back to that step, with fresh
-            // numbers, and the reason shown there (S.flash).
+            // Someone else took the last room a moment ago. Back to the rooms step, searched again,
+            // with the reason shown there (S.flash).
             S.flash = err.message;
-            if (/seat|full/.test(err.message)) { S.acts = null; history.back(); }   // → experiences, reloaded
-            else history.go(-2);                                                     // → rooms, searched again
+            history.go(-2);
           }
           else { $('formError').textContent = err.message; $('formError').hidden = false; }
         })
