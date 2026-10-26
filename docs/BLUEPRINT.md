@@ -208,12 +208,55 @@ total survived.
 3. **Deposits.** M-Pesa and card, adapted from NURA: paying confirms the booking; a payment
    that arrives after the hold expired is handled safely (re-hold if still free, otherwise
    flagged for a refund). **3b:** several rooms per booking, and experiences as add-ons.
-4. **Emails.** Confirmation with the signed link, hold-expired notice, enquiry received,
-   alerts to the lodge.
-5. **Admin.** Sign-in with two-factor (as NURA), bookings list and calendar, check-in /
-   cancel, rooms and rates, closures, enquiries inbox.
+4. **Emails (launch: one alert).** At launch, only an alert to the lodge (Resend, to the
+   owner's own address) for a confirmed booking or a new enquiry. Guest emails (confirmation,
+   hold expired, cancellation) wait for a domain; until then the private booking link is the
+   guest's confirmation. See "Launch scope" below.
+5. **Admin (launch: everything but Closures).** Sign-in with two-factor (as NURA), Today
+   (check in / out), the bookings list and a booking (cancel), the calendar, rooms and rates
+   (including seasons), and the enquiries inbox. Closures comes after launch.
 6. **Ship it.** Neon production database with a least-privilege app login, Render, Netlify
    proxy, uptime monitor, Sentry, and the case study.
+
+## Launch scope (decided Oct 2026)
+
+To ship sooner, the admin launches without the screens it can manage without (decided Oct 2026,
+then widened the same week to include Calendar and Rooms & rates).
+Nothing is thrown away: the full design stays in the prototype (and the case study), behind one
+switch (`LAUNCH` and the `LATER` list at the top of the admin's script) that hides the later screens.
+
+**At launch.** Nineteen admin routes, each requiring a signed-in admin with two-factor done:
+
+| Route | For |
+|---|---|
+| `POST /api/admin/login`, `POST /api/admin/login/code`, `POST /api/admin/logout`, `GET /api/admin/me` | Sign-in with password then authenticator code (as NURA) |
+| `GET /api/admin/today` | Arrivals, departures, in house, tonight's occupancy, holds, new-enquiry count |
+| `GET /api/admin/bookings?q=&status=&room=` | Search and filter |
+| `GET /api/admin/bookings/:ref` | One booking: rooms, experiences, frozen prices, payments, history |
+| `POST /api/admin/bookings/:ref/check-in`, `/check-out`, `/cancel` | The daily actions (cancel takes a reason) |
+| `GET /api/admin/calendar?from=` | Three weeks: rooms free per type per night, season bands, closed units |
+| `GET /api/admin/calendar/night?date=&room=` | Who is staying in a room type that night |
+| `GET /api/admin/rooms`, `PATCH /api/admin/rooms/:id` | Room types: base rate, units, bookable |
+| `GET /api/admin/seasons`, `POST /api/admin/seasons`, `DELETE /api/admin/seasons/:id` | Seasonal rates |
+| `GET /api/admin/enquiries`, `POST /api/admin/enquiries/:id/status` | Inbox; mark handled / new |
+
+**Rules for the two settings screens.** Rate and season changes apply to new bookings only
+(booked nights keep their frozen price). Units can't be lowered below the rooms already booked
+on any future night (the API refuses with the night and the count), and a season can't overlap
+another season for the same room type. Every change is logged in `admin_events`.
+
+**After launch, and the stand-in meanwhile.**
+
+| Later | Meanwhile |
+|---|---|
+| Closures | Add a row to `closures` by hand (the calendar still shows it) |
+| Guest emails | The private booking link is the confirmation; a cancellation reason shows on it |
+| A trips screen for staff | Experiences show on each booking's page |
+
+**Still non-negotiable at launch.** Server-side sign-in checks on every `/api/admin/*` route
+(the hidden admin page is not protection), the least-privilege production database login,
+migration 0002 run on production before the code that needs it, and tests for check-in,
+check-out, cancel and the units rule.
 
 ## Admin design (Phase 5, prototype done Oct 2026)
 
@@ -221,26 +264,33 @@ The admin is designed and clickable before the backend exists: `frontend/admin/i
 running on sample data shaped exactly like the tables above. Phase 5 swaps the sample data
 for `/api/admin/*` calls; the screens stay as they are.
 
-**Decisions.** Calm dark ember look (the site's warm black and ember, but plain sans-serif for
-data, no decorative motion, all text at least 4.5:1 contrast). Desktop first for the reception
+**Decisions.** The site's warm black and ember with square corners. Data sits on sand (dark ink,
+like paper): Today's arrivals and departures, the bookings list, a booking's details, the
+calendar, the inbox. Alerts (holds, enquiries, a guest's request) are dark with an ember edge,
+and counts are round. Panel titles use the site's headline tag. Plain sans-serif for data, no
+decorative motion, all text at least 4.5:1 contrast. Desktop first for the reception
 computer, but every screen works on a phone (drawer menu, bookings as cards, scrolling calendar).
 Not linked from the site and marked `noindex`.
 
-| Screen | What it does |
-|---|---|
-| Sign-in | Email + password, then a 6-digit authenticator code; backup codes for a lost phone |
-| Today | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries |
-| Bookings | Search by name, reference, email or phone; filter by status and room type |
-| Booking | Stay, guest, frozen nightly prices, deposit and balance due, history, check in / out, cancel (with reason), resend email, copy guest link |
-| Calendar | Rooms free per night for three weeks, season band, closures hatched; a night lists who is staying |
-| Rooms & rates | Base rate, units and "bookable" per room type; seasonal rates list and add form |
-| Closures | List with a warning when confirmed bookings overlap; close dates by room type or whole lodge |
-| Enquiries | Inbox with unread marks, reply by email, mark as handled |
+| Screen | At launch? | What it does |
+|---|---|---|
+| Sign-in | yes | Email + password, then a 6-digit authenticator code; backup codes for a lost phone |
+| Today | yes | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries |
+| Bookings | yes | Search by name, reference, email or phone; filter by status and room type |
+| Booking | yes | Rooms, experiences, guest, frozen nightly prices, deposit and balance due, history, check in / out, cancel (with reason), copy guest link. ("Resend confirmation email" waits for guest emails.) |
+| Enquiries | yes | Inbox with unread marks, reply by email, mark as handled |
+| Calendar | yes | Rooms free per night for three weeks, season band, closures hatched; a night lists who is staying |
+| Rooms & rates | yes | Base rate, units and "bookable" per room type; seasonal rates list and add form |
+| Closures | later | List with a warning when confirmed bookings overlap; close dates by room type or whole lodge |
+
+The prototype's sample data still has one room per booking; Phase 5 reads `booking_rooms` and
+`booking_activities` from the real API, so bookings show every room and trip.
 
 **Schema changes the admin needs (Phase 5 migration).**
 - `bookings.checked_in_at` (timestamp, null until arrival). "In house" = `CONFIRMED` + checked in.
   Check-out sets `COMPLETED`.
-- `bookings.cancel_reason` (text), shown to the guest in the cancellation email.
+- `bookings.cancel_reason` (text), shown on the guest's booking page (and in the cancellation
+  email, once guest emails exist).
 - Staff actions logged (who checked in / cancelled what, when) in an `admin_events` table.
 
 **Rules carried into the API.** Every `/api/admin/*` route requires a signed-in admin session

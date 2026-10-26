@@ -44,6 +44,11 @@
       /* Fields: the site's sand */
       --field:     #dcd2c3;
       --field-ink: #1c1610;
+      /* The same sand, used in the admin for DATA: dark ink on sand, like paper on a desk.
+         Today's Arriving and Leaving sheets, the Bookings list, a booking's details, closure
+         clashes and today's calendar column. Alerts (holds, enquiries, a guest's request) are
+         NOT sand: they're dark with an ember edge and an ember headline label. */
+      --sand-ember: #8a3f0e;   /* ember text on sand: 5.0:1 (AA) */
 
       /* Status colours. Never colour alone: every status also has a word. */
       --st-held:      #f0b070;  --st-held-bg:      rgba(232, 149, 74, .14);
@@ -55,7 +60,7 @@
       --serif: 'Playfair Display', Georgia, serif;
       --sans:  'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-      --radius: 6px;
+      --radius: 0;   /* square corners throughout, like the public site */
       --side-w: 232px;
     }
 
@@ -77,7 +82,7 @@
     /* ── Buttons ──────────────────────────────────────────────────────────── */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: 40px; padding: 0 16px; border-radius: var(--radius);
+      min-height: 40px; padding: 0 16px; border-radius: 0;
       border: 1px solid var(--line-2); background: transparent; color: var(--text);
       font-weight: 500; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
     }
@@ -88,13 +93,15 @@
     .btn--danger:hover { background: var(--st-bad-bg); border-color: var(--st-bad); }
     .btn--small { min-height: 32px; padding: 0 12px; font-size: 13px; }
     .btn--ghost { border-color: transparent; color: var(--muted); }
+    /* Capitals like the site's buttons, done in CSS so screen readers still read words, not letters */
+    .btn--caps { text-transform: uppercase; letter-spacing: .14em; font-size: 13px; font-weight: 600; padding: 0 20px; }
     .btn--ghost:hover { color: var(--text); }
     .btn[disabled] { opacity: .45; cursor: not-allowed; }
 
     /* ── Status chips ─────────────────────────────────────────────────────── */
-    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 0;
             font-size: 12.5px; font-weight: 500; white-space: nowrap; }
-    .chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .chip::before { content: ''; width: 6px; height: 6px; border-radius: 0; background: currentColor; }
     .chip--HELD      { color: var(--st-held);    background: var(--st-held-bg); }
     .chip--CONFIRMED { color: var(--st-ok);      background: var(--st-ok-bg); }
     .chip--INHOUSE   { color: var(--st-inhouse); background: var(--st-inhouse-bg); }
@@ -111,7 +118,7 @@
        places you type stand out from the dark panels. color-scheme: light gives date pickers and
        dropdowns their light versions to match. */
     .input, select.input, textarea.input {
-      width: 100%; min-height: 42px; padding: 9px 12px; border-radius: var(--radius);
+      width: 100%; min-height: 42px; padding: 9px 12px; border-radius: 0;
       background: var(--field); border: 1px solid var(--field); color: var(--field-ink); color-scheme: light;
     }
     .input::placeholder { color: #5e4a38; opacity: 1; }            /* 5.6:1 on the sand */
@@ -126,7 +133,7 @@
     ========================================================================== */
     .auth { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px; }
     .auth__card { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line);
-                  border-radius: 10px; padding: 36px 32px; }
+                  border-radius: 0; padding: 36px 32px; }
     .auth__brand { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; text-align: center; }
     .auth__brand img { width: 64px; height: 64px; }
     .auth__brand h1 { font-family: var(--serif); font-size: 22px; text-transform: uppercase; letter-spacing: .18em; color: var(--ember); }
@@ -148,16 +155,17 @@
                      text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }   /* the logo's name, like the site */
     .side__brand small { color: var(--dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
     .nav { display: grid; gap: 2px; }
-    .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius);
+    .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 0;
              color: var(--muted); text-decoration: none; font-weight: 500; }
     .nav a:hover { background: var(--panel-2); color: var(--text); }
     .nav a[aria-current="page"] { background: var(--panel-3); color: var(--text); box-shadow: inset 2px 0 0 var(--ember); }
     .nav svg { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .nav .count { margin-left: auto; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--ember); color: #120c06;
-                  font-size: 12px; font-weight: 600; text-align: center; }
+    /* A round count, like every other notification. 22px circle for 1-2 digits; wider numbers stretch to a pill */
+    .nav .count { margin-left: auto; display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px;
+                  border-radius: 11px; background: var(--ember); color: #120c06; font-size: 12px; font-weight: 600; line-height: 1; }
     .side__foot { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 8px 0; display: grid; gap: 10px; }
     .who { display: flex; align-items: center; gap: 10px; }
-    .who__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--panel-3); display: grid; place-items: center;
+    .who__avatar { width: 32px; height: 32px; border-radius: 0; background: var(--panel-3); display: grid; place-items: center;
                    color: var(--ember-hi); font-weight: 600; font-size: 13px; }
     .who b { display: block; font-weight: 500; font-size: 14px; }
     .who small { color: var(--dim); font-size: 12.5px; }
@@ -173,9 +181,9 @@
     .crumb:hover { color: var(--text); }
 
     /* ── Panels and lists ─────────────────────────────────────────────────── */
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 0; }
     .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
-    .panel__head h2 { font-size: 16px; font-weight: 500; font-family: var(--sans); }
+    .panel__head h2 { font-family: var(--sans); font-size: 14px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--ember-hi); }   /* the site's headline tag */
     .panel__head .hint { margin: 0; }
     .panel__body { padding: 18px; }
     .empty { padding: 22px 18px; color: var(--dim); }
@@ -184,15 +192,46 @@
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .stack { display: grid; gap: 20px; }
 
-    /* Today's stat tiles */
-    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
-    .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; text-decoration: none; color: inherit; }
-    a.tile:hover { border-color: var(--line-2); }
-    .tile__label { font-size: 13px; color: var(--muted); }
-    .tile__value { font-size: 30px; font-weight: 500; margin-top: 4px; line-height: 1.1; }
-    .tile__note { font-size: 12.5px; color: var(--dim); margin-top: 4px; }
-    .meter { height: 6px; border-radius: 99px; background: var(--panel-3); margin-top: 10px; overflow: hidden; }
-    .meter span { display: block; height: 100%; background: var(--ember); border-radius: inherit; }
+    /* Today (option A): the day's numbers on one line, notifications, then the two lists on sand.
+       No boxes: spacing and thin rules do the separating, so the names and buttons stand out. */
+    /* Today: big, readable from across the reception desk */
+    .page__head--today .page__title { font-size: 46px; }
+    .page__head--today .page__sub { font-size: 21px; color: var(--text); margin-top: 8px; }
+    .stats { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 44px; padding: 22px 0; margin-bottom: 22px;   /* labels share one baseline, whatever sits above */
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .stat { display: grid; gap: 6px; color: inherit; text-decoration: none; }
+    .stat__n { font-family: var(--serif); font-size: 46px; line-height: 1; color: var(--text); }
+    .stat__n small { font-size: 22px; color: var(--muted); }
+    /* The site's headline tag: small capitals, wide letter-spacing, ember */
+    .stat__k { font-size: 13px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+    a.stat:hover .stat__k { color: var(--ember-hi); }
+    /* Notifications (holds, enquiries): an ember circle with the count and the site's headline
+       tag beside it. Not sand: sand is for sheets of information; these are alerts. The circle is
+       the one round shape on purpose, because a round count reads as "new" everywhere. */
+    .notes { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-bottom: 28px; }
+    .notice { display: flex; align-items: center; gap: 16px; color: inherit; text-decoration: none; }
+    .notice__n { display: grid; place-items: center; flex: none; width: 60px; height: 60px; border-radius: 50%;
+      background: var(--ember); color: #120c06; font-weight: 600; font-size: 28px; font-variant-numeric: tabular-nums; }
+    .notice__k { display: block; font-size: 15px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ember-hi); }
+    .notice__s { display: block; font-size: 15px; color: var(--muted); margin-top: 3px; }
+    .notice__s .timer { font-size: 15px; }
+    .notice:hover .notice__k { color: var(--text); }
+    .grid-2--wide { gap: 24px; align-items: start; }
+    /* Arriving and Leaving on sand, like paper on the desk: dark ink, maximum contrast (12:1) */
+    .sheet { background: var(--field); color: var(--field-ink); padding: 18px 22px 8px; border-left: 3px solid var(--ember); }
+    .list__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .list__head h2 { font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #522b0a; }
+    .sheet .hint { color: #5a4632; font-size: 14px; }
+    .sheet .rows { border: 0; }
+    .sheet .row { padding: 14px 0; border-top: 1px solid rgba(28, 22, 16, .16); }
+    .sheet .row__name { font-size: 17px; }
+    .sheet .row__name a { color: var(--field-ink); }
+    .sheet .row__name a:hover { color: var(--sand-ember); }
+    .sheet .row__meta { font-size: 15px; color: #5a4632; }
+    .sheet .empty { color: #5a4632; padding: 14px 0 18px; }
+    .row__note { font-size: 14px; color: var(--sand-ember); margin-top: 3px; font-weight: 500; }
+    .row.is-done .row__name a { color: #5c4c3d; text-decoration: line-through; text-decoration-color: rgba(28, 22, 16, .45); }
+    .done-mark { color: #24592c; font-size: 15px; font-weight: 600; white-space: nowrap; }
 
     /* A row in a "today" list: who, what, action */
     .rows { list-style: none; margin: 0; padding: 0; }
@@ -220,30 +259,80 @@
     td a.ref:hover { color: var(--ember-hi); text-decoration: underline; }
     .sub { display: block; font-size: 13px; color: var(--dim); }
 
+    /* The bookings list on sand, like the Today sheets: dark ink on paper for reading data.
+       (The filters bar above stays on the dark panel: its fields are sand already.) */
+    .table-wrap--sand { background: var(--field); color: var(--field-ink); }
+    .table-wrap--sand th { color: #522b0a; font-weight: 600; border-bottom: 1px solid rgba(28, 22, 16, .28); }
+    .table-wrap--sand td { border-bottom: 1px solid rgba(28, 22, 16, .14); }
+    .table-wrap--sand tbody tr.clickable:hover { background: rgba(28, 22, 16, .06); }
+    .table-wrap--sand td a.ref { color: var(--field-ink); }
+    .table-wrap--sand td a.ref:hover { color: var(--sand-ember); }
+    .table-wrap--sand .sub, .table-wrap--sand .empty { color: #5a4632; }
+    /* Status words on sand: no dot, darker colours made for the light background (all 4.6:1 or more) */
+    .table-wrap--sand .chip, .panel--sand .chip { font-weight: 600; padding: 3px 10px; }
+    .table-wrap--sand .chip::before, .panel--sand .chip::before { display: none; }
+    .table-wrap--sand .chip--CONFIRMED, .panel--sand .chip--CONFIRMED { color: #1b5023; background: rgba(36, 120, 50, .16); }
+    .table-wrap--sand .chip--HELD, .panel--sand .chip--HELD      { color: #7a3a0c; background: rgba(200, 120, 42, .22); }
+    .table-wrap--sand .chip--INHOUSE, .panel--sand .chip--INHOUSE   { color: #1d4a72; background: rgba(40, 100, 160, .16); }
+    .table-wrap--sand .chip--COMPLETED, .table-wrap--sand .chip--EXPIRED, .panel--sand .chip--COMPLETED, .panel--sand .chip--EXPIRED { color: #4f4135; background: rgba(28, 22, 16, .08); }
+    .panel--sand .chip--NEW { color: #7a3a0c; background: rgba(200, 120, 42, .22); }
+    .panel--sand .chip--HANDLED { color: #4f4135; background: rgba(28, 22, 16, .08); }
+    /* Buttons on sand: dark ink outlines (the dark-page ones have cream text) */
+    .panel--sand .btn:not(.btn--primary) { color: var(--field-ink); border-color: rgba(28, 22, 16, .35); background: transparent; }
+    .panel--sand .btn:not(.btn--primary):hover { background: rgba(28, 22, 16, .07); border-color: rgba(28, 22, 16, .6); }
+    /* .btn.btn--x matches the rule above's strength (0,3,0) and comes later, so it wins: no !important */
+    .panel--sand .btn.btn--danger { color: #8a2418; border-color: rgba(138, 36, 24, .5); }
+    .panel--sand .btn.btn--danger:hover { background: rgba(190, 60, 40, .12); border-color: #8a2418; }
+    .panel--sand .btn.btn--ghost { border-color: transparent; color: #5a4632; }
+    .panel--sand .btn.btn--primary { color: #120c06; }   /* a link styled as a button (Reply) must not take the sand link colour */
+    .table-wrap--sand .chip--CANCELLED, .panel--sand .chip--CANCELLED { color: #8a2418; background: rgba(190, 60, 40, .15); }
+
     /* Filters bar above the bookings table */
     .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
     .filters .input { width: auto; min-height: 38px; }
     .filters .search { flex: 1 1 240px; }
-    .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; flex-wrap: wrap; }
+    .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 0; overflow: hidden; flex-wrap: wrap; }
     .seg button { background: none; border: 0; padding: 8px 12px; color: var(--muted); cursor: pointer; font-size: 13.5px; font-weight: 500; }
     .seg button + button { border-left: 1px solid var(--line); }
     .seg button[aria-pressed="true"] { background: var(--panel-3); color: var(--text); }
 
     /* ── Booking detail ───────────────────────────────────────────────────── */
     .detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+    /* One booking: the same rules as Today and Bookings. A big top; data on sand with headline
+       tags; the guest's request as a notification; the balance due as the one thing that shouts. */
+    .page__head--big .page__title { font-size: 46px; }
+    .page__head--big .page__sub { display: flex; align-items: center; gap: 14px; font-size: 19px; color: var(--text); margin-top: 8px; }
+    .page__head--big .chip { font-size: 14px; font-weight: 600; padding: 4px 12px; }
+    .page__head--big .chip::before { display: none; }
+    .request { background: var(--panel-2); border-left: 3px solid var(--ember); padding: 14px 18px; margin: 0 0 20px; }
+    .request__k { display: block; font-size: 13px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ember-hi); }
+    .request p { margin: 6px 0 0; font-size: 17px; color: var(--text); }
+    .panel--sand { background: var(--field); color: var(--field-ink); border: 0; border-left: 3px solid var(--ember); }
+    .panel--sand .panel__head { border-bottom: 1px solid rgba(28, 22, 16, .2); padding: 16px 20px 12px; }
+    .panel--sand .panel__head h2 { font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #522b0a; }
+    .panel--sand .panel__body { padding: 16px 20px 18px; }
+    .panel--sand .hint { color: #5a4632; }
+    .panel--sand .kv dt { color: #5a4632; }
+    .panel--sand .kv dd { font-size: 16px; }
+    .panel--sand a { color: var(--sand-ember); }
+    .panel--sand .timeline small { color: #5a4632; }
+    .panel--sand .table-wrap--sand { border-left: 0; }
+    .panel--sand .money .total { background: var(--field-ink); color: var(--field); padding: 14px 14px; margin: 8px -6px 0; }
+    .panel--sand .money .due { color: var(--ember-hi); font-size: 22px; }
     .kv { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; margin: 0; }
     .kv dt { color: var(--muted); font-size: 14px; }
     .kv dd { margin: 0; }
     .money { display: grid; gap: 8px; }
     .money div { display: flex; justify-content: space-between; gap: 12px; }
-    .money .total { border-top: 1px solid var(--line-2); padding-top: 10px; margin-top: 4px; font-weight: 500; }
-    .money .due { color: var(--ember-hi); font-weight: 600; font-size: 17px; }
+    .money .total { background: var(--field); color: var(--field-ink); padding: 10px 12px; margin-top: 6px; font-weight: 500; align-items: baseline; }
+    .money .due { color: var(--sand-ember); font-weight: 600; font-size: 17px; }
     .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
     .timeline li { display: grid; grid-template-columns: 12px 1fr; gap: 12px; }
-    .timeline li::before { content: ''; width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; background: var(--ember); }
+    .timeline li::before { content: ''; width: 9px; height: 9px; border-radius: 0; margin-top: 6px; background: var(--ember); }
     .timeline small { display: block; color: var(--dim); font-size: 13px; }
     .actions { display: grid; gap: 10px; }
-    .note { background: var(--panel-2); border-left: 2px solid var(--ember); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; color: var(--muted); font-size: 14px; }
+    /* A warning is an alert, so it's dark (inside a sand list it's a dark band) */
+    .flag { display: inline-block; margin-top: 8px; padding: 7px 12px; background: var(--field-ink); color: var(--text); border-left: 3px solid var(--ember); font-size: 13.5px; }
 
     /* ── Calendar ─────────────────────────────────────────────────────────── */
     .cal-wrap { overflow-x: auto; }
@@ -251,14 +340,16 @@
     .cal th, .cal td { border-bottom: 1px solid var(--line); padding: 0; text-align: center; }
     .cal thead th { padding: 10px 4px; font-size: 12px; text-transform: none; letter-spacing: 0; }
     .cal thead th b { display: block; font-size: 15px; color: var(--text); font-weight: 500; }
-    .cal thead th.today b { color: var(--ember-hi); }
     .cal thead th.weekend { background: rgba(255, 255, 255, .02); }
+    /* After .weekend on purpose: today can be a Saturday or Sunday, and sand must win */
+    .cal thead th.today { background: var(--field); color: var(--field-ink); }
+    .cal thead th.today b { color: var(--field-ink); }
     .cal .season-row th { padding: 6px 4px; font-size: 11.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; border-bottom: 0; text-align: left; }
     .cal .season-row th.season { background: rgba(200, 120, 42, .10); color: var(--ember-hi); border-left: 1px solid var(--line-2); }
     .cal .room { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 12px 16px; min-width: 190px; border-right: 1px solid var(--line); }
     .cal .room b { display: block; font-weight: 500; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 14px; }
     .cal .room span { color: var(--dim); font-size: 12.5px; text-transform: none; letter-spacing: 0; font-weight: 400; }
-    .cell { display: grid; place-items: center; min-width: 52px; height: 58px; margin: 3px; border-radius: 5px; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: pointer; border: 1px solid transparent; background: none; width: calc(100% - 6px); color: var(--text); }
+    .cell { display: grid; place-items: center; min-width: 52px; height: 58px; margin: 3px; border-radius: 0; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: pointer; border: 1px solid transparent; background: none; width: calc(100% - 6px); color: var(--text); }
     .cell:hover { border-color: var(--line-2); }
     .cell small { display: block; font-size: 11px; color: var(--dim); }
     /* fullness: more booked = more ember */
@@ -270,19 +361,58 @@
     .cell[data-level="full"] small { color: #3a2410; }
     .cell.closed { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 4px, transparent 4px 9px); }
     .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 14px 18px; border-top: 1px solid var(--line); }
-    .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+    .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 0; vertical-align: -2px; margin-right: 6px; }
+
+    /* Calendar on sand: the same meaning, re-coloured for paper. Free = lighter paper; more
+       booked = more ember; full = solid ember. Today, highlighted in sand on the dark page,
+       inverts to a dark column here (sand on sand would vanish). */
+    .panel--sand .cal th, .panel--sand .cal td { border-bottom-color: rgba(28, 22, 16, .14); }
+    .panel--sand .cal thead th { color: #5a4632; }
+    .panel--sand .cal thead th b { color: var(--field-ink); font-size: 16px; }
+    .panel--sand .cal thead th.weekend { background: rgba(28, 22, 16, .05); }
+    .panel--sand .cal thead th.today { background: var(--field-ink); color: var(--field); }
+    .panel--sand .cal thead th.today b { color: var(--ember-hi); }
+    .panel--sand .cal .season-row th { color: #522b0a; font-weight: 600; letter-spacing: .18em; }
+    .panel--sand .cal .season-row th.season { background: rgba(200, 120, 42, .22); color: #7a3a0c; border-left-color: rgba(28, 22, 16, .2); }
+    .panel--sand .cal .room { background: var(--field); border-right-color: rgba(28, 22, 16, .16); }
+    .panel--sand .cal .room b { color: var(--field-ink); font-size: 15px; }
+    .panel--sand .cal .room span { color: #5a4632; }
+    .panel--sand .cell { color: var(--field-ink); font-weight: 500; }
+    .panel--sand .cell small { color: #5a4632; font-weight: 400; }
+    .panel--sand .cell:hover { border-color: rgba(28, 22, 16, .45); }
+    .panel--sand .cell[data-level="0"], .sw[data-level="0"] { background-color: rgba(255, 255, 255, .38); }
+    .panel--sand .cell[data-level="1"], .sw[data-level="1"] { background-color: rgba(200, 120, 42, .16); }
+    .panel--sand .cell[data-level="2"], .sw[data-level="2"] { background-color: rgba(200, 120, 42, .30); }
+    .panel--sand .cell[data-level="3"], .sw[data-level="3"] { background-color: rgba(200, 120, 42, .50); }
+    .panel--sand .cell[data-level="full"], .sw[data-level="full"] { background-color: var(--ember); color: #120c06; }
+    .panel--sand .cell[data-level="full"] small { color: #3a2410; }
+    .panel--sand .cell.closed, .sw.closed { background-image: repeating-linear-gradient(135deg, rgba(28, 22, 16, .16) 0 4px, transparent 4px 9px); }
+    .sw--today { background: var(--field-ink); }
+    .panel--sand .legend { color: #5a4632; border-top-color: rgba(28, 22, 16, .16); }
+    .panel--sand .legend i { outline: 1px solid rgba(28, 22, 16, .2); outline-offset: -1px; }
+    /* Who's staying (the night panel) */
+    .panel--sand .row { border-top-color: rgba(28, 22, 16, .14); }
+    .panel--sand .row__name a { color: var(--field-ink); }
+    .panel--sand .row__name a:hover { color: var(--sand-ember); }
+    .panel--sand .row__meta, .panel--sand .empty { color: #5a4632; }
 
     /* ── Rooms & rates ────────────────────────────────────────────────────── */
     .room-card { display: grid; gap: 14px; }
     .room-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
     .room-card h3 { font-family: var(--serif); font-size: 20px; }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .fact { background: var(--panel-2); border-radius: var(--radius); padding: 10px 12px; }
+    .fact { background: var(--panel-2); border-radius: 0; padding: 10px 12px; }
     .fact span { display: block; font-size: 12.5px; color: var(--muted); }
     .fact b { font-weight: 500; font-size: 17px; }
     .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
     .toggle input { width: 18px; height: 18px; accent-color: var(--ember); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; align-items: end; }
+    /* The room cards are forms, so they stay dark with sand fields; their figures are data, so sand */
+    .fact { background: var(--field); color: var(--field-ink); border-left: 3px solid var(--ember); }
+    .fact span { color: #5a4632; }
+    .fact b { font-weight: 600; }
+    .table-wrap--sand td.up { color: var(--sand-ember); font-weight: 600; }
+    .table-wrap--sand td.down { color: #1b5023; font-weight: 600; }
 
     /* ── Enquiries ────────────────────────────────────────────────────────── */
     .inbox { display: grid; grid-template-columns: 360px 1fr; min-height: 520px; }
@@ -292,29 +422,41 @@
     .inbox__item[aria-current="true"] { background: var(--panel-3); box-shadow: inset 2px 0 0 var(--ember); }
     .inbox__top { display: flex; justify-content: space-between; gap: 10px; }
     .inbox__item b { font-weight: 500; }
-    .inbox__item.unread b::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ember-hi); margin-right: 8px; vertical-align: 2px; }
+    /* Unread: a round dot, like the other notifications (Today's counts), not a square */
+    .inbox__item.unread b::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ember-hi); margin-right: 8px; vertical-align: 1px; }
     .inbox__item small { color: var(--dim); font-size: 12.5px; white-space: nowrap; }
     .inbox__item p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .inbox__read { padding: 24px 28px; }
     .inbox__read h2 { font-family: var(--serif); font-size: 22px; margin-bottom: 4px; }
+    .inbox__from { margin: 0; color: var(--muted); }
+    /* The inbox on sand */
+    .panel--sand .inbox__list { border-right-color: rgba(28, 22, 16, .16); }
+    .panel--sand .inbox__item { border-bottom-color: rgba(28, 22, 16, .14); }
+    .panel--sand .inbox__item:hover { background: rgba(28, 22, 16, .06); }
+    .panel--sand .inbox__item[aria-current="true"] { background: rgba(28, 22, 16, .11); box-shadow: inset 3px 0 0 var(--ember); }
+    .panel--sand .inbox__item b { color: var(--field-ink); }
+    .panel--sand .inbox__item.unread b { font-weight: 700; }
+    .panel--sand .inbox__item.unread b::before { background: var(--ember); }
+    .panel--sand .inbox__item small, .panel--sand .inbox__item p, .panel--sand .inbox__from { color: #5a4632; }
+    .panel--sand .inbox__read h2 { color: var(--field-ink); font-size: 26px; }
+    .panel--sand .message { color: var(--field-ink); font-size: 16px; }
     .message { white-space: pre-wrap; line-height: 1.7; margin: 20px 0; max-width: 640px; }
 
     /* ── Dialog and toast ─────────────────────────────────────────────────── */
-    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; width: min(460px, calc(100vw - 32px)); }
+    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 0; padding: 0; width: min(460px, calc(100vw - 32px)); }
     dialog::backdrop { background: rgba(0, 0, 0, .65); }
     .dlg { padding: 24px; display: grid; gap: 16px; }
     .dlg h2 { font-family: var(--serif); font-size: 22px; }
     .dlg p { margin: 0; color: var(--muted); }
     .dlg__actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel-3); border: 1px solid var(--line-2);
-             padding: 12px 18px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100vw - 32px); z-index: 50; }
+             padding: 12px 18px; border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100vw - 32px); z-index: 50; }
     .toast[hidden] { display: none; }
 
     /* ==========================================================================
        RESPONSIVE: desktop first; tablets lose columns; phones get a drawer and cards
     ========================================================================== */
     @media (max-width: 1180px) {
-      .tiles { grid-template-columns: repeat(3, 1fr); }
       .detail { grid-template-columns: 1fr; }
     }
     @media (max-width: 900px) {
@@ -326,10 +468,19 @@
                 background: var(--panel); border-bottom: 1px solid var(--line); }
       .topbar img { width: 28px; height: 28px; }
       .topbar b { font-family: var(--serif); font-weight: 400; font-size: 15px; text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }
-      .burger { background: none; border: 1px solid var(--line-2); border-radius: var(--radius); width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; }
+      .burger { background: none; border: 1px solid var(--line-2); border-radius: 0; width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; }
       .burger svg { width: 20px; height: 20px; stroke: var(--text); }
       .page { padding: 22px 16px 56px; }
       .page__title { font-size: 25px; }
+      .page__head--today .page__title { font-size: 36px; }
+      .page__head--today .page__sub { font-size: 18px; }
+      .page__head--big .page__title { font-size: 34px; }
+      .page__head--big .page__sub { font-size: 16px; }
+      .stats { gap: 16px 28px; }
+      .stat__n { font-size: 38px; }
+      .notice__n { width: 52px; height: 52px; font-size: 24px; }
+      .notice__k { font-size: 13px; }
+      .sheet { padding: 14px 16px 6px; }
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .inbox { grid-template-columns: 1fr; }
       .inbox__list { border-right: 0; max-height: none; }
@@ -339,8 +490,6 @@
     }
     @media (min-width: 901px) { .back-to-list { display: none; } }
     @media (max-width: 640px) {
-      .tiles { grid-template-columns: 1fr 1fr; }
-      .tile__value { font-size: 26px; }
       .row { grid-template-columns: 1fr; }
       .kv { grid-template-columns: 1fr; gap: 2px 0; }
       .kv dd { margin-bottom: 10px; }
@@ -348,6 +497,8 @@
       /* Bookings table becomes a list of cards: each cell shows its column name from data-label */
       .table--cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       .table--cards tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+      .table-wrap--sand .table--cards tbody tr { border-bottom-color: rgba(28, 22, 16, .14); }
+      .table-wrap--sand .table--cards td[data-label]::before { color: #5a4632; }
       .table--cards td { border: 0; padding: 0; }
       .table--cards td[data-label]::before { content: attr(data-label) ' · '; color: var(--dim); font-size: 12.5px; }
       .table--cards td.c-ref { grid-column: 1; }
@@ -406,6 +557,12 @@
     function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
 
     var TODAY = todayNairobi();
+
+    // LAUNCH SCOPE (docs/BLUEPRINT.md, "Launch scope"): the admin ships with Today, Bookings,
+    // Calendar, Rooms & rates and Enquiries. Closures is designed and kept here, hidden until its
+    // backend exists. Set to false to see the full design (e.g. for the case study).
+    var LAUNCH = true;
+    var LATER = ['closures'];
     var NOW = Date.now();
 
     /* ── DATA: sample records (replace with the API in Phase 5) ──────────────────────────── */
@@ -608,6 +765,7 @@
       var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
       var items = [['today', '#/today', 'Today'], ['bookings', '#/bookings', 'Bookings'], ['calendar', '#/calendar', 'Calendar'],
                    ['rooms', '#/rooms', 'Rooms & rates'], ['closures', '#/closures', 'Closures'], ['enquiries', '#/enquiries', 'Enquiries']];
+      if (LAUNCH) items = items.filter(function (it) { return LATER.indexOf(it[0]) === -1; });
       return '<div class="shell" id="shell">' +
         '<aside class="side" id="side" aria-label="Admin">' +
           '<a class="side__brand" href="#/today"><img src="mark.webp" alt="" /><span><b>Safari Ember</b><small>Admin</small></span></a>' +
@@ -632,55 +790,64 @@
     /* Today: what reception needs at 7am. Arrivals and departures with one-tap actions,
        who's in house, holds about to expire, and how full tonight is. */
     function viewToday() {
+      // Option A (Oct 2026): one line of numbers, notifications (holds, enquiries), then two lists on sand.
       var arrivals = BOOKINGS.filter(function (b) { return b.checkIn === TODAY && b.status === 'CONFIRMED'; });
-      var departures = BOOKINGS.filter(function (b) { return b.checkOut === TODAY && shownStatus(b) === 'INHOUSE'; });
+      // Leaving today: still in house, or already checked out today (shown done, so reception sees progress)
+      var departures = BOOKINGS.filter(function (b) { return b.checkOut === TODAY && (shownStatus(b) === 'INHOUSE' || b.status === 'COMPLETED'); });
       var inHouse = BOOKINGS.filter(function (b) { return shownStatus(b) === 'INHOUSE'; });
       var holds = BOOKINGS.filter(function (b) { return shownStatus(b) === 'HELD'; }).sort(function (a, b) { return a.holdExpiresAt - b.holdExpiresAt; });
       var total = 0, taken = 0;
       ROOM_TYPES.forEach(function (rt) { var o = occupancy(rt, TODAY); total += rt.units - o.closed; taken += o.taken; });
       var pct = total ? Math.round(taken / total * 100) : 0;
       var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
-      var arrivedDone = arrivals.filter(function (b) { return b.checkedInAt; }).length;
+      var done = '<span class="done-mark">✓ ';
 
       function arrivalRow(b) {
-        var rt = roomType(b.roomTypeId);
-        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a> ' + (b.checkedInAt ? chip('INHOUSE') : '') + '</div>' +
-          '<div class="row__meta">' + esc(rt.name) + ' · ' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + ' · <span class="ref">' + b.ref + '</span>' +
-          (balance(b) > 0 ? ' · Balance due <span class="num">' + money(balance(b)) + '</span>' : '') + '</div>' +
-          (b.requests ? '<div class="row__meta" style="color:var(--text)">“' + esc(b.requests) + '”</div>' : '') + '</div>' +
-          '<div class="row__actions">' + (b.checkedInAt ? '' : '<button class="btn btn--primary btn--small" data-act="checkin" data-ref="' + b.ref + '">Check in</button>') + '</div></li>';
+        return '<li class="row' + (b.checkedInAt ? ' is-done' : '') + '"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
+          '<div class="row__meta">' + esc(roomType(b.roomTypeId).name) + ' · ' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</div>' +
+          (b.requests ? '<div class="row__note">' + esc(b.requests) + '</div>' : '') + '</div>' +
+          '<div class="row__actions">' + (b.checkedInAt ? done + 'Checked in</span>'
+            : '<button class="btn btn--primary btn--small" data-act="checkin" data-ref="' + b.ref + '">Check in</button>') + '</div></li>';
       }
       function departureRow(b) {
-        var rt = roomType(b.roomTypeId);
-        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
-          '<div class="row__meta">' + esc(rt.name) + ' · ' + stayLabel(b) + ' · Balance due <span class="num">' + money(balance(b)) + '</span></div></div>' +
-          '<div class="row__actions"><button class="btn btn--small" data-act="checkout" data-ref="' + b.ref + '">Check out</button></div></li>';
+        var out = b.status === 'COMPLETED', due = balance(b);
+        return '<li class="row' + (out ? ' is-done' : '') + '"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
+          '<div class="row__meta">' + esc(roomType(b.roomTypeId).name) +
+            // Once out, just the room: the prototype doesn't record the balance being paid, so don't claim it
+            (out ? '' : ' · ' + (due > 0 ? '<span class="num">' + money(due) + '</span> to pay' : 'paid in full')) + '</div></div>' +
+          '<div class="row__actions">' + (out ? done + 'Checked out</span>'
+            : '<button class="btn btn--primary btn--small" data-act="checkout" data-ref="' + b.ref + '">Check out</button>') + '</div></li>';
       }
-      function holdRow(b) {
-        var rt = roomType(b.roomTypeId);
-        return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
-          '<div class="row__meta">' + esc(rt.name) + ' · ' + stayLabel(b) + ' · Deposit <span class="num">' + money(b.depositKes) + '</span></div></div>' +
-          '<div class="row__actions"><span class="timer" data-expires="' + b.holdExpiresAt + '">–:–</span></div></li>';
+      function list(id, title, hint, rows, empty) {
+        return '<section class="sheet" aria-labelledby="' + id + '"><div class="list__head"><h2 id="' + id + '">' + title + '</h2><p class="hint">' + hint + '</p></div>' +
+          (rows.length ? '<ul class="rows rows--plain">' + rows.join('') + '</ul>' : '<p class="empty">' + empty + '</p>') + '</section>';
       }
 
-      return '<div class="page__head"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(TODAY) + '</p></div>' +
-          '<a class="btn" href="#/bookings">All bookings</a></div>' +
-        '<div class="tiles">' +
-          '<a class="tile" href="#arrivals"><div class="tile__label">Arrivals</div><div class="tile__value num">' + arrivals.length + '</div><div class="tile__note">' + arrivedDone + ' checked in</div></a>' +
-          '<a class="tile" href="#departures"><div class="tile__label">Departures</div><div class="tile__value num">' + departures.length + '</div><div class="tile__note">Check-out by 11:00</div></a>' +
-          '<div class="tile"><div class="tile__label">In house</div><div class="tile__value num">' + inHouse.length + '</div><div class="tile__note">' + plural(inHouse.reduce(function (s, b) { return s + b.guests; }, 0), 'guest') + '</div></div>' +
-          '<a class="tile" href="#/calendar"><div class="tile__label">Tonight</div><div class="tile__value num">' + pct + '%</div><div class="meter" role="img" aria-label="' + taken + ' of ' + total + ' rooms taken"><span style="width:' + pct + '%"></span></div><div class="tile__note">' + taken + ' of ' + total + ' rooms</div></a>' +
-          '<a class="tile" href="#/enquiries"><div class="tile__label">New enquiries</div><div class="tile__value num">' + newEnq + '</div><div class="tile__note">Reply within a day</div></a>' +
+      // Notifications: only when there's something waiting. Read aloud as "2 Holds waiting for a deposit · 5:57 left".
+      function notice(n, label, sub, href, extra) {
+        return '<a class="notice" href="' + href + '"' + (extra || '') + '><span class="notice__n">' + n + '</span>' +
+          '<span><span class="notice__k">' + label + '</span><span class="notice__s">' + sub + '</span></span></a>';
+      }
+      var notes = (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', 'waiting for a deposit · ' +
+                       '<span class="timer" data-expires="' + holds[0].holdExpiresAt + '">–:–</span>', '#/bookings', ' data-act="showheld"') : '') +
+                  (newEnq ? notice(newEnq, newEnq === 1 ? 'Enquiry' : 'Enquiries', 'new, to answer', '#/enquiries') : '');
+      var guests = inHouse.reduce(function (n, b) { return n + b.guests; }, 0);
+      function stat(n, label, href, extra) {
+        var inner = '<span class="stat__n">' + n + '</span><span class="stat__k">' + label + '</span>';
+        return href ? '<a class="stat' + (extra || '') + '" href="' + href + '">' + inner + '</a>' : '<div class="stat' + (extra || '') + '">' + inner + '</div>';
+      }
+
+      return '<div class="page__head page__head--today"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(TODAY) + '</p></div></div>' +
+        '<div class="stats num">' +
+          stat(arrivals.length, 'Arriving') +
+          stat(departures.filter(function (b) { return b.status !== 'COMPLETED'; }).length, 'Leaving') +
+          stat(inHouse.length + ' <small>· ' + guests + ' ' + (guests === 1 ? 'guest' : 'guests') + '</small>', 'In house') +
+          stat(pct + '%', 'Full tonight · ' + taken + ' of ' + total, LAUNCH && LATER.indexOf('calendar') > -1 ? null : '#/calendar') +
         '</div>' +
-        '<div class="grid-2">' +
-          '<section class="panel" id="arrivals" aria-labelledby="h-arr"><div class="panel__head"><h2 id="h-arr">Arrivals</h2><p class="hint">Check-in from 14:00</p></div>' +
-            (arrivals.length ? '<ul class="rows">' + arrivals.map(arrivalRow).join('') + '</ul>' : '<p class="empty">No arrivals today.</p>') + '</section>' +
-          '<div class="stack">' +
-            '<section class="panel" id="departures" aria-labelledby="h-dep"><div class="panel__head"><h2 id="h-dep">Departures</h2></div>' +
-              (departures.length ? '<ul class="rows">' + departures.map(departureRow).join('') + '</ul>' : '<p class="empty">No departures today.</p>') + '</section>' +
-            '<section class="panel" aria-labelledby="h-hold"><div class="panel__head"><h2 id="h-hold">Holds waiting for payment</h2><p class="hint">Released automatically</p></div>' +
-              (holds.length ? '<ul class="rows">' + holds.map(holdRow).join('') + '</ul>' : '<p class="empty">No open holds.</p>') + '</section>' +
-          '</div>' +
+        (notes ? '<div class="notes">' + notes + '</div>' : '') +
+        '<div class="grid-2 grid-2--wide">' +
+          list('h-arr', 'Arriving', 'check-in from 14:00', arrivals.map(arrivalRow), 'No arrivals today.') +
+          list('h-dep', 'Leaving', 'check-out by 11:00', departures.map(departureRow), 'No departures today.') +
         '</div>';
     }
 
@@ -716,7 +883,7 @@
       }).join('');
     }
     function viewBookings() {
-      return '<div class="page__head"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone.</p></div></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone.</p></div></div>' +
         '<section class="panel">' +
           '<div class="filters">' +
             '<label class="sr-only" for="q">Search bookings</label><input class="input search" id="q" type="search" placeholder="Search…" value="' + esc(S.bookingsQ) + '" />' +
@@ -724,7 +891,7 @@
               ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '"' + (S.bookingsRoom === String(rt.id) ? ' selected' : '') + '>' + esc(rt.name) + '</option>'; }).join('') + '</select>' +
             '<div class="seg" role="group" aria-label="Show">' + FILTERS.map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
           '</div>' +
-          '<div class="table-wrap"><table class="table--cards"><caption class="sr-only">Bookings</caption>' +
+          '<div class="table-wrap table-wrap--sand"><table class="table--cards"><caption class="sr-only">Bookings</caption>' +
             '<thead><tr><th scope="col">Ref</th><th scope="col">Guest</th><th scope="col">Room</th><th scope="col">Stay</th><th scope="col" class="right">Total</th><th scope="col">Status</th></tr></thead>' +
             '<tbody id="rows">' + bookingRowsHtml() + '</tbody></table></div>' +
         '</section>';
@@ -748,43 +915,45 @@
       if (st === 'EXPIRED') events.push(['Hold ran out unpaid', b.createdAt + 15 * 6e4]);
 
       return '<a class="crumb" href="#/bookings">← Bookings</a>' +
-        '<div class="page__head"><div><h1 class="page__title">' + guestName(b) + '</h1>' +
-          '<p class="page__sub"><span class="ref">' + b.ref + '</span> · ' + chip(st) + '</p></div>' +
+        '<div class="page__head page__head--big"><div><h1 class="page__title">' + guestName(b) + '</h1>' +
+          '<p class="page__sub"><span class="ref">' + b.ref + '</span> ' + chip(st) + '</p></div>' +
           '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
             (canCheckIn ? '<button class="btn btn--primary" data-act="checkin" data-ref="' + b.ref + '">Check in</button>' : '') +
             (canCheckOut ? '<button class="btn btn--primary" data-act="checkout" data-ref="' + b.ref + '">Check out</button>' : '') +
           '</div></div>' +
-        (b.requests ? '<p class="note" style="margin:0 0 20px"><b style="color:var(--text)">Guest request:</b> ' + esc(b.requests) + '</p>' : '') +
-        '<div class="detail">' +
+        // The guest's request is an alert, styled like Today's notifications (not sand: sand is for data)
+        (b.requests ? '<div class="request"><span class="request__k">Guest request</span><p>' + esc(b.requests) + '</p></div>' : '') +
+        '<div class="detail detail--sand">' +
           '<div class="stack">' +
-            '<section class="panel"><div class="panel__head"><h2>Stay</h2></div><div class="panel__body"><dl class="kv">' +
+            '<section class="panel panel--sand"><div class="panel__head"><h2>Stay</h2></div><div class="panel__body"><dl class="kv">' +
               '<dt>Room</dt><dd>' + esc(rt.name) + ' <span class="hint">(' + esc(rt.kind) + ')</span></dd>' +
               '<dt>Check-in</dt><dd>' + fmtLong(b.checkIn) + ', from 14:00</dd>' +
               '<dt>Check-out</dt><dd>' + fmtLong(b.checkOut) + ', by 11:00</dd>' +
               '<dt>Length</dt><dd>' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</dd>' +
             '</dl></div></section>' +
-            '<section class="panel"><div class="panel__head"><h2>Guest</h2></div><div class="panel__body"><dl class="kv">' +
+            '<section class="panel panel--sand"><div class="panel__head"><h2>Guest</h2></div><div class="panel__body"><dl class="kv">' +
               '<dt>Name</dt><dd>' + guestName(b) + '</dd>' +
               '<dt>Email</dt><dd><a href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a></dd>' +
               '<dt>Phone</dt><dd><a href="tel:' + esc(b.phone.replace(/\s/g, '')) + '">' + esc(b.phone) + '</a></dd>' +
             '</dl></div></section>' +
-            '<section class="panel"><div class="panel__head"><h2>Price, night by night</h2><p class="hint">Frozen when the guest booked</p></div>' +
-              '<div class="table-wrap"><table><thead><tr><th scope="col">Night</th><th scope="col" class="right">Rate</th></tr></thead><tbody>' +
+            '<section class="panel panel--sand"><div class="panel__head"><h2>Price, night by night</h2><p class="hint">Frozen when the guest booked</p></div>' +
+              '<div class="table-wrap table-wrap--sand"><table><thead><tr><th scope="col">Night</th><th scope="col" class="right">Rate</th></tr></thead><tbody>' +
               b.nightly.map(function (n) { return '<tr><td>' + fmtDate(n.night, { weekday: 'short' }) + '</td><td class="right num">' + money(n.rateKes) + '</td></tr>'; }).join('') +
               '</tbody></table></div></section>' +
           '</div>' +
           '<div class="stack">' +
-            '<section class="panel"><div class="panel__head"><h2>Payment</h2></div><div class="panel__body money num">' +
+            '<section class="panel panel--sand"><div class="panel__head"><h2>Payment</h2></div><div class="panel__body money num">' +
               '<div><span>Total</span><span>' + money(b.totalKes) + '</span></div>' +
               '<div><span>Deposit (30%)</span><span>' + money(b.depositKes) + '</span></div>' +
               b.payments.map(function (p) { return '<div class="hint"><span>' + esc(p.provider) + ' · ' + esc(p.ref) + '</span><span>− ' + money(p.amountKes) + '</span></div>'; }).join('') +
               '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(bal)) + '</span></div>' +
             '</div></section>' +
-            '<section class="panel"><div class="panel__head"><h2>History</h2></div><div class="panel__body"><ol class="timeline">' +
+            '<section class="panel panel--sand"><div class="panel__head"><h2>History</h2></div><div class="panel__body"><ol class="timeline">' +
               events.sort(function (a, c) { return a[1] - c[1]; }).map(function (e) { return '<li><div>' + esc(e[0]) + '<small>' + fmtDateTime(e[1]) + '</small></div></li>'; }).join('') +
             '</ol></div></section>' +
-            '<section class="panel"><div class="panel__head"><h2>Actions</h2></div><div class="panel__body actions">' +
-              '<button class="btn" data-act="resend" data-ref="' + b.ref + '"' + (b.payments.length ? '' : ' disabled') + '>Resend confirmation email</button>' +
+            '<section class="panel panel--actions"><div class="panel__head"><h2>Actions</h2></div><div class="panel__body actions">' +
+              // Guest emails wait for a domain (Launch scope), so there's nothing to resend yet
+              (LAUNCH ? '' : '<button class="btn" data-act="resend" data-ref="' + b.ref + '"' + (b.payments.length ? '' : ' disabled') + '>Resend confirmation email</button>') +
               '<button class="btn" data-act="copylink" data-ref="' + b.ref + '">Copy the guest\'s booking link</button>' +
               (canCancel ? '<button class="btn btn--danger" data-act="cancel" data-ref="' + b.ref + '">Cancel booking</button>' : '') +
             '</div></section>' +
@@ -807,9 +976,9 @@
         var open = rt.units - o.closed; if (o.free === 0) return 'full';
         var r = 1 - o.free / Math.max(1, open); return r < .25 ? 0 : r < .5 ? 1 : r < .8 ? 2 : 3;
       }
-      return '<div class="page__head"><div><h1 class="page__title">Calendar</h1><p class="page__sub">Rooms free each night. Select a night to see who is staying.</p></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Calendar</h1><p class="page__sub">Rooms free each night. Select a night to see who is staying.</p></div>' +
           '<div style="display:flex;gap:8px"><button class="btn" data-cal="-21" aria-label="Previous three weeks">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="21" aria-label="Next three weeks">→</button></div></div>' +
-        '<section class="panel"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[DAYS - 1]) + '</caption><thead>' +
+        '<section class="panel panel--sand"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[DAYS - 1]) + '</caption><thead>' +
           '<tr class="season-row"><th class="room" scope="col">Season</th>' + bands.map(function (b) { return '<th colspan="' + b.span + '" class="' + (b.season ? 'season' : '') + '">' + esc(b.label) + '</th>'; }).join('') + '</tr>' +
           '<tr><th class="room" scope="col">Room type</th>' + nights.map(function (n) {
             var d = new Date(n + 'T12:00:00Z'), dow = d.getUTCDay();
@@ -824,10 +993,11 @@
             }).join('') + '</tr>';
           }).join('') +
         '</tbody></table></div>' +
-        '<div class="legend"><span><i style="background:rgba(255,255,255,.06)"></i>Mostly free</span><span><i style="background:rgba(200,120,42,.26)"></i>Filling up</span>' +
-          '<span><i style="background:rgba(200,120,42,.45)"></i>Nearly full</span><span><i style="background:var(--ember)"></i>Full</span>' +
-          '<span><i style="background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.25) 0 3px,transparent 3px 7px)"></i>Some rooms closed</span></div></section>' +
-        '<section class="panel" style="margin-top:20px" id="night-panel" aria-live="polite"><div class="panel__head"><h2>Select a night above</h2></div><p class="empty">The guests staying that night will show here.</p></section>';
+        // Legend swatches use the same classes as the cells, so they can never drift apart
+        '<div class="legend"><span><i class="sw" data-level="0"></i>Mostly free</span><span><i class="sw" data-level="2"></i>Filling up</span>' +
+          '<span><i class="sw" data-level="3"></i>Nearly full</span><span><i class="sw" data-level="full"></i>Full</span>' +
+          '<span><i class="sw closed"></i>Some rooms closed</span><span><i class="sw sw--today"></i>Today</span></div></section>' +
+        '<section class="panel panel--sand" style="margin-top:20px" id="night-panel" aria-live="polite"><div class="panel__head"><h2>Select a night above</h2></div><p class="empty">The guests staying that night will show here.</p></section>';
     }
     function nightPanel(night, rtId) {
       var rt = roomType(rtId), o = occupancy(rt, night);
@@ -845,7 +1015,7 @@
     function viewRooms() {
       var y = TODAY.slice(0, 4);
       var seasons = SEASONS.filter(function (s) { return s.endsOn > TODAY; }).sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : a.startsOn > b.startsOn ? 1 : a.roomTypeId - b.roomTypeId; });
-      return '<div class="page__head"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">Changes apply to new bookings only. Guests who have already booked keep the price they were shown.</p></div></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">Changes apply to new bookings only. Guests who have already booked keep the price they were shown.</p></div></div>' +
         '<div class="grid-3">' + ROOM_TYPES.map(function (rt) {
           return '<section class="panel"><form class="panel__body room-card" data-room-form="' + rt.id + '">' +
             '<div class="room-card__top"><div><h3>' + esc(rt.name) + '</h3><span class="hint">' + esc(rt.kind) + '</span></div>' +
@@ -858,14 +1028,14 @@
             '</div><button class="btn btn--primary">Save changes</button></form></section>';
         }).join('') + '</div>' +
         '<section class="panel" style="margin-top:20px"><div class="panel__head"><h2>Seasonal rates</h2><p class="hint">A season replaces the base rate for the nights it covers</p></div>' +
-          '<div class="table-wrap"><table><thead><tr><th scope="col">Season</th><th scope="col">Room</th><th scope="col">From</th><th scope="col">Until (not included)</th><th scope="col" class="right">KES / night</th><th scope="col" class="right">vs base</th></tr></thead><tbody>' +
+          '<div class="table-wrap table-wrap--sand"><table><thead><tr><th scope="col">Season</th><th scope="col">Room</th><th scope="col">From</th><th scope="col">Until (not included)</th><th scope="col" class="right">KES / night</th><th scope="col" class="right">vs base</th></tr></thead><tbody>' +
           seasons.slice(0, 12).map(function (s) {
             var rt = roomType(s.roomTypeId), diff = Math.round((s.nightlyRateKes / rt.baseRateKes - 1) * 100);
             var on = s.startsOn <= TODAY && TODAY < s.endsOn;
             return '<tr><td>' + esc(s.label) + (on ? ' <span class="chip chip--CONFIRMED">Now</span>' : '') + '</td><td>' + esc(rt.name) + '</td><td class="num">' + fmtDate(s.startsOn, { year: 'numeric' }) + '</td><td class="num">' + fmtDate(s.endsOn, { year: 'numeric' }) + '</td>' +
-              '<td class="right num">' + KES.format(s.nightlyRateKes) + '</td><td class="right num" style="color:' + (diff > 0 ? 'var(--ember-hi)' : 'var(--st-ok)') + '">' + (diff > 0 ? '+' : '') + diff + '%</td></tr>';
+              '<td class="right num">' + KES.format(s.nightlyRateKes) + '</td><td class="right num ' + (diff > 0 ? 'up' : 'down') + '">' + (diff > 0 ? '+' : '') + diff + '%</td></tr>';
           }).join('') + '</tbody></table></div>' +
-          '<div class="panel__body" style="border-top:1px solid var(--line)"><form class="form-grid" id="f-season">' +
+          '<div class="panel__body"><form class="form-grid" id="f-season">' +
             '<div class="field"><label for="s-label">New season</label><input class="input" id="s-label" placeholder="e.g. Easter" required /></div>' +
             '<div class="field"><label for="s-room">Room</label><select class="input" id="s-room">' + ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'; }).join('') + '</select></div>' +
             '<div class="field"><label for="s-from">From</label><input class="input" id="s-from" type="date" required /></div>' +
@@ -877,15 +1047,15 @@
     /* Closures: take units out of sale (maintenance, private events) */
     function viewClosures() {
       var list = CLOSURES.slice().sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : 1; });
-      return '<div class="page__head"><div><h1 class="page__title">Closures</h1><p class="page__sub">Closed rooms can\'t be booked online. Closing never cancels existing bookings.</p></div></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Closures</h1><p class="page__sub">Closed rooms can\'t be booked online. Closing never cancels existing bookings.</p></div></div>' +
         '<div class="detail">' +
-          '<section class="panel"><div class="panel__head"><h2>Upcoming closures</h2></div>' +
+          '<section class="panel panel--sand"><div class="panel__head"><h2>Upcoming closures</h2></div>' +
             (list.length ? '<ul class="rows">' + list.map(function (c) {
               var rt = c.roomTypeId ? roomType(c.roomTypeId) : null;
               var clash = BOOKINGS.filter(function (b) { return (!rt || b.roomTypeId === rt.id) && (b.status === 'CONFIRMED') && b.checkIn < c.endsOn && c.startsOn < b.checkOut; }).length;
               return '<li class="row"><div><div class="row__name">' + esc(c.reason) + '</div>' +
                 '<div class="row__meta">' + (rt ? esc(rt.name) : 'Whole lodge') + ' · ' + (c.units == null ? 'all units' : plural(c.units, 'unit')) + ' · ' + fmtDate(c.startsOn) + ' – ' + fmtDate(c.endsOn) + ' (' + plural(daysBetween(c.startsOn, c.endsOn), 'night') + ')</div>' +
-                (clash ? '<div class="row__meta" style="color:var(--st-held)">⚠ ' + plural(clash, 'confirmed booking') + ' overlap these dates. They stay booked: contact the guests if needed.</div>' : '') +
+                (clash ? '<div class="flag">⚠ ' + plural(clash, 'confirmed booking') + ' overlap these dates. They stay booked: contact the guests if needed.</div>' : '') +
                 '</div><div class="row__actions"><button class="btn btn--small btn--danger" data-act="reopen" data-id="' + c.id + '">Reopen</button></div></li>';
             }).join('') + '</ul>' : '<p class="empty">Nothing is closed.</p>') + '</section>' +
           '<section class="panel"><div class="panel__head"><h2>Close rooms</h2></div><form class="panel__body stack" id="f-closure" style="gap:14px">' +
@@ -903,8 +1073,8 @@
       var list = ENQUIRIES.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
       var cur = ENQUIRIES.find(function (e) { return e.id === S.enquiry; }) || list[0];
       function ago(ms) { var h = Math.round((Date.now() - ms) / 36e5); return h < 1 ? 'Just now' : h < 24 ? h + ' h ago' : fmtDateTime(ms).split(',')[0]; }
-      return '<div class="page__head"><div><h1 class="page__title">Enquiries</h1><p class="page__sub">Messages from the website\'s "Get in touch" form.</p></div></div>' +
-        '<section class="panel inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Enquiries</h1><p class="page__sub">Messages from the website\'s "Get in touch" form.</p></div></div>' +
+        '<section class="panel panel--sand inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
           return '<li><button class="inbox__item' + (e.status === 'NEW' ? ' unread' : '') + '" data-enq="' + e.id + '" aria-current="' + (cur && e.id === cur.id) + '">' +
             '<div class="inbox__top"><b>' + esc(e.firstName + ' ' + e.lastName) + '</b><small>' + ago(e.createdAt) + '</small></div>' +
             '<p>' + esc(e.subject) + ' · ' + esc(e.message) + '</p></button></li>';
@@ -912,7 +1082,7 @@
         (cur ? '<article class="inbox__read" aria-live="polite">' +
           '<button class="btn btn--small btn--ghost back-to-list" data-back="1" style="padding:0;margin-bottom:12px">← All enquiries</button>' +
           '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>' + esc(cur.subject) + '</h2>' +
-            '<p class="page__sub" style="margin:0">' + esc(cur.firstName + ' ' + cur.lastName) + ' · ' + fmtDateTime(cur.createdAt) + '</p></div><div>' + chip(cur.status) + '</div></div>' +
+            '<p class="inbox__from">' + esc(cur.firstName + ' ' + cur.lastName) + ' · ' + fmtDateTime(cur.createdAt) + '</p></div><div>' + chip(cur.status) + '</div></div>' +
           '<dl class="kv" style="margin-top:20px">' +
             '<dt>Email</dt><dd><a href="mailto:' + esc(cur.email) + '">' + esc(cur.email) + '</a></dd>' +
             (cur.phone ? '<dt>Phone</dt><dd><a href="tel:' + esc(cur.phone.replace(/\s/g, '')) + '">' + esc(cur.phone) + '</a></dd>' : '') +
@@ -921,8 +1091,8 @@
           '</dl>' +
           '<div class="message">' + esc(cur.message) + '</div>' +
           '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-            '<a class="btn btn--primary" href="mailto:' + esc(cur.email) + '?subject=' + encodeURIComponent('Re: ' + cur.subject + ' · Safari Ember') + '">Reply by email</a>' +
-            (cur.status === 'NEW' ? '<button class="btn" data-act="handled" data-id="' + cur.id + '">Mark as handled</button>' : '<button class="btn" data-act="reopen-enq" data-id="' + cur.id + '">Mark as new</button>') +
+            '<a class="btn btn--primary btn--caps" href="mailto:' + esc(cur.email) + '?subject=' + encodeURIComponent('Re: ' + cur.subject + ' · Safari Ember') + '" aria-label="Reply by email">Reply</a>' +
+            (cur.status === 'NEW' ? '<button class="btn btn--caps" data-act="handled" data-id="' + cur.id + '">Mark as handled</button>' : '<button class="btn btn--caps" data-act="reopen-enq" data-id="' + cur.id + '">Mark as new</button>') +
           '</div></article>' : '<p class="empty">No enquiries yet.</p>') + '</section>';
     }
 
@@ -935,6 +1105,7 @@
       var parts = hash.split('/');
       if (!S.signedIn && parts[0] !== 'login') { location.replace('#/login'); return; }
       if (S.signedIn && parts[0] === 'login') { location.replace('#/today'); return; }
+      if (LAUNCH && LATER.indexOf(parts[0]) > -1) { location.replace('#/today'); return; }   // not built yet: back to Today
       clearInterval(holdTick);
 
       var titleMap = { today: 'Today', bookings: 'Bookings', booking: 'Booking', calendar: 'Calendar', rooms: 'Rooms & rates', closures: 'Closures', enquiries: 'Enquiries', login: 'Sign in' };
@@ -1063,6 +1234,7 @@
         var b = e.target.closest('[data-act]'); if (!b) return;
         var bk = b.dataset.ref && byRef(b.dataset.ref);
         switch (b.dataset.act) {
+          case 'showheld': S.bookingsFilter = 'held'; break;   // the link itself then opens #/bookings
           case 'checkin':
             bk.checkedInAt = Date.now(); toast(bk.firstName + ' ' + bk.lastName + ' checked in. Balance due ' + money(balance(bk)) + '.'); render(); break;
           case 'checkout':

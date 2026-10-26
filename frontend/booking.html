@@ -26,6 +26,10 @@
       --cream: #f5e8d0; --warm-mid: #c4a882; --warm-dim: #a99379;
       --line: rgba(232, 149, 74, .35); --line-soft: rgba(200, 120, 42, .18);
       --ok: #9fd3a0; --bad: #f0a090;
+      /* M-Pesa's cue: a generic green, not Safaricom's logo. A deep emerald, kept well apart from
+         --ok (the pale mint of CONFIRMED) in hue, saturation and lightness, so "pay this way" never
+         looks like "done". Dark text on it is 5.4:1; on the page 5.6:1. */
+      --mpesa: #1f9d55;
       /* Fields: the homepage's sand, dark-brown labels and dark text (as on Get in Touch) */
       --field: #dcd2c3; --field-label: #522b0a; --field-ink: #1c1610; --field-bad: #a3271b;
       --serif: 'Playfair Display', Georgia, serif;
@@ -137,23 +141,26 @@
     .pick__text .warn { color: var(--ember-glow); }
 
     /* ── Step 2: experiences ─────────────────────────────────────────────── */
-    .xp { border: 1px solid var(--line); padding: 14px; margin-bottom: 20px; }
-    .xp__img { aspect-ratio: 2 / 1; overflow: hidden; background: var(--black-light); }
+    /* Experience card (option A, Oct 2026): a square photo beside the text, the choices in a full-
+       width row underneath. Less than half the height of the photo-on-top card it replaced.
+         desktop  [photo][title + price ]      phone  [photo][title + price]
+                  [photo][description   ]             [description         ]
+                  [departure][people][Add]            [departure           ]
+                                                      [people][Add]        */
+    .xp { border: 1px solid var(--line); padding: 12px; margin-bottom: 16px;
+      display: grid; grid-template-columns: 150px minmax(0, 1fr); column-gap: 20px; align-items: start; }
+    .xp__img { grid-row: 1 / 3; aspect-ratio: 1; overflow: hidden; background: var(--black-light); }
     .xp__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .xp__body { padding: 24px 12px 12px; }
-    .xp h2 { font-family: var(--serif); font-size: 24px; line-height: 1.25; margin-bottom: 10px; }
-    .xp__meta { font-size: 14px; color: var(--ember-glow); margin: 0 0 16px; }
-    .xp__sum { color: var(--warm-mid); font-size: 15px; line-height: 1.8; margin: 0 0 18px; }
-    .xp__add { display: grid; grid-template-columns: 1fr 140px auto; gap: 12px; align-items: end; }
+    .xp__head { padding-top: 4px; }
+    .xp h2 { font-family: var(--serif); font-size: 22px; line-height: 1.25; margin-bottom: 8px; }
+    .xp__meta { font-size: 14px; color: var(--ember-glow); margin: 0 0 8px; }
+    .xp__sum { color: var(--warm-mid); font-size: 14px; line-height: 1.7; margin: 0; }
+    .xp__add, .xp > .error, .xp__none { grid-column: 1 / -1; }
+    .xp__add { display: grid; grid-template-columns: 1fr 120px auto; gap: 10px; align-items: end; margin-top: 14px; }
     .xp__add .btn { min-height: 62px; }
     .xp__add select.input { padding-right: 34px; }
-    .xp__none { color: var(--warm-dim); font-size: 14px; margin: 0; }
-    .summary .lines { list-style: none; padding: 0; margin: 14px 0 0; font-size: 15px; }
-    .summary .lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; }
-    .summary .lines li > :last-child { white-space: nowrap; }   /* keep "KES 22,000" on one line */
-    .summary .lines small { display: block; color: var(--warm-dim); font-size: 13px; }
-    .summary .lines button { background: none; border: 0; color: var(--ember-glow); cursor: pointer; padding: 0; font: inherit; font-size: 13px; text-decoration: underline; }
-    .summary .actions { display: grid; gap: 10px; margin-top: 22px; }
+    .xp__none { color: var(--warm-dim); font-size: 14px; margin: 14px 0 0; }
+    .xp > .error { margin: 10px 0 0; }
 
     /* ── Step 3: details ─────────────────────────────────────────────────── */
     .details { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: start; margin-top: 8px; }
@@ -175,21 +182,44 @@
     /* Browser autofill paints its own pale blue: keep the sand and the dark text instead */
     .input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px var(--field) inset; -webkit-text-fill-color: var(--field-ink); caret-color: var(--field-ink); }
     textarea.input { min-height: 104px; padding-top: 33px; resize: vertical; }
-    /* The M-Pesa number's label is too long to fit inside its box, so there it stays above */
-    .pay__way .field > label { position: static; font-size: 12px; letter-spacing: 3px; color: var(--ember); }
-    .pay__way .field > label span { color: var(--warm-dim); }
-    .pay__way .input { min-height: 48px; padding: 11px 14px; }
     .field .error { font-size: 14px; margin: 0; }
     .form__foot { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
     .fine { font-size: 13px; color: var(--warm-dim); margin: 0; }
 
-    .summary { border: 1px solid var(--line); padding: 26px; position: sticky; top: 24px; }
-    .summary h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 10px; }
-    .summary dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; margin: 22px 0 0; font-size: 15px; }
-    .summary dt { color: var(--warm-mid); }
-    .summary dd { margin: 0; text-align: right; }
-    .summary .sep { grid-column: 1 / -1; border-top: 1px solid var(--line-soft); margin: 6px 0; }
-    .summary .big { font-family: var(--serif); font-size: 22px; color: var(--ember-glow); }
+    /* "Your stay" summary (option C, Oct 2026): it must read at a glance. Three bands:
+       when (big dates), what (rooms and experiences, labelled), and money (a footer ending in the
+       deposit, with the button). A lifted background sets it apart from the page, and text is a
+       step heavier (400) than the page's 300 so it doesn't look faint. */
+    .summary { border: 1px solid var(--line); background: var(--black-mid); position: sticky; top: 24px; font-variant-numeric: tabular-nums; }
+    .sum__when { padding: 24px 26px 20px; border-bottom: 1px solid var(--line-soft); }
+    .sum__eyebrow { display: block; font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-glow); }
+    .sum__dates { display: flex; align-items: flex-start; gap: 12px; margin: 14px 0 0; }
+    .sum__dates > div { flex: 1; min-width: 0; }
+    .sum__k { display: block; font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--warm-mid); }
+    .sum__big { display: block; font-family: var(--serif); font-size: 30px; line-height: 1.15; color: var(--cream); margin: 4px 0 2px; }
+    .sum__sm { display: block; font-size: 14px; color: var(--warm-mid); }
+    .sum__arrow { color: var(--ember); font-size: 20px; padding-top: 26px; }
+    .sum__party { margin: 14px 0 0; font-size: 15px; font-weight: 400; color: var(--cream); }
+    .sum__what { padding: 6px 26px 18px; }
+    .sum__group { display: block; font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-glow); margin: 16px 0 4px; }
+    .sum__group + ul + .sum__group { border-top: 1px solid var(--line-soft); padding-top: 16px; }
+    .sum__what ul { list-style: none; padding: 0; margin: 0; }
+    .sum__what li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-weight: 400; color: var(--cream); }
+    .sum__what li > :last-child { white-space: nowrap; }   /* keep "KES 22,000" on one line */
+    .sum__what small { display: block; font-size: 14px; font-weight: 300; color: var(--warm-mid); margin-top: 2px; }
+    .sum__what small button { background: none; border: 0; color: var(--ember-glow); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+    .sum__money { background: var(--black-light); padding: 18px 26px 22px; }
+    .sum__money dl { margin: 0; }
+    .sum__money dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 3px 0; }
+    .sum__money dt { font-size: 15px; }
+    .sum__money dd { margin: 0; white-space: nowrap; font-size: 15px; }
+    .sum__money .is-sub { color: var(--warm-mid); }
+    .sum__money .is-total { color: var(--cream); font-weight: 400; }
+    .sum__money .is-deposit { padding-top: 10px; }
+    .sum__money .is-deposit dt { font-size: 17px; font-weight: 400; color: var(--cream); }
+    .sum__money .is-deposit dd { font-family: var(--serif); font-size: 26px; color: var(--ember-glow); }
+    .sum__money .actions { display: grid; gap: 12px; margin-top: 18px; justify-items: center; }
+    .sum__money .actions .btn { width: 100%; }
     .linkbtn { background: none; border: 0; padding: 0; color: var(--ember-glow); cursor: pointer; text-decoration: underline; font-size: 14px; }
 
     /* ── Step 3: the hold / the guest's booking ──────────────────────────── */
@@ -217,11 +247,26 @@
     .pay { margin-top: 30px; border-top: 1px solid var(--line-soft); padding-top: 26px; text-align: left; }
     .pay__title { font-family: var(--serif); font-size: 22px; text-align: center; margin-bottom: 10px; }
     .pay__sub { text-align: center; color: var(--warm-mid); margin: 0 0 22px; font-size: 15px; }
+    /* The two ways to pay (option B, Oct 2026): side-by-side tiles, each with its own colour,
+       icon, title and three numbered steps, so nobody has to read to tell them apart. */
     .pay__ways { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .pay__way { border: 1px solid var(--line-soft); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-    .pay__way h3 { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember); }
-    .pay__way p { margin: 0; font-size: 14px; color: var(--warm-mid); }
+    .pay__way { --accent: var(--ember-glow); border: 1px solid var(--line-soft); border-top: 3px solid var(--accent);
+      background: var(--black-mid); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .pay__way--mpesa { --accent: var(--mpesa); }
+    .pay__way h3 { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 20px; line-height: 1.25; color: var(--cream); }
+    .pay__way h3 svg { width: 24px; height: 24px; flex: none; color: var(--accent); }
+    .pay__chips { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .pay__chips li { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--line); color: var(--warm-mid); }
+    .pay__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: step; }
+    .pay__steps li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 400; color: var(--cream); line-height: 1.35; }
+    .pay__steps li::before { counter-increment: step; content: counter(step); flex: none; width: 24px; height: 24px; border-radius: 50%;
+      border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-size: 12px; }
+    .pay__way .hint { margin: 0; font-size: 13px; color: var(--warm-mid); }
+    .pay__chips { margin-top: auto; }   /* sits on the button, filling the tile's spare height */
     .pay__way .btn { margin-top: auto; width: 100%; padding: 0 16px; }
+    .pay__chips + .btn { margin-top: 0; }
+    .btn--mpesa { background: var(--mpesa); border-color: var(--mpesa); color: #08140a; }
+    .btn--mpesa:hover { background: #26b462; border-color: #26b462; }
     .pay__problem { margin: 0 0 18px; padding: 14px 18px; border-left: 2px solid var(--bad); background: rgba(240, 160, 144, .06); color: var(--cream); font-size: 15px; }
     /* Waiting for the guest's PIN / the card result */
     .wait { margin-top: 28px; padding: 22px; border: 1px solid var(--line); text-align: center; }
@@ -243,6 +288,8 @@
       .rooms { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
       .details { grid-template-columns: 1fr; }
       .summary { position: static; order: -1; }
+      .sum__when, .sum__what, .sum__money { padding-left: 20px; padding-right: 20px; }
+      .sum__big { font-size: 26px; }
     }
     @media (max-width: 700px) {
       /* Phones: the homepage's layout. Each field gets a full-width row (side by side, the dates
@@ -260,8 +307,11 @@
       .hold { padding: 30px 20px; }
       .hold__grid { grid-template-columns: 1fr; }
       .pay__ways { grid-template-columns: 1fr; }
-      .xp__img { aspect-ratio: 16 / 10; }
-      .xp__body { padding: 20px 6px 6px; }
+      .xp { grid-template-columns: 96px minmax(0, 1fr); column-gap: 14px; }
+      .xp__img { grid-row: 1; }
+      .xp h2 { font-size: 20px; }
+      .xp__meta { margin: 0; }
+      .xp__sum { grid-column: 1 / -1; margin-top: 12px; }
       /* Departure gets the full width (its text is the longest); people + Add share the next row */
       .xp__add { grid-template-columns: 1fr 1fr; }
       .xp__add > :first-child { grid-column: 1 / -1; }
@@ -568,22 +618,41 @@
 
     /* ── STEP 2: experiences ─────────────────────────────────────────────────────────────── */
     // The summary beside steps 2 and 3: every room and trip, and the money.
-    function summaryHtml(withRemove) {
+    // "Your stay": when (big dates), what (rooms, then experiences), money (ending in the deposit),
+    // with the step's buttons (`actions`) inside the money band so the next move sits by the total.
+    function summaryHtml(withRemove, actions) {
       var st = S.stay, t = totals(), n = nightsBetween(st.checkIn, st.checkOut);
-      return '<span class="label">Your stay</span><div class="rule" role="presentation"></div>' +
-        '<p style="margin:0;color:var(--warm-mid)">' + day(st.checkIn) + ' → ' + day(st.checkOut) + ' · ' + plural(st.guests, 'guest') + '</p>' +
-        '<ul class="lines num">' + t.rooms.map(function (x) {
-          return '<li><span>' + x.units + ' × ' + esc(x.room.name) + '<small>' + plural(n, 'night') + '</small></span><span>' + money(x.units * x.room.totalKes) + '</span></li>';
-        }).join('') + S.trips.map(function (tr, i) {
-          return '<li><span>' + esc(tr.name) + '<small>' + day(tr.day) + ', ' + tr.time + ' · ' + plural(tr.people, 'person', 'people') +
-            (withRemove ? ' · <button type="button" data-remove="' + i + '">Remove</button>' : '') + '</small></span><span>' + money(tr.people * tr.priceKes) + '</span></li>';
-        }).join('') + '</ul>' +
-        '<dl class="num" style="margin-top:12px">' +
-          '<span class="sep" role="presentation"></span>' +
-          '<dt>Total</dt><dd>' + money(t.total) + '</dd>' +
-          '<dt>Deposit to confirm</dt><dd class="big">' + money(t.deposit) + '</dd>' +
-          '<dt>Balance at the lodge</dt><dd>' + money(t.total - t.deposit) + '</dd>' +
-        '</dl>';
+      function when(label, iso, at) {
+        var d = new Date(iso + 'T12:00:00Z');
+        return '<div><span class="sum__k">' + label + '</span>' +
+          '<span class="sum__big">' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) + '</span>' +
+          // Weekday and time on their own lines: "Wednesday, from 14:00" wrapped raggedly next to "Friday, by 11:00"
+          '<span class="sum__sm">' + d.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' }) + '</span>' +
+          '<span class="sum__sm">' + at + '</span></div>';
+      }
+      var rooms = t.rooms.map(function (x) {
+        return '<li><span>' + x.units + ' × ' + esc(x.room.name) + '</span><span>' + money(x.units * x.room.totalKes) + '</span></li>';
+      }).join('');
+      var trips = S.trips.map(function (tr, i) {
+        return '<li><span>' + esc(tr.name) + '<small>' + day(tr.day) + ', ' + tr.time + ' · <span style="white-space:nowrap">' + plural(tr.people, 'person', 'people') + '</span>' +
+          (withRemove ? ' · <button type="button" data-remove="' + i + '" aria-label="Remove ' + esc(tr.name) + '">Remove</button>' : '') +
+          '</small></span><span>' + money(tr.people * tr.priceKes) + '</span></li>';
+      }).join('');
+      return '<div class="sum__when">' +
+          '<h2 class="sum__eyebrow">Your stay</h2>' +
+          '<div class="sum__dates">' + when('Check in', st.checkIn, 'from 14:00') +
+            '<span class="sum__arrow" aria-hidden="true">→</span>' + when('Check out', st.checkOut, 'by 11:00') + '</div>' +
+          '<p class="sum__party">' + plural(n, 'night') + ' · ' + plural(st.guests, 'guest') + '</p>' +
+        '</div>' +
+        '<div class="sum__what">' +
+          '<h3 class="sum__group">Rooms</h3><ul>' + rooms + '</ul>' +
+          (trips ? '<h3 class="sum__group">Experiences</h3><ul>' + trips + '</ul>' : '') +
+        '</div>' +
+        '<div class="sum__money"><dl>' +
+          '<div class="is-total"><dt>Total</dt><dd>' + money(t.total) + '</dd></div>' +
+          '<div class="is-sub"><dt>Balance at the lodge</dt><dd>' + money(t.total - t.deposit) + '</dd></div>' +
+          '<div class="is-deposit"><dt>Deposit to confirm</dt><dd>' + money(t.deposit) + '</dd></div>' +
+        '</dl>' + (actions ? '<div class="actions">' + actions + '</div>' : '') + '</div>';
     }
 
     function openExperiences() {
@@ -599,9 +668,9 @@
         .then(function () { box.setAttribute('aria-busy', 'false'); });
     }
     function drawXpSummary() {
-      $('xpSummary').innerHTML = summaryHtml(true) +
-        '<div class="actions"><button class="btn" type="button" id="toDetails">' + (S.trips.length ? 'Continue' : 'Skip and continue') + '</button>' +
-        '<button class="linkbtn" type="button" id="xpBack">Change rooms</button></div>';
+      $('xpSummary').innerHTML = summaryHtml(true,
+        '<button class="btn" type="button" id="toDetails">' + (S.trips.length ? 'Continue' : 'Skip and continue') + '</button>' +
+        '<button class="linkbtn" type="button" id="xpBack">Change rooms</button>');
       $('toDetails').onclick = function () { history.pushState({ step: 3 }, '', location.href); openDetails(); };
       $('xpBack').onclick = function () { history.back(); };
     }
@@ -627,9 +696,8 @@
         return '<article class="xp" data-xp="' + i + '">' +
           // alt="": the heading right below names the trip, so a description adds nothing for a screen reader
           (photo ? '<div class="xp__img"><img src="' + photo.src + '" alt="" loading="lazy" style="object-position:' + photo.pos + '" /></div>' : '') +
-          '<div class="xp__body">' +
-          '<h2>' + esc(a.name) + '</h2>' +
-          '<p class="xp__meta num">' + money(a.priceKes) + ' per person · about ' + hours(a.durationMinutes) + ' from the lodge</p>' +
+          '<div class="xp__head"><h2>' + esc(a.name) + '</h2>' +
+          '<p class="xp__meta num">' + money(a.priceKes) + ' per person · about ' + hours(a.durationMinutes) + '</p></div>' +
           '<p class="xp__sum">' + esc(a.summary) + '</p>' +
           (a.departures.length
             ? '<div class="xp__add">' +
@@ -638,7 +706,7 @@
                 '<button class="btn" type="button" data-add="' + i + '">Add</button>' +
               '</div><p class="error" id="xpErr-' + i + '" role="alert" hidden></p>'
             : '<p class="xp__none">No departures left on your dates.</p>') +
-          '</div></article>';
+          '</article>';
       }).join('');
     }
     $('xpList').addEventListener('click', function (e) {
@@ -661,8 +729,8 @@
 
     /* ── STEP 3: details ─────────────────────────────────────────────────────────────────── */
     function openDetails() {
-      $('summary').innerHTML = summaryHtml(false) +
-        '<p style="margin:18px 0 0"><button class="linkbtn" type="button" id="changeStay">Change rooms or experiences</button></p>';
+      $('summary').innerHTML = summaryHtml(false,
+        '<button class="linkbtn" type="button" id="changeStay">Change rooms or experiences</button>');
       $('changeStay').onclick = function () { history.back(); };
       clearErrors(); $('formError').hidden = true;
       showStep(3); focusMain();
@@ -779,6 +847,11 @@
         '</div></div>';
     }
 
+    // Small line icons for the payment tiles. Decorative: the heading next to each says the same.
+    var ICON = {
+      phone: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="10" y1="18.5" x2="14" y2="18.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      card: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="5" width="19" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="2.5" y1="9.5" x2="21.5" y2="9.5" stroke="currentColor" stroke-width="2.4"/><line x1="6" y1="15" x2="10" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    };
     function payHtml(b) {
       var ways = b.paymentMethods || [];
       if (!ways.length) {
@@ -793,18 +866,21 @@
         '<p class="pay__sub num">' + money(b.depositKes) + ' now · ' + money(b.balanceKes) + ' balance later</p>' + problem +
         '<div class="pay__ways">' +
           (ways.indexOf('mpesa') > -1 ?
-            '<form class="pay__way" id="mpesaForm" novalidate>' +
-              '<h3>M-Pesa</h3>' +
-              '<p>We\'ll send a prompt to your phone. Enter your PIN there to pay.</p>' +
-              '<div class="field"><label for="mpesaPhone">M-Pesa number <span>(if not the one you booked with)</span></label>' +
-                '<input class="input" id="mpesaPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="0712 345 678" aria-describedby="mpesaPhone-err" />' +
+            '<form class="pay__way pay__way--mpesa" id="mpesaForm" novalidate aria-labelledby="mpesaTitle">' +
+              '<h3 id="mpesaTitle">' + ICON.phone + 'Pay with M-Pesa</h3>' +
+              '<ol class="pay__steps"><li>Get a prompt on your phone</li><li>Enter your M-Pesa PIN</li><li>Your booking is confirmed here</li></ol>' +
+              '<div class="field"><label for="mpesaPhone">M-Pesa number</label>' +
+                '<input class="input" id="mpesaPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="0712 345 678" aria-describedby="mpesaPhone-hint mpesaPhone-err" />' +
+                '<p class="hint" id="mpesaPhone-hint">Leave empty to use your booking’s number.</p>' +
                 '<p class="error" id="mpesaPhone-err" hidden></p></div>' +
-              '<button class="btn" type="submit" data-label="Send M-Pesa prompt">Send M-Pesa prompt</button>' +
+              '<button class="btn btn--mpesa" type="submit" data-label="Send prompt">Send prompt</button>' +
             '</form>' : '') +
           (ways.indexOf('card') > -1 ?
-            '<div class="pay__way">' +
-              '<h3>Card</h3>' +
-              '<p>Visa or Mastercard, on Paystack\'s secure page. You\'ll come straight back here.</p>' +
+            '<div class="pay__way" role="group" aria-labelledby="cardTitle">' +
+              '<h3 id="cardTitle">' + ICON.card + 'Pay by card</h3>' +
+              '<ol class="pay__steps"><li>Go to Paystack\'s secure page</li><li>Enter your card details</li><li>Come straight back here</li></ol>' +
+              // Below the steps, so both tiles' titles and steps line up side by side
+              '<ul class="pay__chips" aria-label="Cards accepted"><li>Visa</li><li>Mastercard</li></ul>' +
               '<button class="btn" type="button" data-pay="card" data-label="Pay by card">Pay by card</button>' +
             '</div>' : '') +
         '</div>' +
