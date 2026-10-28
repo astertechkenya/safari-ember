@@ -35,6 +35,7 @@ import { bookingUrl } from '../lib/bookingLink.js';
 import { bookingStillFits, withHoldRunning } from './capacity.js';
 import { amountToRequest, stkPush, stkQuery } from './daraja.js';
 import { initialize, verify } from './paystack.js';
+import { queueBookingEmail } from './emails.js';
 
 export const MAX_ATTEMPTS = 6;                 // per booking, both methods together
 export const NO_ANSWER_MS = 3 * 60_000;        // an M-Pesa prompt with no final answer by now is given up on
@@ -258,14 +259,19 @@ async function markPaid(paymentId, from = {}) {
     // holdRunning is judged by the database's clock, the one that freed the rooms (withHoldRunning).
     const [b] = await tx.select(withHoldRunning).from(bookings).where(eq(bookings.id, p.bookingId)).for('update');
     const confirm = () => tx.update(bookings).set({ status: 'CONFIRMED', confirmedAt: now, holdExpiresAt: null }).where(eq(bookings.id, b.id));
-    if (b.holdRunning) { await confirm(); return { confirmed: b.ref }; }
+    if (b.holdRunning) { await confirm(); return { confirmed: b.ref, bookingId: b.id }; }
     if (b.status === 'HELD' || b.status === 'EXPIRED') {
-      if (!(await bookingStillFits(tx, b))) { await confirm(); return { confirmed: b.ref, late: true }; }
+      if (!(await bookingStillFits(tx, b))) { await confirm(); return { confirmed: b.ref, bookingId: b.id, late: true }; }
     }
     await tx.update(bookings).set({ refundDue: true, ...(b.status === 'HELD' ? { status: 'EXPIRED' } : {}) }).where(eq(bookings.id, b.id));
     return { refundDue: b.ref, status: b.status };
   });
-  if (outcome?.confirmed) logger.info({ ref: outcome.confirmed, late: Boolean(outcome.late) }, 'deposit paid: booking confirmed');
+  if (outcome?.confirmed) {
+    logger.info({ ref: outcome.confirmed, late: Boolean(outcome.late) }, 'deposit paid: booking confirmed');
+    // After the commit, never inside it. Each goes out at most once per booking (emails.js).
+    queueBookingEmail(outcome.bookingId, 'confirmed');
+    queueBookingEmail(outcome.bookingId, 'lodge_booking');
+  }
   if (outcome?.refundDue) logger.warn({ ref: outcome.refundDue, status: outcome.status }, 'deposit arrived but the booking can’t use it: refund due');
   if (outcome?.flagged) logger.warn({ paymentId }, 'deposit amount mismatch: payment FLAGGED for review');
 }

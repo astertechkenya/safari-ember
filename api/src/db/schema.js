@@ -256,6 +256,16 @@ export const sessions = pgTable('sessions', {
   expire: timestamp({ precision: 6 }).notNull(),
 }, (t) => [index('sessions_expire_idx').on(t.expire)]);
 
+// Emails to a guest about their booking, and the lodge's alert for it: at most one of each kind
+// per booking (the primary key is the "once" guard), with what happened to it. From NURA's
+// order_emails. status: queued → sent | held (no domain yet) | logged (no Resend key) | failed.
+export const bookingEmails = pgTable('booking_emails', {
+  bookingId: integer().notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  kind: varchar({ length: 30 }).notNull(),             // 'confirmed', 'cancelled', 'expired', 'lodge_booking'
+  status: varchar({ length: 10 }).notNull().default('queued'),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.bookingId, t.kind] })]);
+
 // Who did what, when: every change made in the admin (check-in, cancel, a new rate...).
 // `detail` holds the before/after values. Never deleted by the API.
 export const adminEvents = pgTable('admin_events', {

@@ -6,6 +6,7 @@ import { limit } from '../middleware/rateLimit.js';
 import { isIsoDate } from '../lib/dates.js';
 import { personName, email, phone, freeText } from '../lib/fields.js';
 import { saveEnquiry } from '../services/enquiries.js';
+import { queueEnquiryAlert } from '../services/emails.js';
 
 export const enquiriesRouter = Router();
 
@@ -43,6 +44,9 @@ enquiriesRouter.post('/',
   async (req, res) => {
     const { website, ...enquiry } = req.valid.body;
     // A bot gets the same "thank you" as a person, so it learns nothing, but nothing is saved.
-    if (!website) await saveEnquiry(enquiry);
+    if (!website) {
+      await saveEnquiry(enquiry);
+      queueEnquiryAlert();      // returns at once; a Resend problem never fails the form
+    }
     res.status(201).json({ ok: true });
   });

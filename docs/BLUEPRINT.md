@@ -106,6 +106,7 @@ admins           id, email (unique, any case), name, role (ADMIN | DEMO_ADMIN), 
                  (argon2id), totp_secret, created_at, updated_at
 sessions         sid, sess, expire (connect-pg-simple, as NURA)
 admin_events     id, admin_id, action, booking_id, detail, created_at (every staff change)
+booking_emails   booking_id, kind, status, created_at (one row per email kind per booking)
 ```
 
 Booking statuses: `HELD` → `CONFIRMED` (deposit paid) → `COMPLETED` (stayed), or `HELD` →
@@ -222,10 +223,14 @@ total survived.
 3. **Deposits.** M-Pesa and card, adapted from NURA: paying confirms the booking; a payment
    that arrives after the hold expired is handled safely (re-hold if still free, otherwise
    flagged for a refund). **3b:** several rooms per booking, and experiences as add-ons.
-4. **Emails (launch: one alert).** At launch, only an alert to the lodge (Resend, to the
-   owner's own address) for a confirmed booking or a new enquiry. Guest emails (confirmation,
-   hold expired, cancellation) wait for a domain; until then the private booking link is the
-   guest's confirmation. See "Launch scope" below.
+4. **Emails (built Oct 2026, from NURA's mail.js / emails.js).** Guests: booking confirmed,
+   booking cancelled (with the lodge's reason), hold ended. The lodge (`LODGE_EMAIL`): a new
+   confirmed booking, a new enquiry. Each at most once (`booking_emails`, migration 0005), sent
+   after the change commits, never blocking or failing it; Reply on a guest's email goes to the
+   lodge. Lodge alerts carry no guest contact details. Until a domain is verified in Resend,
+   only the account owner's address receives mail (`MAIL_ONLY_TO`), so guests' emails are
+   logged as "held" and the private booking link stays their confirmation. Each booking's
+   history in the admin shows what was emailed and whether it went out.
 5. **Admin.** Sign-in with two-factor (as NURA), Today
    (check in / out), the bookings list and a booking (cancel), the calendar, rooms and rates
    (one price per night), Experiences, and the enquiries inbox. No Closures (handled physically).
@@ -271,11 +276,11 @@ on any future night (the API refuses with the night and the count). Every change
 
 | Later | Meanwhile |
 |---|---|
-| Guest emails | The private booking link is the confirmation; a cancellation reason shows on it |
+| Guest emails delivered | Built; held until a domain is verified in Resend. Meanwhile the private booking link is the confirmation |
 
 **Still non-negotiable at launch.** Server-side sign-in checks on every `/api/admin/*` route
 (the hidden admin page is not protection), the least-privilege production database login,
-migrations 0002, 0003 and 0004 run on production before the code that needs them, and tests for check-in,
+migrations 0002 to 0005 run on production before the code that needs them, and tests for check-in,
 check-out, cancel and the units rule.
 
 ## Admin (Phase 5, built Oct 2026)

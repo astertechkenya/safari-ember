@@ -24,10 +24,11 @@ if (testUrl === process.env.DATABASE_URL) {
 const TEST_SESSION_SECRET = 'test-only-session-secret-long-enough-4567';
 process.env.DATABASE_URL = testUrl;
 process.env.SESSION_SECRET = TEST_SESSION_SECRET;
-// Tests never talk to Safaricom or Paystack, whatever api/.env holds: real keys are removed
-// here, before the test processes start, and fakes are configured below instead.
+// Tests never talk to Safaricom, Paystack or Resend, whatever api/.env holds: real keys are
+// removed here, before the test processes start, and fakes are configured below instead. With
+// no Resend key, every email lands in mail.js's `outbox` for the tests to read.
 for (const key of Object.keys(process.env)) {
-  if (/^(DARAJA_|PAYSTACK_|MPESA_)/.test(key) || key === 'PUBLIC_API_URL') delete process.env[key];
+  if (/^(DARAJA_|PAYSTACK_|MPESA_|RESEND_|MAIL_)/.test(key) || key === 'PUBLIC_API_URL' || key === 'LODGE_EMAIL') delete process.env[key];
 }
 
 export default defineConfig({
@@ -58,6 +59,7 @@ export default defineConfig({
       PAYSTACK_BASE_URL: 'http://127.0.0.1:4597',
       PAYSTACK_SECRET_KEY: 'sk_test_fakeKeyForTestsOnly0123456789',
       PAYMENT_GRACE_MINUTES: '5',
+      LODGE_EMAIL: 'lodge@example.test',      // the lodge's alerts, read from the outbox
     },
     globalSetup: ['./test/globalSetup.js'],
     fileParallelism: false,  // files share one database, so run them one at a time

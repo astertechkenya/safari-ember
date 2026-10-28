@@ -36,6 +36,13 @@
       "when": 1793008453350,
       "tag": "0004_drop_seasons",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793179986323,
+      "tag": "0005_booking_emails",
+      "breakpoints": true
     }
   ]
 }

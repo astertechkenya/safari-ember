@@ -76,6 +76,30 @@ const schema = z.object({
   // Starting a payment keeps the room held for at least this long, so a guest typing their
   // M-Pesa PIN at minute 14 doesn't lose the room at minute 15.
   PAYMENT_GRACE_MINUTES: z.coerce.number().int().min(1).max(30).default(5),
+
+  // Email through Resend (adapted from NURA). Without a key, emails are printed in the terminal
+  // (development) or only logged (production): nothing else changes.
+  RESEND_API_KEY: z.string().regex(/^re_[A-Za-z0-9_]{10,}$/, 'must be a Resend API key (re_…)').optional(),
+  // Who emails come from. onboarding@resend.dev works without a domain of your own, but Resend
+  // then only delivers to YOUR account's address: see MAIL_ONLY_TO. With a verified domain,
+  // use e.g. "Safari Ember <bookings@yourdomain.co.ke>".
+  MAIL_FROM: z.string().min(3).default('Safari Ember <onboarding@resend.dev>'),
+  // Comma-separated addresses. When set, email goes ONLY to these; anyone else's (a guest's) is
+  // logged as held. Set it to your Resend account email while you have no domain (Resend would
+  // refuse the others anyway), and remove it once your domain is verified.
+  MAIL_ONLY_TO: z.string().optional()
+    .transform((s) => (s ? s.split(',').map((a) => a.trim().toLowerCase()).filter(Boolean) : null))
+    // Strict on purpose: "<you@x.com>" would match no real recipient, so every email would be
+    // silently held. Better to refuse to start and say why.
+    .refine((list) => !list || list.every((a) => /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/.test(a)),
+      'must be plain email addresses like you@example.com: no < >, quotes, spaces or comments on the line; separate several with commas'),
+  // The lodge's address: new-booking and new-enquiry alerts go here, and guests' replies to their
+  // emails come here. One plain address. Must be in MAIL_ONLY_TO while that is set.
+  LODGE_EMAIL: z.string().trim().toLowerCase()
+    .regex(/^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/, 'must be one plain email address like you@example.com')
+    .optional(),
+  // Tests point this at a fake Resend. Leave unset.
+  RESEND_BASE_URL: z.url().default('https://api.resend.com'),
 });
 
 function load(env) {
@@ -90,6 +114,10 @@ function load(env) {
     throw new Error(`Invalid environment configuration:\n${problems}\nSee api/.env.example.`);
   }
   const c = parsed.data;
+  // A lodge address outside MAIL_ONLY_TO would be held every time, silently: refuse instead.
+  if (c.LODGE_EMAIL && c.MAIL_ONLY_TO && !c.MAIL_ONLY_TO.includes(c.LODGE_EMAIL)) {
+    throw new Error('Invalid environment configuration:\n  - LODGE_EMAIL: must also be in MAIL_ONLY_TO, or the lodge\'s alerts are never sent\nSee api/.env.example.');
+  }
 
   // WHICH database. Every Safari Ember database is named ember_… (ember_dev, ember_test, later
   // ember_prod). Anything else is another project's, most often because a terminal window still
@@ -125,7 +153,8 @@ function load(env) {
   const mpesaEnabled = Boolean(c.DARAJA_CONSUMER_KEY && c.DARAJA_CONSUMER_SECRET && c.DARAJA_SHORTCODE
     && c.DARAJA_PASSKEY && c.PUBLIC_API_URL && c.MPESA_CALLBACK_SECRET);
   const cardEnabled = Boolean(c.PAYSTACK_SECRET_KEY);
-  return Object.freeze({ ...c, isProd: c.NODE_ENV === 'production', isTest: c.NODE_ENV === 'test', mpesaEnabled, cardEnabled });
+  const mailEnabled = Boolean(c.RESEND_API_KEY);
+  return Object.freeze({ ...c, isProd: c.NODE_ENV === 'production', isTest: c.NODE_ENV === 'test', mpesaEnabled, cardEnabled, mailEnabled });
 }
 
 /**

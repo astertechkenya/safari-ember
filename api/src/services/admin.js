@@ -18,12 +18,13 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   bookings, bookingRooms, bookingNights, bookingActivities, activities, payments, roomTypes,
-  closures, enquiries, adminEvents,
+  closures, enquiries, adminEvents, bookingEmails,
 } from '../db/schema.js';
 import { httpError } from '../middleware/errors.js';
 import { addDays, todayInNairobi } from '../lib/dates.js';
 import { lockRoomTypes } from './capacity.js';
 import { maskName, maskEmail, maskPhone } from '../lib/mask.js';
+import { queueBookingEmail } from './emails.js';
 
 export const CALENDAR_DAYS = 21;
 
@@ -149,7 +150,7 @@ export async function bookingDetail(ref, masked) {
       b.cancel_reason, b.refund_due from bookings b where b.ref = ${ref}`);
   if (!b) return null;
   const [summary] = await summarise([b], masked);
-  const [nights, trips, pays, events] = await Promise.all([
+  const [nights, trips, pays, events, emails] = await Promise.all([
     db.select({ roomTypeId: bookingNights.roomTypeId, night: bookingNights.night, rateKes: bookingNights.rateKes })
       .from(bookingNights).where(eq(bookingNights.bookingId, b.id)).orderBy(asc(bookingNights.night)),
     db.select({ name: activities.name, day: bookingActivities.day, time: bookingActivities.departs, people: bookingActivities.people, priceKes: bookingActivities.priceKes })
@@ -158,6 +159,7 @@ export async function bookingDetail(ref, masked) {
     db.select().from(payments).where(eq(payments.bookingId, b.id)).orderBy(asc(payments.createdAt)),
     db.execute(sql`select e.action, e.detail, e.created_at, a.name as admin from admin_events e left join admins a on a.id = e.admin_id
                     where e.booking_id = ${b.id} order by e.created_at`),
+    db.select().from(bookingEmails).where(eq(bookingEmails.bookingId, b.id)),
   ]);
   const ms = (d) => (d ? new Date(d).getTime() : null);
   const history = [{ what: 'Booked online', at: ms(b.created_at) }];
@@ -169,6 +171,11 @@ export async function bookingDetail(ref, masked) {
   for (const e of events.rows) {
     history.push({ what: (WORDS[e.action] ?? e.action) + (e.action === 'cancel' && e.detail?.reason ? ` · ${e.detail.reason}` : ''), by: e.admin, at: ms(e.created_at) });
   }
+  // What the guest (and the lodge) were emailed, and whether it actually went out
+  const EMAILED = { confirmed: 'Confirmation emailed to the guest', cancelled: 'Cancellation emailed to the guest',
+    expired: '“Hold ended” emailed to the guest', lodge_booking: 'Lodge alerted by email' };
+  const OUTCOME = { sent: '', held: ' · held: no email domain yet', logged: ' · not sent: email isn’t set up', failed: ' · failed to send', queued: ' · sending' };
+  for (const m of emails) history.push({ what: (EMAILED[m.kind] ?? m.kind) + (OUTCOME[m.status] ?? ` · ${m.status}`), at: ms(m.createdAt) });
   if (summary.status === 'HELD') history.push({ what: 'Hold runs out', at: summary.holdExpiresAt });
   if (summary.status === 'EXPIRED') history.push({ what: 'Hold ran out unpaid', at: ms(b.hold_expires_at) });
   history.sort((x, y) => x.at - y.at);
@@ -227,14 +234,18 @@ export function checkOut(ref, adminId) {
   });
 }
 
-export function cancel(ref, adminId, reason) {
-  return act(ref, adminId, 'cancel', (b) => {
+export async function cancel(ref, adminId, reason) {
+  let bookingId;
+  await act(ref, adminId, 'cancel', (b) => {
+    bookingId = b.id;
     if (!(b.status === 'CONFIRMED' && !b.checkedInAt) && !b.holdRunning) {
       throw httpError(409, 'Only a held or confirmed booking that hasn’t arrived can be cancelled.');
     }
     // Never refunds by itself: the lodge refunds a deposit from M-Pesa/Paystack per its policy.
     return { columns: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: reason, holdExpiresAt: null }, detail: { reason } };
   });
+  queueBookingEmail(bookingId, 'cancelled');     // after the commit: the guest gets the reason
+  return ref;
 }
 
 /* ── Calendar ────────────────────────────────────────────────────────────────────────── */

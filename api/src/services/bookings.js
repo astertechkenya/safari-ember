@@ -30,6 +30,7 @@ import { tripDays, weekdayOf, bookable } from './activities.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
 import { daysBetween } from '../lib/dates.js';
+import { queueBookingEmail } from './emails.js';
 
 const roomCard = (rt) => ({ slug: rt.slug, name: rt.name, kind: rt.kind, description: rt.description, sleeps: rt.sleeps });
 
@@ -234,6 +235,8 @@ export async function expireHolds(executor = db) {
     .set({ status: 'EXPIRED' })
     .where(and(eq(bookings.status, 'HELD'), lte(bookings.holdExpiresAt, sql`now()`)))
     .returning({ id: bookings.id });
+  // Each guest whose hold just ran out is told (once: emails.js), after the update has committed.
+  for (const r of rows) queueBookingEmail(r.id, 'expired');
   return rows.length;
 }
 

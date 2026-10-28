@@ -175,7 +175,7 @@ describe('Today and the daily actions', () => {
     expect((await b.post(`/api/admin/bookings/${ref}/cancel`).send({})).status).toBe(400);
     const res = await b.post(`/api/admin/bookings/${ref}/cancel`).send({ reason: 'Guest asked by phone' });
     expect(res.body.booking).toMatchObject({ status: 'CANCELLED', cancelReason: 'Guest asked by phone', refundDue: false, canCancel: false });
-    expect(res.body.booking.history.at(-1).what).toBe('Cancelled · Guest asked by phone');
+    expect(res.body.booking.history.map((h) => h.what)).toContain('Cancelled · Guest asked by phone');
     expect((await freeUnits({ checkIn: inDays(20), checkOut: inDays(22), roomTypeId: room.id })).get(room.id)).toBe(3);
     expect((await b.post(`/api/admin/bookings/${ref}/cancel`).send({ reason: 'again' })).status).toBe(409);
   });
