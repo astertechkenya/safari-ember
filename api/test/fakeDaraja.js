@@ -1,7 +1,8 @@
 // A stand-in for Safaricom's Daraja API, for tests. It answers the three calls Safari Ember makes
 // (token, STK push, STK query) and records what it was sent.
 //
-//   fake.outcome.set(checkoutRequestId, { state: 'paid' } | { state: 'failed', code: '1032' } | { state: 'pending' })
+//   fake.outcome.set(checkoutRequestId, { state: 'paid' } | { state: 'failed', code: '1032' } | { state: 'pending' }
+//                    | { state: 'unclear', code: '4999' })   a ResultCode that isn't a final answer
 //   fake.failNextPush = true   → the next push is refused (Safaricom down)
 import http from 'node:http';
 
@@ -30,6 +31,7 @@ export function startFakeDaraja(port = 4599) {
         const o = fake.outcome.get(body.CheckoutRequestID);
         if (!o || o.state === 'pending') return send(500, { errorCode: '500.001.1001', errorMessage: 'The transaction is being processed' });
         if (o.state === 'paid') return send(200, { ResponseCode: '0', ResultCode: '0', ResultDesc: 'The service request is processed successfully.' });
+        if (o.state === 'unclear') return send(200, { ResponseCode: '0', ResultCode: o.code, ResultDesc: 'The transaction is still under processing' });
         return send(200, { ResponseCode: '0', ResultCode: o.code, ResultDesc: 'Request cancelled by user' });
       }
       send(404, {});

@@ -6,7 +6,11 @@
 //   PENDING, no providerRef   startPayment() made the row; the prompt / page is being opened
 //   PENDING, providerRef set  M-Pesa: the PIN prompt is on the guest's phone
 //                             Card:   the guest is on Paystack's page (or closed it)
-//   PAID / FAILED / FLAGGED   settled, never changed again
+//   PAID / FLAGGED            settled, never changed again
+//   FAILED                    settled, with one exception: if the provider later confirms the
+//                             money DID move (a late Safaricom callback, a Paystack webhook), the
+//                             payment becomes PAID and the booking rules below apply. Money that
+//                             moved must never sit on a booking that says it didn't.
 //
 // THE ONE RULE: nothing is marked paid on anyone's word. A Safaricom callback, a Paystack
 // webhook, or the booking page asking "is it paid yet?" only trigger settle(), which asks the
@@ -33,6 +37,8 @@ import { amountToRequest, stkPush, stkQuery } from './daraja.js';
 import { initialize, verify } from './paystack.js';
 
 export const MAX_ATTEMPTS = 6;                 // per booking, both methods together
+export const NO_ANSWER_MS = 3 * 60_000;        // an M-Pesa prompt with no final answer by now is given up on
+const NO_ANSWER_MESSAGE = 'We didn’t get a final answer from M-Pesa. If money left your account, please don’t pay again: contact the lodge with your booking reference.';
 export const PUSHES_PER_PHONE_PER_HOUR = 5;    // M-Pesa prompts to one number
 const CHECK_EVERY_MS = 4000;                   // the booking page polls; ask the provider at most this often
 
@@ -45,6 +51,8 @@ export const paymentMethods = () => [
 /** What to tell the guest for Safaricom's ResultCodes. */
 const MPESA_MESSAGES = {
   1: 'Your M-Pesa balance wasn’t enough for this payment.',
+  1001: 'Another M-Pesa payment was in progress on this phone. Wait a minute, then try again.',
+  1025: 'M-Pesa couldn’t send the prompt. Please try again.',
   1032: 'The M-Pesa prompt was cancelled.',
   1037: 'We couldn’t reach your phone. Check it’s on and has signal, then try again.',
   1019: 'The prompt expired before it was answered.',
@@ -229,7 +237,8 @@ async function markFailed(paymentId, resultCode, raw, message) {
 async function markPaid(paymentId, from = {}) {
   const outcome = await db.transaction(async (tx) => {
     const [p] = await tx.select().from(payments).where(eq(payments.id, paymentId)).for('update');
-    if (!p || p.status !== 'PENDING') return null;                 // already settled: nothing to do
+    // PENDING, or FAILED that the provider now says was paid after all (see the top of this file).
+    if (!p || (p.status !== 'PENDING' && p.status !== 'FAILED')) return null;   // already paid: nothing to do
     const now = new Date();
     const wrongAmount = from.amountKes !== undefined && from.amountKes !== p.amountKes;
     await tx.update(payments).set({
@@ -313,6 +322,7 @@ export function parseMpesaCallback(body) {
   const items = Object.fromEntries((cb.CallbackMetadata?.Item ?? []).map((i) => [i.Name, i.Value]));
   return {
     checkoutRequestId: cb.CheckoutRequestID,
+    success: Number(cb.ResultCode) === 0,      // what the callback CLAIMS; settle() asks Safaricom
     amountKes: items.Amount !== undefined ? Number(items.Amount) : undefined,
     receipt: typeof items.MpesaReceiptNumber === 'string' ? items.MpesaReceiptNumber : undefined,
     raw: body,
@@ -333,8 +343,9 @@ export async function handleMpesaCallback(body) {
       .where(and(eq(payments.id, p.id), eq(payments.status, 'PAID'), isNull(payments.receipt)));
     return;
   }
-  if (p.status !== 'PENDING') return;                             // a repeat
-  await settle(p, cb);
+  // PENDING: settle it. FAILED but the callback says paid: we may have given up too early (or
+  // Safaricom answered unclearly), so ask again; settle() only believes Safaricom's own answer.
+  if (p.status === 'PENDING' || (p.status === 'FAILED' && cb.success)) await settle(p, cb);
 }
 
 /** A signed Paystack webhook. Only charge.success matters; everything else is ignored. */
@@ -342,8 +353,8 @@ export async function handlePaystackEvent(event) {
   if (event?.event !== 'charge.success' || typeof event.data?.reference !== 'string') return;
   const [p] = await db.select().from(payments).where(and(eq(payments.providerRef, event.data.reference), eq(payments.provider, 'PAYSTACK')));
   if (!p) { logger.warn('Paystack event for an unknown payment: ignored'); return; }
-  if (p.status !== 'PENDING') return;
-  await settle(p);
+  // A charge.success for a page we'd closed (abandoned, or replaced by M-Pesa): verify it anyway.
+  if (p.status === 'PENDING' || p.status === 'FAILED') await settle(p);
 }
 
 /* ── Every minute (jobs/index.js) ───────────────────────────────────────────────────────── */
@@ -365,7 +376,12 @@ export async function reconcilePayments(now = new Date()) {
     try {
       const state = await settle(p);
       if (state !== 'pending') settled += 1;
-      else if (p.provider === 'PAYSTACK' && p.createdAt < ago(60 * 60_000)) {
+      else if (p.provider === 'DARAJA' && p.createdAt < ago(NO_ANSWER_MS)) {
+        // The prompt has long expired on the phone and Safaricom still won't give a final answer.
+        // Free the booking for another attempt; a late "paid" can still settle it (markPaid).
+        await markFailed(p.id, 'NO_ANSWER', null, NO_ANSWER_MESSAGE);
+        logger.warn({ paymentId: p.id }, 'M-Pesa prompt had no final answer after 3 minutes: marked failed');
+      } else if (p.provider === 'PAYSTACK' && p.createdAt < ago(60 * 60_000)) {
         await markFailed(p.id, 'ABANDONED', null, 'The card payment wasn’t completed.');
       }
     } catch (err) {

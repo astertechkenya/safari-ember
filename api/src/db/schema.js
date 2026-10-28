@@ -25,7 +25,7 @@ export const roomTypes = pgTable('room_types', {
   description: text().notNull(),
   sleeps: integer().notNull(),                        // most guests in one unit
   units: integer().notNull(),                         // how many identical rooms of this type
-  baseRateKes: integer().notNull(),                   // per night, when no seasonal rate applies
+  baseRateKes: integer().notNull(),                   // per night, all year
   sort: integer().notNull().default(0),               // display order
   active: boolean().notNull().default(true),          // inactive types can't be booked or shown
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -34,22 +34,6 @@ export const roomTypes = pgTable('room_types', {
   check('room_types_sleeps_check', sql`${t.sleeps} between 1 and 20`),
   check('room_types_units_check', sql`${t.units} >= 0`),
   check('room_types_rate_check', sql`${t.baseRateKes} > 0`),
-]);
-
-// A different nightly price for some dates (migration season, festive season…).
-// [startsOn, endsOn) like a stay: endsOn itself is NOT included.
-// If two seasons overlap on a night, the one starting later wins (it's the more specific one).
-export const seasonalRates = pgTable('seasonal_rates', {
-  id: serial().primaryKey(),
-  roomTypeId: integer().notNull().references(() => roomTypes.id, { onDelete: 'cascade' }),
-  label: varchar({ length: 80 }).notNull(),           // 'Migration season'
-  startsOn: date({ mode: 'string' }).notNull(),
-  endsOn: date({ mode: 'string' }).notNull(),
-  nightlyRateKes: integer().notNull(),
-}, (t) => [
-  index('seasonal_rates_room_idx').on(t.roomTypeId, t.startsOn),
-  check('seasonal_rates_dates_check', sql`${t.endsOn} > ${t.startsOn}`),
-  check('seasonal_rates_rate_check', sql`${t.nightlyRateKes} > 0`),
 ]);
 
 // Units taken out of sale for some nights: maintenance, a private event, the lodge closed.
@@ -98,6 +82,11 @@ export const bookings = pgTable('bookings', {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   confirmedAt: timestamp({ withTimezone: true }),
   cancelledAt: timestamp({ withTimezone: true }),
+  // Phase 5 (admin): arrival and departure as reception records them, and why a booking was
+  // cancelled (shown on the guest's booking page). "In house" = CONFIRMED + checked in.
+  checkedInAt: timestamp({ withTimezone: true }),
+  checkedOutAt: timestamp({ withTimezone: true }),
+  cancelReason: varchar({ length: 300 }),
   // A deposit arrived that the booking can't use: after the hold ran out and the room was
   // taken, after a cancellation, or a second deposit. The lodge refunds it (admin, Phase 5).
   refundDue: boolean().notNull().default(false),
@@ -239,4 +228,44 @@ export const enquiries = pgTable('enquiries', {
 }, (t) => [
   index('enquiries_status_idx').on(t.status, t.createdAt),
   check('enquiries_dates_check', sql`${t.checkIn} is null or ${t.checkOut} is null or ${t.checkOut} > ${t.checkIn}`),
+]);
+
+// ── Admin (Phase 5) ────────────────────────────────────────────────────────────────────────
+// Staff accounts, as NURA: an argon2id password hash (never the password), and for ADMIN a
+// two-factor secret for an authenticator app. DEMO_ADMIN is the read-only account for
+// portfolio visitors: it sees everything with guests' names, emails and phones masked, and
+// can change nothing. Accounts are only ever made from the terminal (npm run create-admin).
+export const adminRole = pgEnum('admin_role', ['ADMIN', 'DEMO_ADMIN']);
+
+export const admins = pgTable('admins', {
+  id: uuid().primaryKey().defaultRandom(),
+  email: varchar({ length: 254 }).notNull(),          // always stored lower-case
+  name: varchar({ length: 80 }).notNull(),
+  role: adminRole().notNull().default('ADMIN'),
+  passwordHash: text().notNull(),
+  totpSecret: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('admins_email_lower_key').on(sql`lower(${t.email})`)]);
+
+// Sign-in sessions, read and written by connect-pg-simple. The browser holds only the random
+// session ID, in a cookie page scripts can't read.
+export const sessions = pgTable('sessions', {
+  sid: varchar().primaryKey(),
+  sess: jsonb().notNull(),
+  expire: timestamp({ precision: 6 }).notNull(),
+}, (t) => [index('sessions_expire_idx').on(t.expire)]);
+
+// Who did what, when: every change made in the admin (check-in, cancel, a new rate...).
+// `detail` holds the before/after values. Never deleted by the API.
+export const adminEvents = pgTable('admin_events', {
+  id: serial().primaryKey(),
+  adminId: uuid().references(() => admins.id, { onDelete: 'set null' }),
+  action: varchar({ length: 40 }).notNull(),          // 'check-in', 'cancel', 'room.update'...
+  bookingId: integer().references(() => bookings.id, { onDelete: 'set null' }),
+  detail: jsonb(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('admin_events_booking_idx').on(t.bookingId, t.createdAt),
+  index('admin_events_created_idx').on(t.createdAt),
 ]);

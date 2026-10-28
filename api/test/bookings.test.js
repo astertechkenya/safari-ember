@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vites
 import { sql, eq } from 'drizzle-orm';
 import { createApp } from '../src/app.js';
 import { db, pool } from '../src/db/client.js';
-import { roomTypes, seasonalRates, closures, bookings } from '../src/db/schema.js';
+import { roomTypes, closures, bookings } from '../src/db/schema.js';
 import { expireHolds, createHold, largestParty } from '../src/services/bookings.js';
 import { freeUnits } from '../src/services/availability.js';
 import { addDays } from '../src/lib/dates.js';
@@ -163,18 +163,6 @@ describe('holding a room', () => {
       expect(body.booking.rooms[0].nightly.map((n) => n.rateKes)).toEqual([10_000, 10_000]);
     } finally {
       await db.update(roomTypes).set({ baseRateKes: 10_000 }).where(eq(roomTypes.id, pair.id));
-    }
-  });
-
-  it('applies seasonal rates to holds', async () => {
-    const [s] = await db.insert(seasonalRates).values({ roomTypeId: pair.id, label: 'Test season', startsOn: inDays(101), endsOn: inDays(102), nightlyRateKes: 15_000 }).returning();
-    try {
-      const res = await book('test-pair', inDays(100), inDays(103));
-      expect(res.body.booking.rooms[0].nightly.map((n) => n.rateKes)).toEqual([10_000, 15_000, 10_000]);
-      expect(res.body.booking.totalKes).toBe(35_000);
-      expect(res.body.booking.depositKes).toBe(10_500);
-    } finally {
-      await db.delete(seasonalRates).where(eq(seasonalRates.id, s.id));
     }
   });
 

@@ -23,6 +23,14 @@ describe('enquiries', () => {
     expect(rows[0]).toMatchObject({ firstName: 'James', email: 'james@example.com', subject: 'Wedding party', status: 'NEW', phone: null });
   });
 
+  it('takes one "Your name" box, as on the homepage', async () => {
+    const { firstName, lastName, subject, ...rest } = valid;
+    expect((await send({ ...rest, name: '  Amina  Wanjiru Otieno ' })).status).toBe(201);
+    expect((await send({ ...rest, name: 'Ophelia' })).status).toBe(201);
+    const rows = await db.select().from(enquiries).orderBy(enquiries.id);
+    expect(rows.map((r) => [r.firstName, r.lastName])).toEqual([['Amina', 'Wanjiru Otieno'], ['Ophelia', '']]);
+  });
+
   it('takes optional dates, guests and phone', async () => {
     const res = await send({ ...valid, checkIn: inDays(30), checkOut: inDays(33), guests: 14, phone: '+44 7700 900123' });
     expect(res.status).toBe(201);
@@ -40,7 +48,8 @@ describe('enquiries', () => {
     const cases = [
       [{ ...valid, message: '  ' }, 'message: is required'],
       [{ ...valid, email: 'nope' }, 'email: must be a valid email address'],
-      [{ ...valid, lastName: undefined }, 'lastName: Invalid input: expected string, received undefined'],
+      [{ ...valid, lastName: undefined }, 'name: is required'],
+      [{ email: 'a@b.co', message: 'Hi' }, 'name: is required'],
       [{ ...valid, checkIn: inDays(5), checkOut: inDays(4) }, 'checkOut: must be after check-in'],
       [{ ...valid, admin: true }, 'Unknown field: admin'],
     ];

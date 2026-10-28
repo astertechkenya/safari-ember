@@ -86,10 +86,20 @@ export async function stkPush({ phone, amountKes, reference }) {
 }
 
 /**
+ * The ResultCodes that are a final "no" for a prompt: no balance, couldn't lock the account
+ * (another prompt in progress), expired, couldn't send, cancelled, phone unreachable, wrong PIN.
+ * Only these fail a payment. Any OTHER non-zero code is not treated as an answer: Safaricom also
+ * uses ResultCodes for "still processing" (e.g. 4999), and its codes change without notice.
+ * Failing on an unknown code is how a guest gets charged with the page saying it failed.
+ */
+export const FINAL_FAILURES = new Set(['1', '1001', '1019', '1025', '1032', '1037', '2001']);
+
+/**
  * Asks Safaricom what happened to a push.
  *   state 'paid'    ResultCode 0
- *   state 'failed'  any other ResultCode (cancelled, wrong PIN, no funds, timed out...)
- *   state 'pending' Safaricom hasn't decided yet (the guest may still be typing their PIN)
+ *   state 'failed'  one of FINAL_FAILURES (cancelled, wrong PIN, no funds, timed out...)
+ *   state 'pending' Safaricom hasn't decided yet (the guest may still be typing their PIN), or
+ *                   answered with a code we don't know as final; resultCode says which
  */
 export async function stkQuery(checkoutRequestId) {
   const ts = nairobiTimestamp();
@@ -105,5 +115,8 @@ export async function stkQuery(checkoutRequestId) {
     throw new DarajaError('STK query failed', { status: res.status, body });
   }
   const code = String(body.ResultCode);
-  return { state: code === '0' ? 'paid' : 'failed', resultCode: code, resultDesc: body.ResultDesc };
+  if (code === '0') return { state: 'paid', resultCode: code, resultDesc: body.ResultDesc };
+  if (FINAL_FAILURES.has(code)) return { state: 'failed', resultCode: code, resultDesc: body.ResultDesc };
+  logger.info({ resultCode: code, resultDesc: body.ResultDesc }, 'STK query: not a final answer yet; will ask again');
+  return { state: 'pending', resultCode: code, resultDesc: body.ResultDesc };
 }

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Same fonts as the public site: Playfair for headings, Jost for everything you read and click -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <style>
     /* ==========================================================================
@@ -45,8 +45,8 @@
       --field:     #dcd2c3;
       --field-ink: #1c1610;
       /* The same sand, used in the admin for DATA: dark ink on sand, like paper on a desk.
-         Today's Arriving and Leaving sheets, the Bookings list, a booking's details, closure
-         clashes and today's calendar column. Alerts (holds, enquiries, a guest's request) are
+         Today's Arriving and Leaving sheets, the Bookings list, a booking's details and
+         today's calendar column. Alerts (holds, enquiries, a guest's request) are
          NOT sand: they're dark with an ember edge and an ember headline label. */
       --sand-ember: #8a3f0e;   /* ember text on sand: 5.0:1 (AA) */
 
@@ -151,8 +151,10 @@
             background: var(--panel); border-right: 1px solid var(--line); padding: 20px 14px; }
     .side__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; text-decoration: none; color: var(--text); }
     .side__brand img { width: 34px; height: 34px; }
-    .side__brand b { display: block; font-family: var(--serif); font-weight: 400; font-size: 15px; line-height: 1.1;
-                     text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }   /* the logo's name, like the site */
+    /* The logo's name, in the logo's own orange. At 400 the strokes were so thin they blended into
+       the dark and read brown; 600 lets the full colour through. */
+    .side__brand b { display: block; font-family: var(--serif); font-weight: 600; font-size: 15px; line-height: 1.1;
+                     text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }
     .side__brand small { color: var(--dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
     .nav { display: grid; gap: 2px; }
     .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 0;
@@ -170,6 +172,12 @@
     .who b { display: block; font-weight: 500; font-size: 14px; }
     .who small { color: var(--dim); font-size: 12.5px; }
     .proto-note { font-size: 12px; color: var(--dim); line-height: 1.4; }
+    /* Live data (Phase 5): loading, a failed load, the demo account's note, sign-in errors */
+    .loading { color: var(--muted); padding: 40px 0; }
+    .problem { background: var(--panel-2); border-left: 3px solid var(--st-bad); padding: 16px 18px; max-width: 640px; }
+    .problem p { margin: 0 0 12px; }
+    .demo-note { font-size: 12.5px; color: var(--muted); line-height: 1.45; border-left: 2px solid var(--ember); padding-left: 10px; }
+    .auth__error { margin: 0; color: var(--st-bad); font-size: 14px; }
 
     .main { min-width: 0; }
     .topbar { display: none; }
@@ -177,8 +185,6 @@
     .page__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
     .page__title { font-family: var(--serif); font-size: 30px; line-height: 1.15; }
     .page__sub { margin: 6px 0 0; color: var(--muted); }
-    .crumb { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); text-decoration: none; font-size: 14px; margin-bottom: 10px; }
-    .crumb:hover { color: var(--text); }
 
     /* ── Panels and lists ─────────────────────────────────────────────────── */
     .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 0; }
@@ -269,11 +275,11 @@
     .table-wrap--sand td a.ref:hover { color: var(--sand-ember); }
     .table-wrap--sand .sub, .table-wrap--sand .empty { color: #5a4632; }
     /* Status words on sand: no dot, darker colours made for the light background (all 4.6:1 or more) */
-    .table-wrap--sand .chip, .panel--sand .chip { font-weight: 600; padding: 3px 10px; }
-    .table-wrap--sand .chip::before, .panel--sand .chip::before { display: none; }
+    .table-wrap--sand .chip, .panel--sand .chip, .sheet .chip { font-weight: 600; padding: 3px 10px; }
+    .table-wrap--sand .chip::before, .panel--sand .chip::before, .sheet .chip::before { display: none; }
     .table-wrap--sand .chip--CONFIRMED, .panel--sand .chip--CONFIRMED { color: #1b5023; background: rgba(36, 120, 50, .16); }
-    .table-wrap--sand .chip--HELD, .panel--sand .chip--HELD      { color: #7a3a0c; background: rgba(200, 120, 42, .22); }
-    .table-wrap--sand .chip--INHOUSE, .panel--sand .chip--INHOUSE   { color: #1d4a72; background: rgba(40, 100, 160, .16); }
+    .table-wrap--sand .chip--HELD, .panel--sand .chip--HELD, .sheet .chip--HELD { color: #7a3a0c; background: rgba(200, 120, 42, .22); }
+    .table-wrap--sand .chip--INHOUSE, .panel--sand .chip--INHOUSE, .sheet .chip--INHOUSE { color: #1d4a72; background: rgba(40, 100, 160, .16); }
     .table-wrap--sand .chip--COMPLETED, .table-wrap--sand .chip--EXPIRED, .panel--sand .chip--COMPLETED, .panel--sand .chip--EXPIRED { color: #4f4135; background: rgba(28, 22, 16, .08); }
     .panel--sand .chip--NEW { color: #7a3a0c; background: rgba(200, 120, 42, .22); }
     .panel--sand .chip--HANDLED { color: #4f4135; background: rgba(28, 22, 16, .08); }
@@ -291,10 +297,15 @@
     .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
     .filters .input { width: auto; min-height: 38px; }
     .filters .search { flex: 1 1 240px; }
-    .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 0; overflow: hidden; flex-wrap: wrap; }
-    .seg button { background: none; border: 0; padding: 8px 12px; color: var(--muted); cursor: pointer; font-size: 13.5px; font-weight: 500; }
-    .seg button + button { border-left: 1px solid var(--line); }
-    .seg button[aria-pressed="true"] { background: var(--panel-3); color: var(--text); }
+    /* Bookings: status as tabs across the top of the panel (option A, Oct 2026), capitals like the
+       site's headline tags. On a phone they slide sideways instead of wrapping. */
+    .tabs { display: flex; gap: 30px; padding: 0 18px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs button { flex: none; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 16px 0 14px;
+      font: inherit; font-size: 13px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); cursor: pointer; white-space: nowrap; }
+    .tabs button:hover { color: var(--text); }
+    .tabs button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--ember); }
+    .tabs button:focus-visible { outline-offset: -2px; }
 
     /* ── Booking detail ───────────────────────────────────────────────────── */
     .detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
@@ -344,8 +355,6 @@
     /* After .weekend on purpose: today can be a Saturday or Sunday, and sand must win */
     .cal thead th.today { background: var(--field); color: var(--field-ink); }
     .cal thead th.today b { color: var(--field-ink); }
-    .cal .season-row th { padding: 6px 4px; font-size: 11.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; border-bottom: 0; text-align: left; }
-    .cal .season-row th.season { background: rgba(200, 120, 42, .10); color: var(--ember-hi); border-left: 1px solid var(--line-2); }
     .cal .room { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 12px 16px; min-width: 190px; border-right: 1px solid var(--line); }
     .cal .room b { display: block; font-weight: 500; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 14px; }
     .cal .room span { color: var(--dim); font-size: 12.5px; text-transform: none; letter-spacing: 0; font-weight: 400; }
@@ -359,7 +368,6 @@
     .cell[data-level="3"] { background: rgba(200, 120, 42, .45); }
     .cell[data-level="full"] { background: var(--ember); color: #120c06; }
     .cell[data-level="full"] small { color: #3a2410; }
-    .cell.closed { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 4px, transparent 4px 9px); }
     .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 14px 18px; border-top: 1px solid var(--line); }
     .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 0; vertical-align: -2px; margin-right: 6px; }
 
@@ -372,8 +380,6 @@
     .panel--sand .cal thead th.weekend { background: rgba(28, 22, 16, .05); }
     .panel--sand .cal thead th.today { background: var(--field-ink); color: var(--field); }
     .panel--sand .cal thead th.today b { color: var(--ember-hi); }
-    .panel--sand .cal .season-row th { color: #522b0a; font-weight: 600; letter-spacing: .18em; }
-    .panel--sand .cal .season-row th.season { background: rgba(200, 120, 42, .22); color: #7a3a0c; border-left-color: rgba(28, 22, 16, .2); }
     .panel--sand .cal .room { background: var(--field); border-right-color: rgba(28, 22, 16, .16); }
     .panel--sand .cal .room b { color: var(--field-ink); font-size: 15px; }
     .panel--sand .cal .room span { color: #5a4632; }
@@ -386,7 +392,10 @@
     .panel--sand .cell[data-level="3"], .sw[data-level="3"] { background-color: rgba(200, 120, 42, .50); }
     .panel--sand .cell[data-level="full"], .sw[data-level="full"] { background-color: var(--ember); color: #120c06; }
     .panel--sand .cell[data-level="full"] small { color: #3a2410; }
-    .panel--sand .cell.closed, .sw.closed { background-image: repeating-linear-gradient(135deg, rgba(28, 22, 16, .16) 0 4px, transparent 4px 9px); }
+    /* A night's guest list: how many rooms each has, as a number at the right end of the row */
+    .row__rooms { text-align: right; line-height: 1.1; min-width: 56px; }
+    .row__rooms b { display: block; font-size: 28px; font-weight: 600; color: var(--field-ink); font-variant-numeric: tabular-nums; }
+    .row__rooms span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #5a4632; }
     .sw--today { background: var(--field-ink); }
     .panel--sand .legend { color: #5a4632; border-top-color: rgba(28, 22, 16, .16); }
     .panel--sand .legend i { outline: 1px solid rgba(28, 22, 16, .2); outline-offset: -1px; }
@@ -397,6 +406,19 @@
     .panel--sand .row__meta, .panel--sand .empty { color: #5a4632; }
 
     /* ── Rooms & rates ────────────────────────────────────────────────────── */
+    /* Experiences: departures as day sheets (like Today's lists); trips as cards (like rooms) */
+    .xp-days { display: grid; gap: 20px; }
+    .xp-title { margin: 40px 0 12px; font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ember-hi); }
+    .dep { padding: 14px 0; border-top: 1px solid rgba(28, 22, 16, .16); }
+    .dep__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .dep__what { font-size: 17px; font-weight: 500; }
+    .dep__what b { font-variant-numeric: tabular-nums; margin-right: 6px; }
+    .dep__count { font-size: 15px; color: #5a4632; font-variant-numeric: tabular-nums; }
+    .dep__count strong { color: var(--sand-ember); font-weight: 600; }
+    .dep__who { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+    .dep__who li { font-size: 15px; color: #3d3024; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .dep__who a { color: var(--field-ink); }
+    .dep__who a:hover { color: var(--sand-ember); }
     .room-card { display: grid; gap: 14px; }
     .room-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
     .room-card h3 { font-family: var(--serif); font-size: 20px; }
@@ -411,8 +433,6 @@
     .fact { background: var(--field); color: var(--field-ink); border-left: 3px solid var(--ember); }
     .fact span { color: #5a4632; }
     .fact b { font-weight: 600; }
-    .table-wrap--sand td.up { color: var(--sand-ember); font-weight: 600; }
-    .table-wrap--sand td.down { color: #1b5023; font-weight: 600; }
 
     /* ── Enquiries ────────────────────────────────────────────────────────── */
     .inbox { display: grid; grid-template-columns: 360px 1fr; min-height: 520px; }
@@ -467,7 +487,7 @@
       .topbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 20; padding: 10px 14px;
                 background: var(--panel); border-bottom: 1px solid var(--line); }
       .topbar img { width: 28px; height: 28px; }
-      .topbar b { font-family: var(--serif); font-weight: 400; font-size: 15px; text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }
+      .topbar b { font-family: var(--serif); font-weight: 600; font-size: 15px; text-transform: uppercase; letter-spacing: .14em; color: var(--ember); }
       .burger { background: none; border: 1px solid var(--line-2); border-radius: 0; width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; }
       .burger svg { width: 20px; height: 20px; stroke: var(--text); }
       .page { padding: 22px 16px 56px; }
@@ -504,6 +524,7 @@
       .table--cards td.c-ref { grid-column: 1; }
       .table--cards td.c-status { grid-column: 2; grid-row: 1; justify-self: end; }
       .table--cards td.c-guest, .table--cards td.c-stay, .table--cards td.c-money { grid-column: 1 / -1; }
+      .table--cards td.c-count { grid-column: 1 / -1; text-align: left; }
       .table--cards td.c-hide, .table--cards .sub.c-hide { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
@@ -516,14 +537,12 @@
 
   <script>
   /* ============================================================================================
-     SAFARI EMBER ADMIN · PROTOTYPE SCRIPT
+     SAFARI EMBER ADMIN · SCRIPT
      How it's built, so the backend can slot in later:
-       DATA    sample records shaped exactly like the database tables in docs/BLUEPRINT.md
-       RULES   the same booking rules as the API (nights, prices, what takes a unit)
+       API     every number and name comes from /api/admin (api/src/routes/admin.js)
        VIEWS   one function per screen; each returns HTML built ONLY through esc() for any value
                that came from a guest or staff member (see the warning on esc)
        ROUTER  the address after # decides the screen: #/today, #/bookings, #/booking/SE-…, …
-     In Phase 5 the DATA block is replaced by fetch('/api/admin/…') calls; the views stay.
   ============================================================================================ */
   (function () {
     'use strict';
@@ -558,157 +577,51 @@
 
     var TODAY = todayNairobi();
 
-    // LAUNCH SCOPE (docs/BLUEPRINT.md, "Launch scope"): the admin ships with Today, Bookings,
-    // Calendar, Rooms & rates and Enquiries. Closures is designed and kept here, hidden until its
-    // backend exists. Set to false to see the full design (e.g. for the case study).
-    var LAUNCH = true;
-    var LATER = ['closures'];
-    var NOW = Date.now();
 
-    /* ── DATA: sample records (replace with the API in Phase 5) ──────────────────────────── */
+    /* ── API ─────────────────────────────────────────────────────────────────────────────── */
 
-    var ROOM_TYPES = [
-      { id: 1, slug: 'hearthside-room', name: 'Hearthside Room',     kind: 'Deluxe',       sleeps: 2, units: 12, baseRateKes: 28000,  active: true },
-      { id: 2, slug: 'coalbed-suite',   name: 'The Coalbed Suite',   kind: 'Junior suite', sleeps: 3, units: 6,  baseRateKes: 45000,  active: true },
-      { id: 3, slug: 'ember-penthouse', name: 'The Ember Penthouse', kind: 'Penthouse',    sleeps: 4, units: 1,  baseRateKes: 120000, active: true },
-    ];
-    function roomType(id) { return ROOM_TYPES.find(function (r) { return r.id === id; }); }
-
-    // Seasons as in api/src/db/seed.js: a percentage of each room's base rate, rounded to 500
-    var SEASONS = [];
-    (function () {
-      var y = Number(TODAY.slice(0, 4)), id = 1;
-      var defs = [['Long rains', '04-01', '06-01', 85], ['Migration season', '07-01', '11-01', 125], ['Festive season', '12-20', '01-04', 135]];
-      [y - 1, y, y + 1].forEach(function (yr) {
-        defs.forEach(function (d) {
-          ROOM_TYPES.forEach(function (rt) {
-            SEASONS.push({ id: id++, roomTypeId: rt.id, label: d[0], startsOn: yr + '-' + d[1],
-              endsOn: d[2] < d[1] ? (yr + 1) + '-' + d[2] : yr + '-' + d[2],
-              nightlyRateKes: Math.round(rt.baseRateKes * d[3] / 100 / 500) * 500 });
-          });
+    // Everything comes from /api/admin (api/src/routes/admin.js), with the session cookie the API
+    // sets at sign-in. The cookie is httpOnly: this script never sees it, it just rides along.
+    // The API checks the session (and the 6-digit code) on every request: hiding a button here
+    // is only for clarity, never protection.
+    function api(path, opts) {
+      opts = opts || {};
+      var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: { Accept: 'application/json' } };
+      if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+      return fetch('/api/admin' + path, init).then(function (res) {
+        if (res.status === 204) return {};
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok) {
+            var e = new Error(body.error || 'Something went wrong. Please try again.');
+            e.status = res.status; e.needsTotp = !!body.needsTotp; throw e;
+          }
+          return body;
         });
+      }, function () {
+        var e = new Error('Can’t reach the booking system. Check the connection and try again.'); e.status = 0; throw e;
       });
-    })();
-    function rateFor(rtId, night) {
-      var s = SEASONS.find(function (s) { return s.roomTypeId === rtId && s.startsOn <= night && night < s.endsOn; });
-      return s ? s.nightlyRateKes : roomType(rtId).baseRateKes;
+    }
+    function qs(o) {
+      return Object.keys(o).filter(function (k) { return o[k] !== '' && o[k] != null; })
+        .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); }).join('&');
     }
 
-    // Booking references: no 0/O or 1/I, as in the API
-    var REF_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', refSeed = 7;
-    function nextRef() { var r = 'SE-'; for (var i = 0; i < 6; i++) { refSeed = (refSeed * 9301 + 49297) % 233280; r += REF_ABC[refSeed % REF_ABC.length]; } return r; }
+    /* ── Shared bits ─────────────────────────────────────────────────────────────────────── */
 
-    // [first, last, room, check-in offset from today, nights, guests, status, extras]
-    var GUESTS = [
-      ['Amani', 'Wanjiru', 1, 0, 3, 2, 'CONFIRMED', { requests: 'Arriving late, around 9pm. Please keep dinner.' }],
-      ['James', 'Thornton', 2, 0, 4, 3, 'CONFIRMED', {}],
-      ['Fatima', 'Al-Sayed', 3, 0, 2, 2, 'CONFIRMED', { requests: 'Anniversary: a bottle of champagne in the room if possible.' }],
-      ['David', 'Mwangi', 1, -3, 3, 2, 'INHOUSE', {}],
-      ['Claire', 'Dubois', 1, -2, 2, 1, 'INHOUSE', {}],
-      ['Kofi', 'Mensah', 2, -1, 5, 2, 'INHOUSE', { requests: 'Vegetarian meals for both guests.' }],
-      ['Priya', 'Nair', 1, -1, 4, 2, 'INHOUSE', {}],
-      ['Lena', 'Hoffmann', 1, -4, 4, 2, 'INHOUSE', {}],
-      ['Samuel', 'Otieno', 2, -2, 2, 3, 'INHOUSE', {}],
-      ['Grace', 'Achieng', 1, 0, 2, 2, 'HELD', { holdMin: 6 }],
-      ['Tom', 'Becker', 2, 3, 3, 2, 'HELD', { holdMin: 11 }],
-      ['Aisha', 'Bello', 1, 1, 3, 2, 'CONFIRMED', {}],
-      ['Marco', 'Rossi', 2, 2, 4, 3, 'CONFIRMED', {}],
-      ['Wanjiku', 'Kamau', 1, 2, 2, 1, 'CONFIRMED', {}],
-      ['Olivia', 'Brown', 3, 5, 3, 4, 'CONFIRMED', { requests: 'Travelling with two children (8 and 11).' }],
-      ['Hiroshi', 'Tanaka', 1, 6, 5, 2, 'CONFIRMED', {}],
-      ['Nia', 'Kariuki', 2, 8, 2, 2, 'CONFIRMED', {}],
-      ['Ethan', 'Cole', 1, 12, 3, 2, 'CONFIRMED', {}],
-      ['Sofia', 'Garcia', 1, 4, 3, 2, 'CANCELLED', { reason: 'Guest changed travel plans' }],
-      ['Brian', 'Kiprop', 1, 2, 2, 2, 'EXPIRED', {}],
-      ['Elena', 'Petrova', 2, 9, 3, 2, 'EXPIRED', {}],
-      ['Mark', 'Ellis', 1, -9, 3, 2, 'COMPLETED', {}],
-      ['Zawadi', 'Njeri', 2, -12, 4, 3, 'COMPLETED', {}],
-      ['Ahmed', 'Hassan', 3, -15, 2, 2, 'COMPLETED', {}],
-    ];
-    var BOOKINGS = GUESTS.map(function (g, i) {
-      var checkIn = addDays(TODAY, g[3]), checkOut = addDays(checkIn, g[4]);
-      var nights = []; for (var d = 0; d < g[4]; d++) { var n = addDays(checkIn, d); nights.push({ night: n, rateKes: rateFor(g[2], n) }); }
-      var total = nights.reduce(function (s, n) { return s + n.rateKes; }, 0);
-      var deposit = Math.ceil(total * 0.30);
-      var created = NOW - (Math.abs(g[3]) + 6 + i) * 864e5;
-      var status = g[6], ex = g[7];
-      var b = {
-        ref: nextRef(), roomTypeId: g[2], checkIn: checkIn, checkOut: checkOut, nights: g[4], guests: g[5],
-        status: status === 'INHOUSE' ? 'CONFIRMED' : status,
-        // checkedInAt: not in the Phase 1 schema yet. See the note at the end of this file.
-        checkedInAt: status === 'INHOUSE' ? NOW - (Math.abs(g[3]) * 864e5) + 3 * 36e5 : null,
-        holdExpiresAt: status === 'HELD' ? NOW + ex.holdMin * 6e4 : null,
-        firstName: g[0], lastName: g[1],
-        email: (g[0] + '.' + g[1]).toLowerCase().replace(/[^a-z.]/g, '') + '@example.com',
-        phone: '+254 7' + String(10000000 + i * 7919713 % 89999999).slice(0, 2) + ' ' + String(100000 + i * 48271 % 899999).slice(0, 3) + ' ' + String(100 + i * 37 % 899),
-        requests: ex.requests || '', nightly: nights, totalKes: total, depositKes: deposit,
-        createdAt: status === 'HELD' ? NOW - (15 - ex.holdMin) * 6e4 : created,
-        confirmedAt: (status === 'CONFIRMED' || status === 'INHOUSE' || status === 'COMPLETED' || status === 'CANCELLED') ? created + 9 * 6e4 : null,
-        cancelledAt: status === 'CANCELLED' ? created + 3 * 864e5 : null,
-        cancelReason: ex.reason || '',
-        payments: [],
-      };
-      if (b.confirmedAt) b.payments.push({ provider: i % 3 === 1 ? 'Card (Paystack)' : 'M-Pesa', ref: i % 3 === 1 ? 'PSK_' + b.ref.slice(3).toLowerCase() + 'x2' : 'S' + b.ref.slice(3) + 'K' + (i % 9), amountKes: deposit, at: b.confirmedAt });
-      return b;
-    });
-    function byRef(ref) { return BOOKINGS.find(function (b) { return b.ref === ref; }); }
-
-    var CLOSURES = [
-      { id: 1, roomTypeId: 2, startsOn: addDays(TODAY, 6), endsOn: addDays(TODAY, 10), units: 1, reason: 'Bathroom refit, suite 4' },
-      { id: 2, roomTypeId: null, startsOn: addDays(TODAY, 40), endsOn: addDays(TODAY, 42), units: null, reason: 'Private wedding: whole lodge' },
-    ];
-    var closureSeq = 3;
-
-    var ENQUIRIES = [
-      { id: 1, firstName: 'Rachel', lastName: 'Kimani', email: 'rachel.kimani@example.com', phone: '+254 722 418 503', subject: 'Group booking', checkIn: addDays(TODAY, 30), checkOut: addDays(TODAY, 33), guests: 9, status: 'NEW', createdAt: NOW - 2 * 36e5,
-        message: 'Hello,\n\nWe are planning a 40th birthday trip for nine friends next month. Could we take three Coalbed Suites, and is there a private dinner option on the rooftop?\n\nThank you,\nRachel' },
-      { id: 2, firstName: 'Daniel', lastName: 'Okafor', email: 'd.okafor@example.com', phone: '', subject: 'Airport transfer', checkIn: addDays(TODAY, 5), checkOut: addDays(TODAY, 8), guests: 2, status: 'NEW', createdAt: NOW - 7 * 36e5,
-        message: 'Do you arrange transfers from JKIA? Our flight lands at 06:40 on the morning of check-in.' },
-      { id: 3, firstName: 'Ingrid', lastName: 'Larsen', email: 'ingrid.larsen@example.com', phone: '+47 912 44 018', subject: 'Dietary needs', checkIn: null, checkOut: null, guests: null, status: 'NEW', createdAt: NOW - 26 * 36e5,
-        message: 'I have a severe nut allergy. Can the Cinder Café prepare meals safely for me?' },
-      { id: 4, firstName: 'Peter', lastName: 'Ndegwa', email: 'peter.ndegwa@example.com', phone: '+254 711 902 334', subject: 'Corporate retreat', checkIn: addDays(TODAY, 60), checkOut: addDays(TODAY, 62), guests: 14, status: 'HANDLED', createdAt: NOW - 4 * 864e5,
-        message: 'We would like a quote for a two-night leadership retreat with meeting room hire for 14 people.' },
-      { id: 5, firstName: 'Maya', lastName: 'Chen', email: 'maya.chen@example.com', phone: '', subject: 'Spa booking', checkIn: null, checkOut: null, guests: null, status: 'HANDLED', createdAt: NOW - 6 * 864e5,
-        message: 'Can I book a 90-minute treatment at the Silt Spa without staying overnight?' },
-    ];
-
-    /* ── RULES (mirror the API) ──────────────────────────────────────────────────────────── */
-
-    // A booking takes a unit while HELD (hold not run out) or CONFIRMED, for check_in ≤ night < check_out
-    function takesUnit(b, night) {
-      var live = b.status === 'CONFIRMED' || (b.status === 'HELD' && b.holdExpiresAt > Date.now());
-      return live && b.checkIn <= night && night < b.checkOut;
-    }
-    function closedUnits(rt, night) {
-      return CLOSURES.reduce(function (n, c) {
-        if ((c.roomTypeId === null || c.roomTypeId === rt.id) && c.startsOn <= night && night < c.endsOn) return n + (c.units == null ? rt.units : c.units);
-        return n;
-      }, 0);
-    }
-    function occupancy(rt, night) {
-      var taken = BOOKINGS.filter(function (b) { return b.roomTypeId === rt.id && takesUnit(b, night); }).length;
-      var closed = Math.min(rt.units, closedUnits(rt, night));
-      return { taken: taken, closed: closed, free: Math.max(0, rt.units - taken - closed) };
-    }
-    // What staff see as the status: a confirmed guest who has checked in is "In house"
-    function shownStatus(b) {
-      if (b.status === 'HELD' && b.holdExpiresAt <= Date.now()) return 'EXPIRED';
-      if (b.status === 'CONFIRMED' && b.checkedInAt) return 'INHOUSE';
-      return b.status;
-    }
     var STATUS_WORD = { HELD: 'Held', CONFIRMED: 'Confirmed', INHOUSE: 'In house', COMPLETED: 'Completed', EXPIRED: 'Expired', CANCELLED: 'Cancelled', NEW: 'New', HANDLED: 'Handled' };
     function chip(st) { return '<span class="chip chip--' + st + '">' + STATUS_WORD[st] + '</span>'; }
     function guestName(b) { return esc(b.firstName + ' ' + b.lastName); }
-    function balance(b) { return b.totalKes - (b.payments.reduce(function (s, p) { return s + p.amountKes; }, 0)); }
-
-    /* ── UI bits ─────────────────────────────────────────────────────────────────────────── */
+    /** "2 × Hearthside Room, The Coalbed Suite" */
+    function roomsLabel(b) { return b.rooms.map(function (r) { return (r.units > 1 ? r.units + ' × ' : '') + esc(r.name); }).join(', ') || '—'; }
+    function roomCount(b) { return b.rooms.reduce(function (n, r) { return n + r.units; }, 0); }
+    function readOnly() { return S.me && S.me.masked; }
 
     var ICONS = {
       today: '<path d="M4 6h16v14H4z"/><path d="M4 10h16M9 3v4M15 3v4"/>',
       bookings: '<path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/>',
       calendar: '<path d="M4 5h16v15H4z"/><path d="M4 10h16M10 10v10M15 10v10"/>',
       rooms: '<path d="M3 18V8l9-4 9 4v10"/><path d="M3 18h18M8 18v-5h8v5"/>',
-      closures: '<circle cx="12" cy="12" r="8"/><path d="M6.5 6.5l11 11"/>',
+      experiences: '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
       enquiries: '<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>',
     };
     function icon(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>'; }
@@ -725,7 +638,7 @@
       var d = document.getElementById('dlg');
       d.innerHTML = '<form method="dialog" class="dlg">' +
         '<h2>' + esc(opts.title) + '</h2><p>' + esc(opts.body) + '</p>' +
-        (opts.field ? '<div class="field"><label for="dlg-field">' + esc(opts.field) + '</label><textarea class="input" id="dlg-field" rows="3" required></textarea></div>' : '') +
+        (opts.field ? '<div class="field"><label for="dlg-field">' + esc(opts.field) + '</label><textarea class="input" id="dlg-field" rows="3" required minlength="3" maxlength="300"></textarea></div>' : '') +
         '<div class="dlg__actions"><button class="btn" value="cancel" formnovalidate>Keep it</button>' +
         '<button class="btn ' + (opts.danger ? 'btn--danger' : 'btn--primary') + '" value="ok">' + esc(opts.ok) + '</button></div></form>';
       d.onclose = function () {
@@ -734,12 +647,15 @@
       d.showModal();
     }
 
+    /* ── STATE ───────────────────────────────────────────────────────────────────────────── */
+
+    // me: the signed-in admin from the API ({ name, role, masked, needsTotp }), or null.
+    var S = { me: null, checked: false, stage: 'password', bookingsFilter: 'upcoming', bookingsRoom: 'all', bookingsQ: '',
+              calStart: TODAY, xpStart: TODAY, enquiry: null, reading: false, newEnq: 0, rooms: null };
+
     /* ── VIEWS ───────────────────────────────────────────────────────────────────────────── */
 
-    var S = { signedIn: false, stage: 'password', bookingsFilter: 'upcoming', bookingsRoom: 'all', bookingsQ: '', calStart: TODAY, enquiry: 1 };
-    try { S.signedIn = sessionStorage.getItem('se-admin-proto') === '1'; } catch (e) {}
-
-    function viewLogin() {
+    function viewLogin(error) {
       var two = S.stage === 'code';
       return '<main class="auth"><div class="auth__card">' +
         '<div class="auth__brand"><img src="mark.webp" alt="" /><h1>Safari Ember</h1><p>Staff sign-in</p></div>' +
@@ -747,25 +663,28 @@
           ? '<form id="f-code" novalidate>' +
               '<div class="field"><label for="code">6-digit code from your authenticator app</label>' +
               '<input class="input code-input" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required /></div>' +
+              (error ? '<p class="auth__error" role="alert">' + esc(error) + '</p>' : '') +
               '<button class="btn btn--primary">Verify and sign in</button>' +
               '<p class="hint" style="margin:0">Codes change every 30 seconds.</p>' +
             '</form>' +
-            '<div class="auth__foot">Lost your phone? <button type="button" id="backup">Use a backup code</button><br />' +
+            '<div class="auth__foot">Lost your phone? Ask the lodge manager to reset your two-factor.<br />' +
               '<button type="button" id="restart">Back to email and password</button></div>'
           : '<form id="f-login" novalidate>' +
               '<div class="field"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="username" required /></div>' +
               '<div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" required /></div>' +
+              (error ? '<p class="auth__error" role="alert">' + esc(error) + '</p>' : '') +
               '<button class="btn btn--primary">Continue</button>' +
             '</form>' +
-            '<div class="auth__foot">Prototype: any email and password work.<br />Forgotten your password? Ask the lodge manager to reset it.</div>') +
+            '<div class="auth__foot">Forgotten your password? Ask the lodge manager to reset it.</div>') +
         '</div></main>';
     }
 
     function shell(active, inner) {
-      var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
+      var newEnq = S.newEnq;
       var items = [['today', '#/today', 'Today'], ['bookings', '#/bookings', 'Bookings'], ['calendar', '#/calendar', 'Calendar'],
-                   ['rooms', '#/rooms', 'Rooms & rates'], ['closures', '#/closures', 'Closures'], ['enquiries', '#/enquiries', 'Enquiries']];
-      if (LAUNCH) items = items.filter(function (it) { return LATER.indexOf(it[0]) === -1; });
+                   ['experiences', '#/experiences', 'Experiences'], ['rooms', '#/rooms', 'Rooms & rates'], ['enquiries', '#/enquiries', 'Enquiries']];
+      var name = S.me ? S.me.name : '';
+      var initials = name.split(/\s+/).map(function (w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
       return '<div class="shell" id="shell">' +
         '<aside class="side" id="side" aria-label="Admin">' +
           '<a class="side__brand" href="#/today"><img src="mark.webp" alt="" /><span><b>Safari Ember</b><small>Admin</small></span></a>' +
@@ -774,9 +693,9 @@
               (it[0] === 'enquiries' && newEnq ? '<span class="count" aria-label="' + newEnq + ' new">' + newEnq + '</span>' : '') + '</a>';
           }).join('') + '</nav>' +
           '<div class="side__foot">' +
-            '<div class="who"><div class="who__avatar" aria-hidden="true">EK</div><div><b>Ethan K.</b><small>Lodge manager</small></div></div>' +
+            '<div class="who"><div class="who__avatar" aria-hidden="true">' + esc(initials) + '</div><div><b>' + esc(name) + '</b><small>' + (readOnly() ? 'Demo account' : 'Admin') + '</small></div></div>' +
             '<button class="btn btn--small btn--ghost" id="signout" style="justify-content:flex-start;padding:0">Sign out</button>' +
-            '<p class="proto-note">Design prototype · sample data. Nothing you do here is saved.</p>' +
+            (readOnly() ? '<p class="demo-note">Demo account: look around freely. Guests’ details are hidden and nothing can be changed.</p>' : '') +
           '</div>' +
         '</aside>' +
         '<div class="main">' +
@@ -787,36 +706,35 @@
         '</div></div>';
     }
 
+    function problemHtml(e) {
+      return '<div class="problem" role="alert"><p>' + esc(e.message) + '</p><button class="btn" type="button" id="retry">Try again</button></div>';
+    }
+
     /* Today: what reception needs at 7am. Arrivals and departures with one-tap actions,
        who's in house, holds about to expire, and how full tonight is. */
-    function viewToday() {
+    function viewToday(t) {
       // Option A (Oct 2026): one line of numbers, notifications (holds, enquiries), then two lists on sand.
-      var arrivals = BOOKINGS.filter(function (b) { return b.checkIn === TODAY && b.status === 'CONFIRMED'; });
-      // Leaving today: still in house, or already checked out today (shown done, so reception sees progress)
-      var departures = BOOKINGS.filter(function (b) { return b.checkOut === TODAY && (shownStatus(b) === 'INHOUSE' || b.status === 'COMPLETED'); });
-      var inHouse = BOOKINGS.filter(function (b) { return shownStatus(b) === 'INHOUSE'; });
-      var holds = BOOKINGS.filter(function (b) { return shownStatus(b) === 'HELD'; }).sort(function (a, b) { return a.holdExpiresAt - b.holdExpiresAt; });
-      var total = 0, taken = 0;
-      ROOM_TYPES.forEach(function (rt) { var o = occupancy(rt, TODAY); total += rt.units - o.closed; taken += o.taken; });
-      var pct = total ? Math.round(taken / total * 100) : 0;
-      var newEnq = ENQUIRIES.filter(function (e) { return e.status === 'NEW'; }).length;
+      S.newEnq = t.newEnquiries;
+      var pct = t.tonight.open ? Math.round(t.tonight.taken / t.tonight.open * 100) : 0;
       var done = '<span class="done-mark">✓ ';
+      var ro = readOnly();
 
       function arrivalRow(b) {
-        return '<li class="row' + (b.checkedInAt ? ' is-done' : '') + '"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
-          '<div class="row__meta">' + esc(roomType(b.roomTypeId).name) + ' · ' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</div>' +
+        var inn = b.status === 'INHOUSE';
+        return '<li class="row' + (inn ? ' is-done' : '') + '"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
+          '<div class="row__meta">' + roomsLabel(b) + ' · ' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</div>' +
           (b.requests ? '<div class="row__note">' + esc(b.requests) + '</div>' : '') + '</div>' +
-          '<div class="row__actions">' + (b.checkedInAt ? done + 'Checked in</span>'
-            : '<button class="btn btn--primary btn--small" data-act="checkin" data-ref="' + b.ref + '">Check in</button>') + '</div></li>';
+          '<div class="row__actions">' + (inn ? done + 'Checked in</span>'
+            : ro ? '' : '<button class="btn btn--primary btn--small" data-act="checkin" data-ref="' + b.ref + '">Check in</button>') + '</div></li>';
       }
       function departureRow(b) {
-        var out = b.status === 'COMPLETED', due = balance(b);
+        var out = b.status === 'COMPLETED';
         return '<li class="row' + (out ? ' is-done' : '') + '"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a></div>' +
-          '<div class="row__meta">' + esc(roomType(b.roomTypeId).name) +
-            // Once out, just the room: the prototype doesn't record the balance being paid, so don't claim it
-            (out ? '' : ' · ' + (due > 0 ? '<span class="num">' + money(due) + '</span> to pay' : 'paid in full')) + '</div></div>' +
+          '<div class="row__meta">' + roomsLabel(b) +
+            // Once out, just the rooms: the balance being paid isn't recorded, so don't claim it
+            (out ? '' : ' · ' + (b.balanceKes > 0 ? '<span class="num">' + money(b.balanceKes) + '</span> to pay' : 'paid in full')) + '</div></div>' +
           '<div class="row__actions">' + (out ? done + 'Checked out</span>'
-            : '<button class="btn btn--primary btn--small" data-act="checkout" data-ref="' + b.ref + '">Check out</button>') + '</div></li>';
+            : ro ? '' : '<button class="btn btn--primary btn--small" data-act="checkout" data-ref="' + b.ref + '" data-name="' + guestName(b) + '" data-due="' + b.balanceKes + '">Check out</button>') + '</div></li>';
       }
       function list(id, title, hint, rows, empty) {
         return '<section class="sheet" aria-labelledby="' + id + '"><div class="list__head"><h2 id="' + id + '">' + title + '</h2><p class="hint">' + hint + '</p></div>' +
@@ -828,167 +746,152 @@
         return '<a class="notice" href="' + href + '"' + (extra || '') + '><span class="notice__n">' + n + '</span>' +
           '<span><span class="notice__k">' + label + '</span><span class="notice__s">' + sub + '</span></span></a>';
       }
+      var holds = t.holds, newEnq = t.newEnquiries;
       var notes = (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', 'waiting for a deposit · ' +
                        '<span class="timer" data-expires="' + holds[0].holdExpiresAt + '">–:–</span>', '#/bookings', ' data-act="showheld"') : '') +
                   (newEnq ? notice(newEnq, newEnq === 1 ? 'Enquiry' : 'Enquiries', 'new, to answer', '#/enquiries') : '');
-      var guests = inHouse.reduce(function (n, b) { return n + b.guests; }, 0);
+      var guests = t.inHouse.guests;
       function stat(n, label, href, extra) {
         var inner = '<span class="stat__n">' + n + '</span><span class="stat__k">' + label + '</span>';
         return href ? '<a class="stat' + (extra || '') + '" href="' + href + '">' + inner + '</a>' : '<div class="stat' + (extra || '') + '">' + inner + '</div>';
       }
 
-      return '<div class="page__head page__head--today"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(TODAY) + '</p></div></div>' +
+      return '<div class="page__head page__head--today"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(t.date) + '</p></div></div>' +
         '<div class="stats num">' +
-          stat(arrivals.length, 'Arriving') +
-          stat(departures.filter(function (b) { return b.status !== 'COMPLETED'; }).length, 'Leaving') +
-          stat(inHouse.length + ' <small>· ' + guests + ' ' + (guests === 1 ? 'guest' : 'guests') + '</small>', 'In house') +
-          stat(pct + '%', 'Full tonight · ' + taken + ' of ' + total, LAUNCH && LATER.indexOf('calendar') > -1 ? null : '#/calendar') +
+          stat(t.arrivals.filter(function (b) { return b.status !== 'INHOUSE'; }).length, 'Arriving') +
+          stat(t.departures.filter(function (b) { return b.status !== 'COMPLETED'; }).length, 'Leaving') +
+          stat(t.inHouse.rooms + ' <small>· ' + guests + ' ' + (guests === 1 ? 'guest' : 'guests') + '</small>', 'In house') +
+          stat(pct + '%', 'Full tonight · ' + t.tonight.taken + ' of ' + t.tonight.open, '#/calendar') +
         '</div>' +
         (notes ? '<div class="notes">' + notes + '</div>' : '') +
         '<div class="grid-2 grid-2--wide">' +
-          list('h-arr', 'Arriving', 'check-in from 14:00', arrivals.map(arrivalRow), 'No arrivals today.') +
-          list('h-dep', 'Leaving', 'check-out by 11:00', departures.map(departureRow), 'No departures today.') +
+          list('h-arr', 'Arriving', 'check-in from 14:00', t.arrivals.map(arrivalRow), 'No arrivals today.') +
+          list('h-dep', 'Leaving', 'check-out by 11:00', t.departures.map(departureRow), 'No departures today.') +
         '</div>';
     }
 
     /* Bookings: everything, searchable. Default view = what's coming up. */
-    var FILTERS = [['upcoming', 'Upcoming'], ['inhouse', 'In house'], ['held', 'Held'], ['past', 'Past'], ['cancelled', 'Cancelled & expired'], ['all', 'All']];
-    function filterBookings() {
-      var q = S.bookingsQ.toLowerCase();
-      return BOOKINGS.filter(function (b) {
-        var st = shownStatus(b);
-        var keep = {
-          upcoming: (st === 'CONFIRMED' || st === 'HELD') && b.checkOut > TODAY,
-          inhouse: st === 'INHOUSE', held: st === 'HELD', past: st === 'COMPLETED',
-          cancelled: st === 'CANCELLED' || st === 'EXPIRED', all: true,
-        }[S.bookingsFilter];
-        if (!keep) return false;
-        if (S.bookingsRoom !== 'all' && String(b.roomTypeId) !== S.bookingsRoom) return false;
-        if (q && (b.ref + ' ' + b.firstName + ' ' + b.lastName + ' ' + b.email + ' ' + b.phone).toLowerCase().indexOf(q) === -1) return false;
-        return true;
-      }).sort(function (a, b) { return S.bookingsFilter === 'past' ? (a.checkIn < b.checkIn ? 1 : -1) : (a.checkIn > b.checkIn ? 1 : a.checkIn < b.checkIn ? -1 : 0); });
-    }
-    function bookingRowsHtml() {
-      var list = filterBookings();
-      if (!list.length) return '<tr><td colspan="7" class="empty">No bookings match.</td></tr>';
+    var FILTERS = [['upcoming', 'Upcoming'], ['inhouse', 'In house'], ['held', 'Held'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All']];   // "Cancelled" includes lapsed holds
+    function bookingRowsHtml(list) {
+      if (!list.length) return '<tr><td colspan="8" class="empty">No bookings match.</td></tr>';
       return list.map(function (b) {
-        var rt = roomType(b.roomTypeId), st = shownStatus(b), paid = b.payments.length;
         return '<tr class="clickable" data-href="#/booking/' + b.ref + '">' +
           '<td class="c-ref"><a class="ref" href="#/booking/' + b.ref + '">' + b.ref + '</a></td>' +
           '<td class="c-guest" data-label="Guest">' + guestName(b) + '<span class="sub c-hide">' + esc(b.email) + '</span></td>' +
-          '<td class="c-hide">' + esc(rt.name) + '<span class="sub">' + plural(b.guests, 'guest') + '</span></td>' +
+          // Rooms (the types), how many rooms, and guests: three columns, so each can be scanned down
+          '<td class="c-hide">' + b.rooms.map(function (r) { return esc(r.name); }).join('<br>') + '</td>' +
+          '<td class="right num c-count" data-label="Rooms">' + roomCount(b) + '</td>' +
+          '<td class="right num c-count" data-label="Guests">' + b.guests + '</td>' +
           '<td class="c-stay num" data-label="Stay">' + stayLabel(b) + '<span class="sub c-hide">' + plural(b.nights, 'night') + '</span></td>' +
-          '<td class="right num c-money" data-label="Total">' + money(b.totalKes) + '<span class="sub">' + (paid ? 'Deposit paid' : 'No deposit yet') + '</span></td>' +
-          '<td class="c-status">' + chip(st) + '</td></tr>';
+          '<td class="right num c-money" data-label="Total">' + money(b.totalKes) + '<span class="sub">' + (b.depositPaid ? 'Deposit paid' : 'No deposit yet') + '</span></td>' +
+          '<td class="c-status">' + chip(b.status) + '</td></tr>';
       }).join('');
     }
-    function viewBookings() {
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone.</p></div></div>' +
+    function bookingsQuery() {
+      return '/bookings?' + qs({ status: S.bookingsFilter, room: S.bookingsRoom === 'all' ? '' : S.bookingsRoom, q: S.bookingsQ.trim() });
+    }
+    function viewBookings(d) {
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone. "Cancelled" includes holds that ran out.</p></div></div>' +
         '<section class="panel">' +
+          '<div class="tabs" role="group" aria-label="Show">' + FILTERS.map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
           '<div class="filters">' +
-            '<label class="sr-only" for="q">Search bookings</label><input class="input search" id="q" type="search" placeholder="Search…" value="' + esc(S.bookingsQ) + '" />' +
+            '<label class="sr-only" for="q">Search bookings</label><input class="input search" id="q" type="search" placeholder="Search name, reference, email or phone…" maxlength="60" value="' + esc(S.bookingsQ) + '" />' +
             '<label class="sr-only" for="room">Room type</label><select class="input" id="room"><option value="all">All rooms</option>' +
-              ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '"' + (S.bookingsRoom === String(rt.id) ? ' selected' : '') + '>' + esc(rt.name) + '</option>'; }).join('') + '</select>' +
-            '<div class="seg" role="group" aria-label="Show">' + FILTERS.map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+              d.rooms.map(function (rt) { return '<option value="' + rt.id + '"' + (S.bookingsRoom === String(rt.id) ? ' selected' : '') + '>' + esc(rt.name) + '</option>'; }).join('') + '</select>' +
           '</div>' +
           '<div class="table-wrap table-wrap--sand"><table class="table--cards"><caption class="sr-only">Bookings</caption>' +
-            '<thead><tr><th scope="col">Ref</th><th scope="col">Guest</th><th scope="col">Room</th><th scope="col">Stay</th><th scope="col" class="right">Total</th><th scope="col">Status</th></tr></thead>' +
-            '<tbody id="rows">' + bookingRowsHtml() + '</tbody></table></div>' +
+            '<thead><tr><th scope="col">Ref</th><th scope="col">Guest</th><th scope="col">Rooms</th><th scope="col" class="right">No. of rooms</th><th scope="col" class="right">Guests</th><th scope="col">Stay</th><th scope="col" class="right">Total</th><th scope="col">Status</th></tr></thead>' +
+            '<tbody id="rows" aria-live="polite">' + bookingRowsHtml(d.bookings) + '</tbody></table></div>' +
         '</section>';
     }
 
     /* One booking: everything about the stay, the money, and what can be done next */
-    function viewBooking(ref) {
-      var b = byRef(ref);
-      if (!b) return '<a class="crumb" href="#/bookings">← Bookings</a><h1 class="page__title">Booking not found</h1><p class="page__sub">No booking has the reference ' + esc(ref) + '.</p>';
-      var rt = roomType(b.roomTypeId), st = shownStatus(b), bal = balance(b);
-      var canCheckIn = st === 'CONFIRMED' && b.checkIn <= TODAY && b.checkOut > TODAY;
-      var canCheckOut = st === 'INHOUSE';
-      var canCancel = st === 'CONFIRMED' || st === 'HELD';
+    function viewBooking(b) {
+      var st = b.status, ro = readOnly();
+      var nights = [];
+      b.rooms.forEach(function (r) { r.nightly.forEach(function (n) { nights.push({ night: n.night, room: r, rateKes: n.rateKes }); }); });
+      nights.sort(function (x, y) { return x.night < y.night ? -1 : x.night > y.night ? 1 : 0; });
+      var many = b.rooms.length > 1;
 
-      var events = [['Booked online', b.createdAt]];
-      if (b.status === 'HELD') events.push(['Hold runs out', b.holdExpiresAt]);
-      b.payments.forEach(function (p) { events.push(['Deposit paid · ' + p.provider, p.at]); });
-      if (b.checkedInAt) events.push(['Checked in', b.checkedInAt]);
-      if (b.status === 'COMPLETED') events.push(['Checked out', new Date(b.checkOut + 'T08:00:00Z').getTime()]);
-      if (b.cancelledAt) events.push(['Cancelled · ' + (b.cancelReason || 'no reason given'), b.cancelledAt]);
-      if (st === 'EXPIRED') events.push(['Hold ran out unpaid', b.createdAt + 15 * 6e4]);
-
-      return '<a class="crumb" href="#/bookings">← Bookings</a>' +
-        '<div class="page__head page__head--big"><div><h1 class="page__title">' + guestName(b) + '</h1>' +
+      // No "← Bookings" link: the browser's Back button returns to the list (each screen is its own address)
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">' + guestName(b) + '</h1>' +
           '<p class="page__sub"><span class="ref">' + b.ref + '</span> ' + chip(st) + '</p></div>' +
           '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-            (canCheckIn ? '<button class="btn btn--primary" data-act="checkin" data-ref="' + b.ref + '">Check in</button>' : '') +
-            (canCheckOut ? '<button class="btn btn--primary" data-act="checkout" data-ref="' + b.ref + '">Check out</button>' : '') +
+            (b.canCheckIn && !ro ? '<button class="btn btn--primary" data-act="checkin" data-ref="' + b.ref + '">Check in</button>' : '') +
+            (b.canCheckOut && !ro ? '<button class="btn btn--primary" data-act="checkout" data-ref="' + b.ref + '" data-name="' + guestName(b) + '" data-due="' + b.balanceKes + '">Check out</button>' : '') +
           '</div></div>' +
         // The guest's request is an alert, styled like Today's notifications (not sand: sand is for data)
         (b.requests ? '<div class="request"><span class="request__k">Guest request</span><p>' + esc(b.requests) + '</p></div>' : '') +
+        (b.refundDue ? '<div class="request"><span class="request__k">Refund due</span><p>A deposit reached us that this booking couldn’t use. Refund it from M-Pesa or Paystack.</p></div>' : '') +
         '<div class="detail detail--sand">' +
           '<div class="stack">' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>Stay</h2></div><div class="panel__body"><dl class="kv">' +
-              '<dt>Room</dt><dd>' + esc(rt.name) + ' <span class="hint">(' + esc(rt.kind) + ')</span></dd>' +
+              '<dt>' + (roomCount(b) > 1 ? 'Rooms' : 'Room') + '</dt><dd>' + b.rooms.map(function (r) { return (r.units > 1 ? r.units + ' × ' : '') + esc(r.name); }).join('<br>') + '</dd>' +
               '<dt>Check-in</dt><dd>' + fmtLong(b.checkIn) + ', from 14:00</dd>' +
               '<dt>Check-out</dt><dd>' + fmtLong(b.checkOut) + ', by 11:00</dd>' +
               '<dt>Length</dt><dd>' + plural(b.nights, 'night') + ' · ' + plural(b.guests, 'guest') + '</dd>' +
+              (b.activities.length ? '<dt>Experiences</dt><dd>' + b.activities.map(function (a) {
+                return esc(a.name) + ' <span class="hint">· ' + fmtDate(a.day, { weekday: 'short' }) + ', ' + esc(a.time) + ' · ' + plural(a.people, 'person', 'people') + '</span>';
+              }).join('<br>') + '</dd>' : '') +
             '</dl></div></section>' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>Guest</h2></div><div class="panel__body"><dl class="kv">' +
               '<dt>Name</dt><dd>' + guestName(b) + '</dd>' +
-              '<dt>Email</dt><dd><a href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a></dd>' +
-              '<dt>Phone</dt><dd><a href="tel:' + esc(b.phone.replace(/\s/g, '')) + '">' + esc(b.phone) + '</a></dd>' +
+              '<dt>Email</dt><dd>' + (ro ? esc(b.email) : '<a href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a>') + '</dd>' +
+              '<dt>Phone</dt><dd>' + (ro ? esc(b.phone) : '<a href="tel:' + esc(String(b.phone).replace(/\s/g, '')) + '">' + esc(b.phone) + '</a>') + '</dd>' +
             '</dl></div></section>' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>Price, night by night</h2><p class="hint">Frozen when the guest booked</p></div>' +
-              '<div class="table-wrap table-wrap--sand"><table><thead><tr><th scope="col">Night</th><th scope="col" class="right">Rate</th></tr></thead><tbody>' +
-              b.nightly.map(function (n) { return '<tr><td>' + fmtDate(n.night, { weekday: 'short' }) + '</td><td class="right num">' + money(n.rateKes) + '</td></tr>'; }).join('') +
+              '<div class="table-wrap table-wrap--sand"><table><thead><tr><th scope="col">Night</th>' + (many ? '<th scope="col">Room</th>' : '') + '<th scope="col" class="right">Rate</th></tr></thead><tbody>' +
+              nights.map(function (n) {
+                return '<tr><td>' + fmtDate(n.night, { weekday: 'short' }) + '</td>' + (many ? '<td>' + (n.room.units > 1 ? n.room.units + ' × ' : '') + esc(n.room.name) + '</td>' : '') +
+                  '<td class="right num">' + money(n.rateKes * n.room.units) + '</td></tr>';
+              }).join('') +
+              b.activities.map(function (a) {
+                return '<tr><td>' + fmtDate(a.day, { weekday: 'short' }) + '</td>' + (many ? '<td>' + esc(a.name) + '</td>' : '') +
+                  '<td class="right num">' + (many ? '' : esc(a.name) + ' · ') + money(a.totalKes) + '</td></tr>';
+              }).join('') +
               '</tbody></table></div></section>' +
           '</div>' +
           '<div class="stack">' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>Payment</h2></div><div class="panel__body money num">' +
               '<div><span>Total</span><span>' + money(b.totalKes) + '</span></div>' +
               '<div><span>Deposit (30%)</span><span>' + money(b.depositKes) + '</span></div>' +
-              b.payments.map(function (p) { return '<div class="hint"><span>' + esc(p.provider) + ' · ' + esc(p.ref) + '</span><span>− ' + money(p.amountKes) + '</span></div>'; }).join('') +
-              '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(bal)) + '</span></div>' +
+              b.payments.map(function (p) {
+                return '<div class="hint"><span>' + esc(p.provider) + (p.receipt ? ' · ' + esc(p.receipt) : '') + '</span><span>' + (p.status === 'PAID' ? 'paid' : 'to check') + '</span></div>';
+              }).join('') +
+              '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(b.balanceKes)) + '</span></div>' +
             '</div></section>' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>History</h2></div><div class="panel__body"><ol class="timeline">' +
-              events.sort(function (a, c) { return a[1] - c[1]; }).map(function (e) { return '<li><div>' + esc(e[0]) + '<small>' + fmtDateTime(e[1]) + '</small></div></li>'; }).join('') +
+              b.history.map(function (e) { return '<li><div>' + esc(e.what) + '<small>' + fmtDateTime(e.at) + (e.by ? ' · ' + esc(e.by) : '') + '</small></div></li>'; }).join('') +
             '</ol></div></section>' +
+            (ro ? '' :
             '<section class="panel panel--actions"><div class="panel__head"><h2>Actions</h2></div><div class="panel__body actions">' +
               // Guest emails wait for a domain (Launch scope), so there's nothing to resend yet
-              (LAUNCH ? '' : '<button class="btn" data-act="resend" data-ref="' + b.ref + '"' + (b.payments.length ? '' : ' disabled') + '>Resend confirmation email</button>') +
               '<button class="btn" data-act="copylink" data-ref="' + b.ref + '">Copy the guest\'s booking link</button>' +
-              (canCancel ? '<button class="btn btn--danger" data-act="cancel" data-ref="' + b.ref + '">Cancel booking</button>' : '') +
-            '</div></section>' +
+              (b.canCancel ? '<button class="btn btn--danger" data-act="cancel" data-ref="' + b.ref + '" data-paid="' + (b.depositPaid ? b.depositKes : 0) + '">Cancel booking</button>' : '') +
+            '</div></section>') +
           '</div>' +
         '</div>';
     }
 
     /* Calendar: rooms free per night for three weeks. Rows = room types, columns = nights. */
-    function viewCalendar() {
-      var DAYS = 21, start = S.calStart, nights = [];
-      for (var i = 0; i < DAYS; i++) nights.push(addDays(start, i));
-      // Season band above the dates (taken from the first room type; all types share season dates)
-      var bands = [], cur = null;
-      nights.forEach(function (n) {
-        var s = SEASONS.find(function (x) { return x.roomTypeId === 1 && x.startsOn <= n && n < x.endsOn; });
-        var label = s ? s.label : 'Standard rates';
-        if (cur && cur.label === label) cur.span++; else { cur = { label: label, span: 1, season: !!s }; bands.push(cur); }
-      });
-      function level(o, rt) {
-        var open = rt.units - o.closed; if (o.free === 0) return 'full';
-        var r = 1 - o.free / Math.max(1, open); return r < .25 ? 0 : r < .5 ? 1 : r < .8 ? 2 : 3;
+    function viewCalendar(c) {
+      var nights = [];
+      for (var i = 0; i < c.days; i++) nights.push(addDays(c.from, i));
+      function level(o) {
+        if (o.free === 0) return 'full';
+        var r = 1 - o.free / Math.max(1, o.open); return r < .25 ? 0 : r < .5 ? 1 : r < .8 ? 2 : 3;
       }
       return '<div class="page__head page__head--big"><div><h1 class="page__title">Calendar</h1><p class="page__sub">Rooms free each night. Select a night to see who is staying.</p></div>' +
           '<div style="display:flex;gap:8px"><button class="btn" data-cal="-21" aria-label="Previous three weeks">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="21" aria-label="Next three weeks">→</button></div></div>' +
-        '<section class="panel panel--sand"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[DAYS - 1]) + '</caption><thead>' +
-          '<tr class="season-row"><th class="room" scope="col">Season</th>' + bands.map(function (b) { return '<th colspan="' + b.span + '" class="' + (b.season ? 'season' : '') + '">' + esc(b.label) + '</th>'; }).join('') + '</tr>' +
+        '<section class="panel panel--sand"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[c.days - 1]) + '</caption><thead>' +
           '<tr><th class="room" scope="col">Room type</th>' + nights.map(function (n) {
             var d = new Date(n + 'T12:00:00Z'), dow = d.getUTCDay();
-            return '<th scope="col" class="' + (n === TODAY ? 'today ' : '') + (dow === 0 || dow === 6 ? 'weekend' : '') + '">' + d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + '<b>' + d.getUTCDate() + '</b></th>';
+            return '<th scope="col" class="' + (n === c.today ? 'today ' : '') + (dow === 0 || dow === 6 ? 'weekend' : '') + '">' + d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + '<b>' + d.getUTCDate() + '</b></th>';
           }).join('') + '</tr></thead><tbody>' +
-          ROOM_TYPES.map(function (rt) {
-            return '<tr><th class="room" scope="row"><b>' + esc(rt.name) + '</b><span>' + plural(rt.units, 'unit') + '</span></th>' + nights.map(function (n) {
-              var o = occupancy(rt, n);
-              var label = rt.name + ', ' + fmtLong(n) + ': ' + o.free + ' of ' + rt.units + ' free' + (o.closed ? ', ' + o.closed + ' closed' : '');
-              return '<td><button class="cell' + (o.closed ? ' closed' : '') + '" data-level="' + level(o, rt) + '" data-night="' + n + '" data-room="' + rt.id + '" aria-label="' + esc(label) + '">' +
+          c.rooms.map(function (rt) {
+            return '<tr><th class="room" scope="row"><b>' + esc(rt.name) + '</b><span>' + plural(rt.units, 'unit') + '</span></th>' + rt.nights.map(function (o) {
+              var label = rt.name + ', ' + fmtLong(o.night) + ': ' + o.free + ' of ' + rt.units + ' free';
+              return '<td><button class="cell" data-level="' + level(o) + '" data-night="' + o.night + '" data-room="' + rt.id + '" aria-label="' + esc(label) + '">' +
                 o.free + '<small>free</small></button></td>';
             }).join('') + '</tr>';
           }).join('') +
@@ -996,133 +899,185 @@
         // Legend swatches use the same classes as the cells, so they can never drift apart
         '<div class="legend"><span><i class="sw" data-level="0"></i>Mostly free</span><span><i class="sw" data-level="2"></i>Filling up</span>' +
           '<span><i class="sw" data-level="3"></i>Nearly full</span><span><i class="sw" data-level="full"></i>Full</span>' +
-          '<span><i class="sw closed"></i>Some rooms closed</span><span><i class="sw sw--today"></i>Today</span></div></section>' +
+          '<span><i class="sw sw--today"></i>Today</span></div></section>' +
         '<section class="panel panel--sand" style="margin-top:20px" id="night-panel" aria-live="polite"><div class="panel__head"><h2>Select a night above</h2></div><p class="empty">The guests staying that night will show here.</p></section>';
     }
-    function nightPanel(night, rtId) {
-      var rt = roomType(rtId), o = occupancy(rt, night);
-      var list = BOOKINGS.filter(function (b) { return b.roomTypeId === rtId && takesUnit(b, night); });
-      var cl = CLOSURES.filter(function (c) { return (c.roomTypeId === null || c.roomTypeId === rtId) && c.startsOn <= night && night < c.endsOn; });
-      return '<div class="panel__head"><h2>' + esc(rt.name) + ' · ' + fmtLong(night) + '</h2><p class="hint">' + o.free + ' of ' + rt.units + ' free</p></div>' +
-        (list.length || cl.length ? '<ul class="rows">' + list.map(function (b) {
-          return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a> ' + chip(shownStatus(b)) + '</div><div class="row__meta">' + stayLabel(b) + ' · <span class="ref">' + b.ref + '</span></div></div></li>';
-        }).join('') + cl.map(function (c) {
-          return '<li class="row"><div><div class="row__name">Closed: ' + esc(c.reason) + '</div><div class="row__meta">' + (c.units == null ? 'All units' : plural(c.units, 'unit')) + ' · ' + fmtDate(c.startsOn) + ' – ' + fmtDate(c.endsOn) + '</div></div></li>';
-        }).join('') + '</ul>' : '<p class="empty">Nobody is staying in this room type that night.</p>');
+    function nightPanel(n) {
+      return '<div class="panel__head"><h2>' + esc(n.room.name) + ' · ' + fmtLong(n.date) + '</h2><p class="hint">' + n.free + ' of ' + n.room.units + ' free</p></div>' +
+        (n.bookings.length ? '<ul class="rows">' + n.bookings.map(function (b) {
+          return '<li class="row"><div><div class="row__name"><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a> ' + chip(b.status) + '</div><div class="row__meta">' +
+            stayLabel(b) + ' · <span class="ref">' + b.ref + '</span></div></div>' +
+            // Always shown, 1 or 6: the number staff scan for
+            '<div class="row__rooms"><b>' + b.unitsHere + '</b><span>' + (b.unitsHere === 1 ? 'room' : 'rooms') + '</span></div></li>';
+        }).join('') + '</ul>' : '<p class="empty">' + (n.date < TODAY ? 'Nobody stayed' : 'Nobody is staying') + ' in this room type that night.</p>');
     }
 
-    /* Rooms & rates: base prices, units, on/off; seasonal prices below */
-    function viewRooms() {
-      var y = TODAY.slice(0, 4);
-      var seasons = SEASONS.filter(function (s) { return s.endsOn > TODAY; }).sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : a.startsOn > b.startsOn ? 1 : a.roomTypeId - b.roomTypeId; });
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">Changes apply to new bookings only. Guests who have already booked keep the price they were shown.</p></div></div>' +
-        '<div class="grid-3">' + ROOM_TYPES.map(function (rt) {
-          return '<section class="panel"><form class="panel__body room-card" data-room-form="' + rt.id + '">' +
+    /* Rooms & rates: the nightly price, units and on/off per room type (one price all year) */
+    function viewRooms(d) {
+      var ro = readOnly();
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">One price per night, all year. Changes apply to new bookings straight away; guests who have already booked keep the price they were shown.</p></div></div>' +
+        '<div class="grid-3">' + d.rooms.map(function (rt) {
+          return '<section class="panel"><form class="panel__body room-card" data-room-form="' + rt.id + '" novalidate>' +
             '<div class="room-card__top"><div><h3>' + esc(rt.name) + '</h3><span class="hint">' + esc(rt.kind) + '</span></div>' +
-              '<label class="toggle"><input type="checkbox" name="active"' + (rt.active ? ' checked' : '') + ' /> Bookable</label></div>' +
+              '<label class="toggle"><input type="checkbox" name="active"' + (rt.active ? ' checked' : '') + (ro ? ' disabled' : '') + ' /> Bookable</label></div>' +
             '<div class="facts"><div class="fact"><span>Sleeps</span><b class="num">' + rt.sleeps + '</b></div><div class="fact"><span>Units</span><b class="num">' + rt.units + '</b></div>' +
-              '<div class="fact"><span>Tonight</span><b class="num">' + occupancy(rt, TODAY).free + ' free</b></div></div>' +
+              '<div class="fact"><span>Tonight</span><b class="num">' + (rt.freeTonight == null ? '—' : rt.freeTonight + ' free') + '</b></div></div>' +
             '<div class="form-grid">' +
-              '<div class="field"><label for="base-' + rt.id + '">Base rate (KES / night)</label><input class="input num" id="base-' + rt.id + '" name="base" inputmode="numeric" value="' + rt.baseRateKes + '" /></div>' +
-              '<div class="field"><label for="units-' + rt.id + '">Units</label><input class="input num" id="units-' + rt.id + '" name="units" type="number" min="0" max="99" value="' + rt.units + '" /></div>' +
-            '</div><button class="btn btn--primary">Save changes</button></form></section>';
-        }).join('') + '</div>' +
-        '<section class="panel" style="margin-top:20px"><div class="panel__head"><h2>Seasonal rates</h2><p class="hint">A season replaces the base rate for the nights it covers</p></div>' +
-          '<div class="table-wrap table-wrap--sand"><table><thead><tr><th scope="col">Season</th><th scope="col">Room</th><th scope="col">From</th><th scope="col">Until (not included)</th><th scope="col" class="right">KES / night</th><th scope="col" class="right">vs base</th></tr></thead><tbody>' +
-          seasons.slice(0, 12).map(function (s) {
-            var rt = roomType(s.roomTypeId), diff = Math.round((s.nightlyRateKes / rt.baseRateKes - 1) * 100);
-            var on = s.startsOn <= TODAY && TODAY < s.endsOn;
-            return '<tr><td>' + esc(s.label) + (on ? ' <span class="chip chip--CONFIRMED">Now</span>' : '') + '</td><td>' + esc(rt.name) + '</td><td class="num">' + fmtDate(s.startsOn, { year: 'numeric' }) + '</td><td class="num">' + fmtDate(s.endsOn, { year: 'numeric' }) + '</td>' +
-              '<td class="right num">' + KES.format(s.nightlyRateKes) + '</td><td class="right num ' + (diff > 0 ? 'up' : 'down') + '">' + (diff > 0 ? '+' : '') + diff + '%</td></tr>';
-          }).join('') + '</tbody></table></div>' +
-          '<div class="panel__body"><form class="form-grid" id="f-season">' +
-            '<div class="field"><label for="s-label">New season</label><input class="input" id="s-label" placeholder="e.g. Easter" required /></div>' +
-            '<div class="field"><label for="s-room">Room</label><select class="input" id="s-room">' + ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'; }).join('') + '</select></div>' +
-            '<div class="field"><label for="s-from">From</label><input class="input" id="s-from" type="date" required /></div>' +
-            '<div class="field"><label for="s-to">Until</label><input class="input" id="s-to" type="date" required /></div>' +
-            '<div class="field"><label for="s-rate">KES / night</label><input class="input num" id="s-rate" inputmode="numeric" required /></div>' +
-            '<button class="btn">Add season</button></form></div></section>';
+              '<div class="field"><label for="base-' + rt.id + '">Price per night (KES)</label><input class="input num" id="base-' + rt.id + '" name="base" inputmode="numeric" value="' + rt.baseRateKes + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+              '<div class="field"><label for="units-' + rt.id + '">Units</label><input class="input num" id="units-' + rt.id + '" name="units" type="number" min="0" max="99" value="' + rt.units + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+            '</div>' + (ro ? '' : '<button class="btn btn--primary">Save changes</button>') + '</form></section>';
+        }).join('') + '</div>';
     }
 
-    /* Closures: take units out of sale (maintenance, private events) */
-    function viewClosures() {
-      var list = CLOSURES.slice().sort(function (a, b) { return a.startsOn < b.startsOn ? -1 : 1; });
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Closures</h1><p class="page__sub">Closed rooms can\'t be booked online. Closing never cancels existing bookings.</p></div></div>' +
-        '<div class="detail">' +
-          '<section class="panel panel--sand"><div class="panel__head"><h2>Upcoming closures</h2></div>' +
-            (list.length ? '<ul class="rows">' + list.map(function (c) {
-              var rt = c.roomTypeId ? roomType(c.roomTypeId) : null;
-              var clash = BOOKINGS.filter(function (b) { return (!rt || b.roomTypeId === rt.id) && (b.status === 'CONFIRMED') && b.checkIn < c.endsOn && c.startsOn < b.checkOut; }).length;
-              return '<li class="row"><div><div class="row__name">' + esc(c.reason) + '</div>' +
-                '<div class="row__meta">' + (rt ? esc(rt.name) : 'Whole lodge') + ' · ' + (c.units == null ? 'all units' : plural(c.units, 'unit')) + ' · ' + fmtDate(c.startsOn) + ' – ' + fmtDate(c.endsOn) + ' (' + plural(daysBetween(c.startsOn, c.endsOn), 'night') + ')</div>' +
-                (clash ? '<div class="flag">⚠ ' + plural(clash, 'confirmed booking') + ' overlap these dates. They stay booked: contact the guests if needed.</div>' : '') +
-                '</div><div class="row__actions"><button class="btn btn--small btn--danger" data-act="reopen" data-id="' + c.id + '">Reopen</button></div></li>';
-            }).join('') + '</ul>' : '<p class="empty">Nothing is closed.</p>') + '</section>' +
-          '<section class="panel"><div class="panel__head"><h2>Close rooms</h2></div><form class="panel__body stack" id="f-closure" style="gap:14px">' +
-            '<div class="field"><label for="c-room">Which rooms</label><select class="input" id="c-room"><option value="">Whole lodge</option>' + ROOM_TYPES.map(function (rt) { return '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'; }).join('') + '</select></div>' +
-            '<div class="grid-2" style="gap:14px"><div class="field"><label for="c-from">First night</label><input class="input" id="c-from" type="date" required min="' + TODAY + '" /></div>' +
-              '<div class="field"><label for="c-to">Open again on</label><input class="input" id="c-to" type="date" required min="' + addDays(TODAY, 1) + '" /></div></div>' +
-            '<div class="field"><label for="c-units">How many units</label><input class="input num" id="c-units" type="number" min="1" placeholder="All" /><span class="hint">Leave empty to close every unit.</span></div>' +
-            '<div class="field"><label for="c-reason">Reason (staff only)</label><input class="input" id="c-reason" maxlength="120" required placeholder="e.g. Painting, suites 1–2" /></div>' +
-            '<button class="btn btn--primary">Close these dates</button></form></section>' +
-        '</div>';
+    /* Experiences: two weeks of departures (who's going, how many vehicles), then each trip's settings */
+    function viewExperiences(d) {
+      var ro = readOnly();
+      var byDay = [];
+      d.departures.forEach(function (dep) {
+        var last = byDay[byDay.length - 1];
+        if (!last || last.day !== dep.day) byDay.push(last = { day: dep.day, deps: [] });
+        last.deps.push(dep);
+      });
+      var end = addDays(d.from, d.days - 1);
+      var list = byDay.length ? byDay.map(function (g) {
+        return '<section class="sheet" aria-label="' + esc(fmtLong(g.day)) + '"><div class="list__head"><h2>' + fmtLong(g.day) + '</h2>' +
+            (g.day === d.today ? '<p class="hint">Today</p>' : '') + '</div>' +
+          g.deps.map(function (dep) {
+            return '<div class="dep"><div class="dep__head"><div class="dep__what"><b>' + esc(dep.time) + '</b>' + esc(dep.name) + '</div>' +
+              '<div class="dep__count"><strong>' + plural(dep.people, 'person', 'people') + '</strong> · ' + plural(dep.vehicles, 'vehicle') + ' (' + dep.seats + ' seats each)</div></div>' +
+              '<ul class="dep__who">' + dep.bookings.map(function (b) {
+                return '<li><a href="#/booking/' + b.ref + '">' + guestName(b) + '</a><span>' + plural(b.people, 'person', 'people') + '</span>' +
+                  (ro ? '<span>' + esc(b.phone) + '</span>' : '<a href="tel:' + esc(String(b.phone).replace(/\s/g, '')) + '">' + esc(b.phone) + '</a>') +
+                  (b.status !== 'CONFIRMED' ? chip(b.status) : '') + '</li>';
+              }).join('') + '</ul></div>';
+          }).join('') + '</section>';
+      }).join('') : '<section class="sheet"><p class="empty">No experiences booked from ' + fmtDate(d.from) + ' to ' + fmtDate(end) + '.</p></section>';
+
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Experiences</h1><p class="page__sub">Who is going on each trip, two weeks at a time. Every trip runs daily. "Held" means the deposit isn\'t paid yet.</p></div>' +
+          '<div style="display:flex;gap:8px"><button class="btn" data-xp="-14" aria-label="Previous two weeks">←</button><button class="btn" data-xp="0">Today</button><button class="btn" data-xp="14" aria-label="Next two weeks">→</button></div></div>' +
+        '<p class="hint" style="margin:0 0 12px">' + fmtDate(d.from) + ' – ' + fmtDate(end, { year: 'numeric' }) + '</p>' +
+        '<div class="xp-days" aria-live="polite">' + list + '</div>' +
+        '<h2 class="xp-title">Trips</h2>' +
+        '<p class="hint" style="margin:-6px 0 16px">Price changes apply to new bookings only. Guests already booked keep their departure and price.</p>' +
+        '<div class="grid-3">' + d.trips.map(function (t) {
+          var hours = t.durationMinutes / 60;
+          return '<section class="panel"><form class="panel__body room-card" data-trip-form="' + t.id + '" novalidate>' +
+            '<div class="room-card__top"><div><h3>' + esc(t.name) + '</h3><span class="hint">' + (hours % 1 ? t.durationMinutes + ' min' : plural(hours, 'hour')) + '</span></div>' +
+              '<label class="toggle"><input type="checkbox" name="active"' + (t.active ? ' checked' : '') + (ro ? ' disabled' : '') + ' /> Offered</label></div>' +
+            '<div class="facts"><div class="fact"><span>Per person</span><b class="num">' + KES.format(t.priceKes) + '</b></div>' +
+              '<div class="fact"><span>Seats</span><b class="num">' + t.seats + '</b></div>' +
+              '<div class="fact"><span>Trips a day</span><b class="num">' + t.departureTimes.length + '</b></div></div>' +
+            '<div class="form-grid">' +
+              '<div class="field"><label for="tp-' + t.id + '">Price per person (KES)</label><input class="input num" id="tp-' + t.id + '" name="price" inputmode="numeric" value="' + t.priceKes + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+              '<div class="field"><label for="ts-' + t.id + '">Seats per vehicle</label><input class="input num" id="ts-' + t.id + '" name="seats" type="number" min="1" max="100" value="' + t.seats + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+            '</div>' +
+            '<div class="field"><label for="tt-' + t.id + '">Departure times</label><input class="input num" id="tt-' + t.id + '" name="times" value="' + esc(t.departureTimes.join(', ')) + '" aria-describedby="tth-' + t.id + '"' + (ro ? ' readonly' : '') + ' />' +
+              '<p class="hint" id="tth-' + t.id + '" style="margin:4px 0 0">24-hour, separated by commas, e.g. 06:30, 14:30</p></div>' +
+            (ro ? '' : '<button class="btn btn--primary">Save changes</button>') + '</form></section>';
+        }).join('') + '</div>';
     }
+
 
     /* Enquiries: the "Get in touch" form's inbox */
-    function viewEnquiries() {
-      var list = ENQUIRIES.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
-      var cur = ENQUIRIES.find(function (e) { return e.id === S.enquiry; }) || list[0];
+    function viewEnquiries(list) {
+      S.newEnq = list.filter(function (e) { return e.status === 'NEW'; }).length;
+      var cur = list.find(function (e) { return e.id === S.enquiry; }) || list[0];
+      var ro = readOnly();
       function ago(ms) { var h = Math.round((Date.now() - ms) / 36e5); return h < 1 ? 'Just now' : h < 24 ? h + ' h ago' : fmtDateTime(ms).split(',')[0]; }
       return '<div class="page__head page__head--big"><div><h1 class="page__title">Enquiries</h1><p class="page__sub">Messages from the website\'s "Get in touch" form.</p></div></div>' +
-        '<section class="panel panel--sand inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
+        (list.length ? '<section class="panel panel--sand inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
           return '<li><button class="inbox__item' + (e.status === 'NEW' ? ' unread' : '') + '" data-enq="' + e.id + '" aria-current="' + (cur && e.id === cur.id) + '">' +
             '<div class="inbox__top"><b>' + esc(e.firstName + ' ' + e.lastName) + '</b><small>' + ago(e.createdAt) + '</small></div>' +
-            '<p>' + esc(e.subject) + ' · ' + esc(e.message) + '</p></button></li>';
+            '<p>' + (e.subject ? esc(e.subject) + ' · ' : '') + esc(e.message) + '</p></button></li>';
         }).join('') + '</ul>' +
-        (cur ? '<article class="inbox__read" aria-live="polite">' +
+        '<article class="inbox__read" aria-live="polite">' +
           '<button class="btn btn--small btn--ghost back-to-list" data-back="1" style="padding:0;margin-bottom:12px">← All enquiries</button>' +
-          '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>' + esc(cur.subject) + '</h2>' +
+          '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>' + esc(cur.subject || 'Enquiry') + '</h2>' +
             '<p class="inbox__from">' + esc(cur.firstName + ' ' + cur.lastName) + ' · ' + fmtDateTime(cur.createdAt) + '</p></div><div>' + chip(cur.status) + '</div></div>' +
           '<dl class="kv" style="margin-top:20px">' +
-            '<dt>Email</dt><dd><a href="mailto:' + esc(cur.email) + '">' + esc(cur.email) + '</a></dd>' +
-            (cur.phone ? '<dt>Phone</dt><dd><a href="tel:' + esc(cur.phone.replace(/\s/g, '')) + '">' + esc(cur.phone) + '</a></dd>' : '') +
-            (cur.checkIn ? '<dt>Dates</dt><dd>' + fmtDate(cur.checkIn) + ' – ' + fmtDate(cur.checkOut) + ' (' + plural(daysBetween(cur.checkIn, cur.checkOut), 'night') + ')</dd>' : '') +
+            '<dt>Email</dt><dd>' + (ro ? esc(cur.email) : '<a href="mailto:' + esc(cur.email) + '">' + esc(cur.email) + '</a>') + '</dd>' +
+            (cur.phone ? '<dt>Phone</dt><dd>' + (ro ? esc(cur.phone) : '<a href="tel:' + esc(cur.phone.replace(/\s/g, '')) + '">' + esc(cur.phone) + '</a>') + '</dd>' : '') +
+            (cur.checkIn && cur.checkOut ? '<dt>Dates</dt><dd>' + fmtDate(cur.checkIn) + ' – ' + fmtDate(cur.checkOut) + ' (' + plural(daysBetween(cur.checkIn, cur.checkOut), 'night') + ')</dd>' : '') +
             (cur.guests ? '<dt>Guests</dt><dd>' + cur.guests + '</dd>' : '') +
           '</dl>' +
           '<div class="message">' + esc(cur.message) + '</div>' +
-          '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-            '<a class="btn btn--primary btn--caps" href="mailto:' + esc(cur.email) + '?subject=' + encodeURIComponent('Re: ' + cur.subject + ' · Safari Ember') + '" aria-label="Reply by email">Reply</a>' +
-            (cur.status === 'NEW' ? '<button class="btn btn--caps" data-act="handled" data-id="' + cur.id + '">Mark as handled</button>' : '<button class="btn btn--caps" data-act="reopen-enq" data-id="' + cur.id + '">Mark as new</button>') +
-          '</div></article>' : '<p class="empty">No enquiries yet.</p>') + '</section>';
+          (ro ? '' : '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+            '<a class="btn btn--primary btn--caps" href="mailto:' + esc(cur.email) + '?subject=' + encodeURIComponent('Re: ' + (cur.subject || 'your enquiry') + ' · Safari Ember') + '" aria-label="Reply by email">Reply</a>' +
+            (cur.status === 'NEW' ? '<button class="btn btn--caps" data-act="enquiry" data-status="HANDLED" data-id="' + cur.id + '">Mark as handled</button>' : '<button class="btn btn--caps" data-act="enquiry" data-status="NEW" data-id="' + cur.id + '">Mark as new</button>') +
+          '</div>') + '</article></section>'
+        : '<section class="panel panel--sand"><p class="empty">No enquiries yet. Messages from the site\'s "Get in touch" form arrive here.</p></section>');
     }
 
     /* ── ROUTER ───────────────────────────────────────────────────────────────────────────── */
 
     var app = document.getElementById('app');
-    var holdTick;
-    function render() {
+    var holdTick, renderSeq = 0, lastRoute = '';
+
+    // What each screen needs from the API, then how to draw it
+    var SCREENS = {
+      today: { title: 'Today', load: function () { return api('/today'); }, view: viewToday },
+      bookings: { title: 'Bookings', view: viewBookings, load: function () {
+        return Promise.all([api(bookingsQuery()), S.rooms ? Promise.resolve({ rooms: S.rooms }) : api('/rooms')])
+          .then(function (r) { S.rooms = r[1].rooms; return { bookings: r[0].bookings, rooms: S.rooms }; });
+      } },
+      booking: { title: 'Booking', nav: 'bookings', view: viewBooking, load: function (ref) {
+        return api('/bookings/' + encodeURIComponent(ref)).then(function (r) { return r.booking; });
+      } },
+      calendar: { title: 'Calendar', load: function () { return api('/calendar?' + qs({ from: S.calStart })); }, view: viewCalendar },
+      experiences: { title: 'Experiences', load: function () { return api('/experiences?' + qs({ from: S.xpStart })).then(function (d) { S.trips = d.trips; return d; }); }, view: viewExperiences },
+      rooms: { title: 'Rooms & rates', view: viewRooms, load: function () {
+        return api('/rooms').then(function (r) { S.rooms = r.rooms; return { rooms: r.rooms }; });
+      } },
+      enquiries: { title: 'Enquiries', load: function () { return api('/enquiries').then(function (r) { return r.enquiries; }); }, view: viewEnquiries },
+    };
+
+    /** A request was refused because the session ended or the code is still needed: back to sign-in. */
+    function signedOut(e) {
+      if (e.status !== 401) return false;
+      if (e.needsTotp && S.me) { S.me.needsTotp = true; S.stage = 'code'; }
+      else { S.me = null; S.stage = 'password'; toast(e.message); }
+      location.hash = '#/login'; if (location.hash === '#/login') render();
+      return true;
+    }
+
+    function render(opts) {
+      var seq = ++renderSeq;
       var hash = location.hash.replace(/^#\/?/, '') || 'today';
       var parts = hash.split('/');
-      if (!S.signedIn && parts[0] !== 'login') { location.replace('#/login'); return; }
-      if (S.signedIn && parts[0] === 'login') { location.replace('#/today'); return; }
-      if (LAUNCH && LATER.indexOf(parts[0]) > -1) { location.replace('#/today'); return; }   // not built yet: back to Today
+      if (!S.checked) return;                                   // still asking the API who we are
+      var signedIn = S.me && !S.me.needsTotp;
+      if (!signedIn && parts[0] !== 'login') { location.replace('#/login'); return; }
+      if (signedIn && parts[0] === 'login') { location.replace('#/today'); return; }
       clearInterval(holdTick);
 
-      var titleMap = { today: 'Today', bookings: 'Bookings', booking: 'Booking', calendar: 'Calendar', rooms: 'Rooms & rates', closures: 'Closures', enquiries: 'Enquiries', login: 'Sign in' };
-      document.title = (titleMap[parts[0]] || 'Admin') + ' · Safari Ember Admin';
+      if (parts[0] === 'login') {
+        document.title = 'Sign in · Safari Ember Admin';
+        app.innerHTML = viewLogin(opts && opts.error); bindLogin(); return;
+      }
+      var screen = SCREENS[parts[0]] || SCREENS.today;
+      document.title = screen.title + ' · Safari Ember Admin';
+      var active = screen.nav || parts[0];
+      // A new screen shows "Loading…" at once; a redraw of the same screen (after an action)
+      // keeps the old content until the new arrives, so nothing jumps.
+      var routeChanged = hash !== lastRoute; lastRoute = hash;
+      if (routeChanged) { app.innerHTML = shell(active, '<p class="loading" role="status">Loading…</p>'); bindShell(); }
 
-      if (parts[0] === 'login') { app.innerHTML = viewLogin(); bindLogin(); return; }
-      var views = { today: viewToday, bookings: viewBookings, calendar: viewCalendar, rooms: viewRooms, closures: viewClosures, enquiries: viewEnquiries };
-      var active = parts[0] === 'booking' ? 'bookings' : parts[0];
-      var html = parts[0] === 'booking' ? viewBooking(decodeURIComponent(parts[1] || '')) : (views[parts[0]] || viewToday)();
-      var hadFocusInMain = false;
-      app.innerHTML = shell(active, html);
-      bindShell();
-      // Move focus to the new page for keyboard and screen-reader users, like a page load would
-      if (window.__routed) document.getElementById('main').focus({ preventScroll: true });
-      window.__routed = true;
-      window.scrollTo(0, 0);
-      tickHolds(); holdTick = setInterval(tickHolds, 1000);
+      return screen.load(decodeURIComponent(parts[1] || '')).then(function (data) {
+        if (seq !== renderSeq) return;                          // the user moved on meanwhile
+        if (parts[0] === 'booking' && !data) throw Object.assign(new Error('Booking not found.'), { status: 404 });
+        app.innerHTML = shell(active, screen.view(data));
+        bindShell();
+        // Move focus to the new page for keyboard and screen-reader users, like a page load would
+        if (routeChanged && window.__routed) document.getElementById('main').focus({ preventScroll: true });
+        window.__routed = true;
+        if (routeChanged) window.scrollTo(0, 0);
+        tickHolds(); holdTick = setInterval(tickHolds, 1000);
+      }).catch(function (e) {
+        if (seq !== renderSeq || signedOut(e)) return;
+        var main = document.getElementById('main');
+        if (main) main.innerHTML = problemHtml(e);
+        var retry = document.getElementById('retry'); if (retry) retry.onclick = function () { lastRoute = ''; render(); };
+      });
     }
 
     function tickHolds() {
@@ -1135,24 +1090,52 @@
 
     /* ── EVENTS ───────────────────────────────────────────────────────────────────────────── */
 
+    function busy(btn, on, label) {
+      if (!btn) return;
+      if (on) { btn.dataset.label = btn.textContent; btn.textContent = label || 'Working…'; btn.disabled = true; }
+      else { btn.textContent = btn.dataset.label || btn.textContent; btn.disabled = false; }
+    }
+
     function bindLogin() {
       var f = document.getElementById('f-login'), c = document.getElementById('f-code');
-      if (f) { document.getElementById('email').focus();
-        f.addEventListener('submit', function (e) { e.preventDefault(); S.stage = 'code'; render(); document.getElementById('code').focus(); }); }
+      if (f) {
+        document.getElementById('email').focus();
+        f.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var btn = f.querySelector('button'); busy(btn, true, 'Signing in…');
+          api('/login', { method: 'POST', body: { email: document.getElementById('email').value, password: document.getElementById('pw').value } })
+            .then(function (r) {
+              S.me = r.admin;
+              if (S.me.needsTotp) { S.stage = 'code'; render(); document.getElementById('code').focus(); }
+              else { S.stage = 'password'; location.hash = '#/today'; }
+            })
+            .catch(function (err) { render({ error: err.message }); var pw = document.getElementById('pw'); if (pw) pw.focus(); });
+        });
+      }
       if (c) {
         c.addEventListener('submit', function (e) {
           e.preventDefault();
           var v = document.getElementById('code').value.trim();
-          if (!/^\d{6}$/.test(v)) { toast('Enter the 6 digits from your authenticator app.'); return; }
-          S.signedIn = true; S.stage = 'password';
-          try { sessionStorage.setItem('se-admin-proto', '1'); } catch (err) {}
-          location.hash = '#/today';
+          if (!/^\d{6}$/.test(v)) { render({ error: 'Enter the 6 digits from your authenticator app.' }); document.getElementById('code').focus(); return; }
+          var btn = c.querySelector('button'); busy(btn, true, 'Checking…');
+          api('/login/code', { method: 'POST', body: { code: v } })
+            .then(function (r) { S.me = r.admin; S.stage = 'password'; location.hash = '#/today'; })
+            .catch(function (err) {
+              if (err.status === 401 && !S.me) return signedOut(err);
+              render({ error: err.message }); document.getElementById('code').focus();
+            });
         });
-        document.getElementById('restart').onclick = function () { S.stage = 'password'; render(); };
-        document.getElementById('backup').onclick = function () { toast('Backup codes: 10 one-time codes given to each manager when they set up two-factor.'); };
+        document.getElementById('restart').onclick = function () {
+          api('/logout', { method: 'POST' }).catch(function () {}).then(function () { S.me = null; S.stage = 'password'; render(); });
+        };
       }
     }
 
+    /** After an action: toast, then redraw the current screen from the API (the source of truth). */
+    function refresh(msg) { if (msg) toast(msg); render(); }
+    function failed(e) { if (!signedOut(e)) toast(e.message); }
+
+    var searchTimer;
     function bindShell() {
       var shellEl = document.getElementById('shell'), burger = document.getElementById('burger');
       function setNav(open) {
@@ -1166,19 +1149,26 @@
       // Esc closes the phone menu. Assigned (not added), so re-rendering never stacks up listeners.
       document.onkeydown = function (e) { if (e.key === 'Escape' && shellEl.classList.contains('nav-open')) { setNav(false); burger.focus(); } };
       document.getElementById('signout').onclick = function () {
-        S.signedIn = false; try { sessionStorage.removeItem('se-admin-proto'); } catch (e) {}
-        location.hash = '#/login';
+        api('/logout', { method: 'POST' }).catch(function () {}).then(function () {
+          // Forget everything the last person saw: messages, filters, cached rooms
+          document.getElementById('toast').hidden = true;
+          S = Object.assign(S, { me: null, stage: 'password', bookingsFilter: 'upcoming', bookingsRoom: 'all', bookingsQ: '', enquiry: null, reading: false, newEnq: 0, rooms: null });
+          location.hash = '#/login';
+        });
       };
 
-      // Bookings table: search, filters, whole-row click
+      // Bookings table: search (asks the API once typing pauses), filters, whole-row click
       var q = document.getElementById('q');
       if (q) {
-        q.addEventListener('input', function () { S.bookingsQ = q.value; document.getElementById('rows').innerHTML = bookingRowsHtml(); });
-        document.getElementById('room').onchange = function (e) { S.bookingsRoom = e.target.value; document.getElementById('rows').innerHTML = bookingRowsHtml(); };
+        function reload() {
+          api(bookingsQuery()).then(function (r) { var rows = document.getElementById('rows'); if (rows) rows.innerHTML = bookingRowsHtml(r.bookings); }, failed);
+        }
+        q.addEventListener('input', function () { S.bookingsQ = q.value; clearTimeout(searchTimer); searchTimer = setTimeout(reload, 250); });
+        document.getElementById('room').onchange = function (e) { S.bookingsRoom = e.target.value; reload(); };
         document.querySelectorAll('[data-filter]').forEach(function (b) {
           b.onclick = function () { S.bookingsFilter = b.dataset.filter;
             document.querySelectorAll('[data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-            document.getElementById('rows').innerHTML = bookingRowsHtml(); };
+            reload(); };
         });
         document.getElementById('rows').addEventListener('click', function (e) {
           var tr = e.target.closest('tr[data-href]'); if (tr && !e.target.closest('a')) location.hash = tr.dataset.href;
@@ -1187,89 +1177,113 @@
 
       // Calendar
       document.querySelectorAll('[data-cal]').forEach(function (b) {
-        b.onclick = function () { var n = Number(b.dataset.cal); S.calStart = n ? addDays(S.calStart, n) : TODAY; render(); };
+        b.onclick = function () { var n = Number(b.dataset.cal); S.calStart = n ? addDays(S.calStart, n) : TODAY; refresh(); };
       });
       document.querySelectorAll('.cell').forEach(function (c) {
-        c.onclick = function () { document.getElementById('night-panel').innerHTML = nightPanel(c.dataset.night, Number(c.dataset.room)); };
+        c.onclick = function () {
+          var panel = document.getElementById('night-panel');
+          api('/calendar/night?' + qs({ date: c.dataset.night, room: c.dataset.room }))
+            .then(function (n) { panel.innerHTML = nightPanel(n); }, failed);
+        };
       });
 
       // Enquiries
       document.querySelectorAll('[data-enq]').forEach(function (b) {
-        b.onclick = function () { S.enquiry = Number(b.dataset.enq); S.reading = true; render(); };
+        b.onclick = function () { S.enquiry = Number(b.dataset.enq); S.reading = true; refresh(); };
       });
-      var back = document.querySelector('[data-back]'); if (back) back.onclick = function () { S.reading = false; render(); };
+      var back = document.querySelector('[data-back]'); if (back) back.onclick = function () { S.reading = false; refresh(); };
 
-      // Forms (prototype: they update the sample data in memory)
-      document.querySelectorAll('[data-room-form]').forEach(function (f) {
+      // Experiences: two weeks back / forward, and trip settings (send only what changed)
+      document.querySelectorAll('[data-xp]').forEach(function (b) {
+        b.onclick = function () { var n = Number(b.dataset.xp); S.xpStart = n ? addDays(S.xpStart, n) : TODAY; refresh(); };
+      });
+      document.querySelectorAll('[data-trip-form]').forEach(function (f) {
         f.onsubmit = function (e) {
-          e.preventDefault(); var rt = roomType(Number(f.dataset.roomForm));
-          var base = Number(String(f.base.value).replace(/[^\d]/g, '')), units = Number(f.units.value);
-          if (!(base >= 1000)) { toast('The base rate should be at least KES 1,000.'); f.base.focus(); return; }
-          rt.baseRateKes = base; rt.units = units; rt.active = f.active.checked;
-          toast(rt.name + ' saved (prototype: not stored).'); render();
+          e.preventDefault();
+          var id = Number(f.dataset.tripForm), change = {};
+          var t = S.trips.find(function (x) { return x.id === id; });
+          var price = Number(String(f.price.value).replace(/[^\d]/g, '')), seats = Number(f.seats.value);
+          var times = f.times.value.split(/[,\s]+/).filter(Boolean).map(function (x) { return /^\d:\d\d$/.test(x) ? '0' + x : x; });
+          if (!(price >= 100)) { toast('The price per person should be at least KES 100.'); f.price.focus(); return; }
+          if (!(seats >= 1 && seats <= 100 && Math.floor(seats) === seats)) { toast('Seats must be a whole number from 1 to 100.'); f.seats.focus(); return; }
+          if (!times.length || times.some(function (x) { return !/^([01]\d|2[0-3]):[0-5]\d$/.test(x); })) { toast('Write departure times as HH:MM, e.g. 06:30, 14:30.'); f.times.focus(); return; }
+          if (new Set(times).size !== times.length) { toast('A departure time is listed twice.'); f.times.focus(); return; }
+          times.sort();
+          if (price !== t.priceKes) change.priceKes = price;
+          if (seats !== t.seats) change.seats = seats;
+          if (times.join() !== t.departureTimes.join()) change.departureTimes = times;
+          if (f.active.checked !== t.active) change.active = f.active.checked;
+          if (!Object.keys(change).length) { toast('Nothing to save.'); return; }
+          var btn = f.querySelector('button'); busy(btn, true, 'Saving…');
+          api('/experiences/' + id, { method: 'PATCH', body: change }).then(function (r) {
+            refresh(t.name + ' saved.' + (r.offSchedule ? ' ' + plural(r.offSchedule, 'booking') + ' already booked on a time or day it no longer runs: they keep their slot, so contact those guests.' : ''));
+          }, function (err) { busy(btn, false); failed(err); });
         };
       });
-      var fs = document.getElementById('f-season');
-      if (fs) fs.onsubmit = function (e) {
-        e.preventDefault();
-        var from = document.getElementById('s-from').value, to = document.getElementById('s-to').value;
-        if (to <= from) { toast('"Until" must be after "From".'); return; }
-        SEASONS.push({ id: SEASONS.length + 1, roomTypeId: Number(document.getElementById('s-room').value), label: document.getElementById('s-label').value.trim(),
-          startsOn: from, endsOn: to, nightlyRateKes: Number(document.getElementById('s-rate').value.replace(/[^\d]/g, '')) });
-        toast('Season added (prototype: not stored).'); render();
-      };
-      var fc = document.getElementById('f-closure');
-      if (fc) fc.onsubmit = function (e) {
-        e.preventDefault();
-        var from = document.getElementById('c-from').value, to = document.getElementById('c-to').value;
-        if (!from || !to || to <= from) { toast('"Open again on" must be after the first night.'); return; }
-        var u = document.getElementById('c-units').value;
-        CLOSURES.push({ id: closureSeq++, roomTypeId: document.getElementById('c-room').value ? Number(document.getElementById('c-room').value) : null,
-          startsOn: from, endsOn: to, units: u ? Number(u) : null, reason: document.getElementById('c-reason').value.trim() });
-        toast('Dates closed (prototype: not stored).'); render();
-      };
 
+      // Rooms: send only what changed
+      document.querySelectorAll('[data-room-form]').forEach(function (f) {
+        f.onsubmit = function (e) {
+          e.preventDefault();
+          var rt = S.rooms.find(function (r) { return r.id === Number(f.dataset.roomForm); });
+          var base = Number(String(f.base.value).replace(/[^\d]/g, '')), units = Number(f.units.value), change = {};
+          if (!(base >= 1000)) { toast('The price per night should be at least KES 1,000.'); f.base.focus(); return; }
+          if (!(units >= 0 && units <= 99 && Math.floor(units) === units)) { toast('Units must be a whole number from 0 to 99.'); f.units.focus(); return; }
+          if (base !== rt.baseRateKes) change.baseRateKes = base;
+          if (units !== rt.units) change.units = units;
+          if (f.active.checked !== rt.active) change.active = f.active.checked;
+          if (!Object.keys(change).length) { toast('Nothing to save.'); return; }
+          var btn = f.querySelector('button'); busy(btn, true, 'Saving…');
+          api('/rooms/' + rt.id, { method: 'PATCH', body: change })
+            .then(function () { refresh(rt.name + ' saved. New bookings use the new settings.'); }, function (err) { busy(btn, false); failed(err); });
+        };
+      });
       // Buttons with data-act, anywhere on the page
       document.getElementById('main').addEventListener('click', function (e) {
         var b = e.target.closest('[data-act]'); if (!b) return;
-        var bk = b.dataset.ref && byRef(b.dataset.ref);
+        var ref = b.dataset.ref;
         switch (b.dataset.act) {
           case 'showheld': S.bookingsFilter = 'held'; break;   // the link itself then opens #/bookings
           case 'checkin':
-            bk.checkedInAt = Date.now(); toast(bk.firstName + ' ' + bk.lastName + ' checked in. Balance due ' + money(balance(bk)) + '.'); render(); break;
+            busy(b, true, 'Checking in…');
+            api('/bookings/' + ref + '/check-in', { method: 'POST' })
+              .then(function (r) { refresh(r.booking.firstName + ' ' + r.booking.lastName + ' checked in. Balance due ' + money(r.booking.balanceKes) + '.'); }, function (err) { busy(b, false); failed(err); });
+            break;
           case 'checkout':
-            confirmDialog({ title: 'Check out ' + bk.firstName + ' ' + bk.lastName + '?', body: 'Make sure the balance of ' + money(balance(bk)) + ' has been paid at the desk.', ok: 'Check out',
-              onOk: function () { bk.status = 'COMPLETED'; bk.checkedInAt = bk.checkedInAt || Date.now(); toast('Checked out. Room ready for housekeeping.'); render(); } }); break;
+            confirmDialog({ title: 'Check out ' + b.dataset.name + '?', body: 'Make sure the balance of ' + money(Number(b.dataset.due)) + ' has been paid at the desk.', ok: 'Check out',
+              onOk: function () {
+                api('/bookings/' + ref + '/check-out', { method: 'POST' }).then(function () { refresh('Checked out. Room ready for housekeeping.'); }, failed);
+              } });
+            break;
           case 'cancel':
-            confirmDialog({ title: 'Cancel ' + bk.ref + '?', danger: true, ok: 'Cancel booking', field: 'Reason (the guest will see this in their email)',
-              body: bk.payments.length ? 'The room is released straight away. The deposit of ' + money(bk.depositKes) + ' is not refunded automatically: refund it from M-Pesa or Paystack if your policy allows.' : 'The hold is released straight away. No payment was taken.',
-              onOk: function (reason) { bk.status = 'CANCELLED'; bk.cancelledAt = Date.now(); bk.cancelReason = reason; toast(bk.ref + ' cancelled.'); render(); } }); break;
-          case 'resend': toast('Confirmation email sent again to ' + bk.email + ' (prototype).'); break;
+            var paid = Number(b.dataset.paid);
+            confirmDialog({ title: 'Cancel ' + ref + '?', danger: true, ok: 'Cancel booking', field: 'Reason (the guest sees this on their booking page)',
+              body: paid ? 'The rooms are released straight away. The deposit of ' + money(paid) + ' is not refunded automatically: refund it from M-Pesa or Paystack if your policy allows.' : 'The hold is released straight away. No payment was taken.',
+              onOk: function (reason) {
+                if (!reason || reason.length < 3) { toast('Give the guest a short reason.'); return; }
+                api('/bookings/' + ref + '/cancel', { method: 'POST', body: { reason: reason } }).then(function () { refresh(ref + ' cancelled.'); }, failed);
+              } });
+            break;
           case 'copylink':
-            var link = location.origin + '/booking.html?ref=' + bk.ref + '&sig=…';
-            (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { toast('Guest link copied.'); }, function () { toast(link); }); break;
-          case 'reopen':
-            var c = CLOSURES.find(function (x) { return x.id === Number(b.dataset.id); });
-            confirmDialog({ title: 'Reopen these dates?', body: c.reason + ': the rooms go back on sale immediately.', ok: 'Reopen',
-              onOk: function () { CLOSURES.splice(CLOSURES.indexOf(c), 1); toast('Rooms back on sale.'); render(); } }); break;
-          case 'handled': case 'reopen-enq':
-            var en = ENQUIRIES.find(function (x) { return x.id === Number(b.dataset.id); });
-            en.status = b.dataset.act === 'handled' ? 'HANDLED' : 'NEW'; render(); break;
+            api('/bookings/' + ref + '/link').then(function (r) {
+              return (navigator.clipboard ? navigator.clipboard.writeText(r.url) : Promise.reject()).then(function () { toast('Guest link copied.'); }, function () { toast(r.url); });
+            }, failed);
+            break;
+          case 'enquiry':
+            api('/enquiries/' + b.dataset.id + '/status', { method: 'POST', body: { status: b.dataset.status } })
+              .then(function () { refresh(b.dataset.status === 'HANDLED' ? 'Marked as handled.' : 'Marked as new.'); }, failed);
+            break;
         }
       });
     }
 
-    window.addEventListener('hashchange', render);
-    render();
+    window.addEventListener('hashchange', function () { render(); });
 
-    /* ── NOTES FOR THE BACKEND (Phase 5) ──────────────────────────────────────────────────────
-       1. Check-in needs a column the Phase 1 schema doesn't have: bookings.checked_in_at
-          (timestamp, null until the guest arrives). "In house" = CONFIRMED + checked_in_at set.
-          Check-out sets status COMPLETED. Add both in the Phase 5 migration.
-       2. Every /api/admin/* route must require a signed-in admin session (with two-factor done).
-          This page's sign-in is only a design: it lets anyone in.
-       3. Enquiries need status (NEW / HANDLED), already in the blueprint's table.
-    ─────────────────────────────────────────────────────────────────────────────────────────── */
+    // Start: ask the API who is signed in (the cookie, if any, comes along by itself).
+    api('/me').then(function (r) {
+      S.me = r.admin;
+      if (S.me.needsTotp) S.stage = 'code';
+    }, function () { S.me = null; }).then(function () { S.checked = true; render(); });
   })();
   </script>
 </body>

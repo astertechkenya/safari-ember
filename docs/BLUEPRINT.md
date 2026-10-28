@@ -51,9 +51,10 @@ never timestamps, so no time zone can shift a stay by a day.
 in one booking (`MAX_ROOMS`), mixing types freely; the rooms chosen must sleep the whole party.
 Larger groups send an enquiry.
 
-**Prices.** Each night costs the room type's base rate, unless a *seasonal rate* covers that
-night (for example the migration season, July to October). The total is the sum of the
-nights, so a stay that crosses into peak season is priced night by night, correctly.
+**Prices.** Each night costs the room type's base rate: one price all year, set in the admin.
+(Seasonal rates existed until Oct 2026 and were removed, migration 0004: a base-rate change that
+a season silently overrode looked like a bug, and one price is easier for staff and guests.)
+The total is the sum of the nights; each night's price is still stored on its own.
 All money is whole Kenyan shillings, stored as integers. No floating point anywhere.
 
 **Deposit.** 30% of the total, rounded up to the next shilling, paid online to confirm. The
@@ -76,8 +77,9 @@ and inserts. A second booking for the same type waits for the first to finish, t
 again and sees 0 left. Other room types are not blocked. The tests fire simultaneous bookings
 at the last unit to prove only one wins.
 
-**Closures.** The admin can block units for dates (maintenance, a private event, the whole
-lodge closed). Blocked units count as taken.
+**Closures.** Handled physically by the lodge, not in the admin (decided Oct 2026): there is no
+Closures screen. The `closures` table and its rule stay in the booking engine (a row blocks units
+for its dates and they count as taken), but nothing in the admin creates or shows them.
 
 **Booking reference.** Guests see a short reference like `SE-7K3QXM` (no 0/O or 1/I to misread
 on the phone), never the database id. Their confirmation link is signed, like NURA's order
@@ -87,7 +89,6 @@ links, so nobody can open someone else's booking by guessing.
 
 ```
 room_types       id, slug, name, kind, description, sleeps, units, base_rate_kes, sort, active
-seasonal_rates   id, room_type_id, starts_on, ends_on (exclusive), nightly_rate_kes, label
 closures         id, room_type_id (null = every type), starts_on, ends_on (exclusive), units, reason
 bookings         id, ref, check_in, check_out, guests, nights, total_kes, deposit_kes,
                  status, hold_expires_at, first_name, last_name, email, phone, requests,
@@ -101,11 +102,15 @@ payments         id, booking_id, provider (DARAJA | PAYSTACK), status, amount_ke
                  phone, provider_ref, receipt, result_code, failure_reason, raw, checked_at, created_at
 enquiries        id, first_name, last_name, email, phone, subject, message, check_in, check_out,
                  guests, status, created_at
-admins, sessions (Phase 5, as NURA)
+admins           id, email (unique, any case), name, role (ADMIN | DEMO_ADMIN), password_hash
+                 (argon2id), totp_secret, created_at, updated_at
+sessions         sid, sess, expire (connect-pg-simple, as NURA)
+admin_events     id, admin_id, action, booking_id, detail, created_at (every staff change)
 ```
 
 Booking statuses: `HELD` → `CONFIRMED` (deposit paid) → `COMPLETED` (stayed), or `HELD` →
-`EXPIRED`, or `CONFIRMED` → `CANCELLED`. A booking takes a unit while it is `HELD` (and not
+`EXPIRED`, or `CONFIRMED` → `CANCELLED`. Checking in sets `checked_in_at` (shown as "In house"); checking
+out sets `COMPLETED` and `checked_out_at`. A booking takes a unit while it is `HELD` (and not
 past its hold) or `CONFIRMED`.
 
 `booking_nights` freezes each night's price when the guest books, so changing a rate later
@@ -123,8 +128,8 @@ never changes what an existing guest owes.
 | `POST /api/bookings/:ref/pay` (signed link) | Start the deposit payment: `{ method: 'mpesa', phone? }` sends a prompt; `{ method: 'card' }` returns Paystack's page address |
 | `POST /api/payments/mpesa/callback/:secret` | Safaricom's result (a hint: we then ask Safaricom ourselves) |
 | `POST /api/payments/paystack/webhook` | Paystack's signed events (a hint: we then ask Paystack ourselves) |
-| `POST /api/enquiries` | The "Get in touch" form, saved and (Phase 4) emailed to the lodge |
-| `/api/admin/*` (Phase 5) | Bookings, calendar, rooms, rates, closures, enquiries |
+| `POST /api/enquiries` | The "Get in touch" form (`name` or `firstName` + `lastName`, `email`, `message`, optional extras), saved for the admin inbox and (Phase 4) emailed to the lodge |
+| `/api/admin/*` (Phase 5) | The admin: see "Launch scope" for the nineteen routes |
 
 ## Deposits (Phase 3)
 
@@ -140,6 +145,14 @@ Switching from an unfinished card page to M-Pesa first checks the card wasn't pa
 **Settles once.** Every status change is a conditional update (`… where status = 'PENDING'`)
 under a row lock, taken in a fixed order (payment → booking → room types by id, see
 `services/capacity.js`), so racing answers can't settle a payment twice or deadlock.
+
+**Only a final "no" fails a payment** (fixed Oct 2026, after a real sandbox payment showed as
+failed). M-Pesa fails only on Safaricom's final codes (`FINAL_FAILURES` in `services/daraja.js`:
+no balance, cancelled, wrong PIN, timed out, unreachable, expired, couldn't send). Any other
+non-zero answer, such as 4999 "still under processing", means keep waiting. With no final answer
+after 3 minutes the minute job marks it `NO_ANSWER` and tells the guest not to pay again but to
+contact the lodge. **Proof of payment overrides a failure:** if Safaricom or Paystack later
+confirms a `FAILED` payment was paid, it becomes `PAID` and the table below applies.
 
 **What a paid deposit does:**
 
@@ -204,7 +217,8 @@ total survived.
    expiry, enquiries. Tested against a real Postgres.
 2. **Wire up the site.** The "Check Availability" bar shows real rooms and prices; guests pick
    one, enter their details and get a hold. The enquiry form posts to the API instead of
-   Netlify Forms.
+   Netlify Forms. (Done for real in Oct 2026: until then the homepage form showed "Thank you"
+   but sent nothing. It now says thank you only once the API has saved the message.)
 3. **Deposits.** M-Pesa and card, adapted from NURA: paying confirms the booking; a payment
    that arrives after the hold expired is handled safely (re-hold if still free, otherwise
    flagged for a refund). **3b:** several rooms per booking, and experiences as add-ons.
@@ -212,9 +226,9 @@ total survived.
    owner's own address) for a confirmed booking or a new enquiry. Guest emails (confirmation,
    hold expired, cancellation) wait for a domain; until then the private booking link is the
    guest's confirmation. See "Launch scope" below.
-5. **Admin (launch: everything but Closures).** Sign-in with two-factor (as NURA), Today
+5. **Admin.** Sign-in with two-factor (as NURA), Today
    (check in / out), the bookings list and a booking (cancel), the calendar, rooms and rates
-   (including seasons), and the enquiries inbox. Closures comes after launch.
+   (one price per night), Experiences, and the enquiries inbox. No Closures (handled physically).
 6. **Ship it.** Neon production database with a least-privilege app login, Render, Netlify
    proxy, uptime monitor, Sentry, and the case study.
 
@@ -222,10 +236,11 @@ total survived.
 
 To ship sooner, the admin launches without the screens it can manage without (decided Oct 2026,
 then widened the same week to include Calendar and Rooms & rates).
-Nothing is thrown away: the full design stays in the prototype (and the case study), behind one
-switch (`LAUNCH` and the `LATER` list at the top of the admin's script) that hides the later screens.
+Closures was later dropped from the admin altogether (handled physically), so the `LAUNCH` /
+`LATER` switch that hid it is gone too.
 
-**At launch.** Nineteen admin routes, each requiring a signed-in admin with two-factor done:
+**At launch (built Oct 2026).** Nineteen admin routes. Login and logout are open; every other one
+requires a signed-in admin with two-factor done (`me` and `login/code` also answer mid-sign-in):
 
 | Route | For |
 |---|---|
@@ -234,35 +249,39 @@ switch (`LAUNCH` and the `LATER` list at the top of the admin's script) that hid
 | `GET /api/admin/bookings?q=&status=&room=` | Search and filter |
 | `GET /api/admin/bookings/:ref` | One booking: rooms, experiences, frozen prices, payments, history |
 | `POST /api/admin/bookings/:ref/check-in`, `/check-out`, `/cancel` | The daily actions (cancel takes a reason) |
-| `GET /api/admin/calendar?from=` | Three weeks: rooms free per type per night, season bands, closed units |
+| `GET /api/admin/bookings/:ref/link` | The guest's private booking link, to copy and send by hand (not for the demo account) |
+| `GET /api/admin/calendar?from=` | Three weeks: rooms free per type per night, closed units |
 | `GET /api/admin/calendar/night?date=&room=` | Who is staying in a room type that night |
 | `GET /api/admin/rooms`, `PATCH /api/admin/rooms/:id` | Room types: base rate, units, bookable |
-| `GET /api/admin/seasons`, `POST /api/admin/seasons`, `DELETE /api/admin/seasons/:id` | Seasonal rates |
+| `GET /api/admin/experiences?from=`, `PATCH /api/admin/experiences/:id` | Two weeks of departures (who's going, people, vehicles) and each trip's price, seats, times, on/off (every trip runs daily) |
 | `GET /api/admin/enquiries`, `POST /api/admin/enquiries/:id/status` | Inbox; mark handled / new |
 
-**Rules for the two settings screens.** Rate and season changes apply to new bookings only
+**Rules for Experiences.** A price change applies to new bookings only (each booking froze its
+price per person). Seats are one vehicle's seats, for staff planning: never a limit for guests.
+Every trip runs daily (decided Oct 2026), so days aren't editable. Removing a time, or switching a trip off, never touches existing bookings: they keep
+their slot and still show in the departures list, and the admin is told how many are affected
+so staff can contact those guests. Logged in `admin_events` as `activity.update`.
+
+**Rules for Rooms & rates.** A price change applies to new bookings at once, for every date
 (booked nights keep their frozen price). Units can't be lowered below the rooms already booked
-on any future night (the API refuses with the night and the count), and a season can't overlap
-another season for the same room type. Every change is logged in `admin_events`.
+on any future night (the API refuses with the night and the count). Every change is logged in
+`admin_events`.
 
 **After launch, and the stand-in meanwhile.**
 
 | Later | Meanwhile |
 |---|---|
-| Closures | Add a row to `closures` by hand (the calendar still shows it) |
 | Guest emails | The private booking link is the confirmation; a cancellation reason shows on it |
-| A trips screen for staff | Experiences show on each booking's page |
 
 **Still non-negotiable at launch.** Server-side sign-in checks on every `/api/admin/*` route
 (the hidden admin page is not protection), the least-privilege production database login,
-migration 0002 run on production before the code that needs it, and tests for check-in,
+migrations 0002, 0003 and 0004 run on production before the code that needs them, and tests for check-in,
 check-out, cancel and the units rule.
 
-## Admin design (Phase 5, prototype done Oct 2026)
+## Admin (Phase 5, built Oct 2026)
 
-The admin is designed and clickable before the backend exists: `frontend/admin/index.html`,
-running on sample data shaped exactly like the tables above. Phase 5 swaps the sample data
-for `/api/admin/*` calls; the screens stay as they are.
+`frontend/admin/index.html`, one page, talking only to `/api/admin/*` with the session cookie.
+It hides buttons the signed-in account can't use, but every rule is enforced by the API.
 
 **Decisions.** The site's warm black and ember with square corners. Data sits on sand (dark ink,
 like paper): Today's arrivals and departures, the bookings list, a booking's details, the
@@ -274,24 +293,36 @@ Not linked from the site and marked `noindex`.
 
 | Screen | At launch? | What it does |
 |---|---|---|
-| Sign-in | yes | Email + password, then a 6-digit authenticator code; backup codes for a lost phone |
+| Sign-in | yes | Email + password, then a 6-digit authenticator code; a lost phone is reset by the manager (`create-admin --reset-2fa`) |
 | Today | yes | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries |
 | Bookings | yes | Search by name, reference, email or phone; filter by status and room type |
 | Booking | yes | Rooms, experiences, guest, frozen nightly prices, deposit and balance due, history, check in / out, cancel (with reason), copy guest link. ("Resend confirmation email" waits for guest emails.) |
 | Enquiries | yes | Inbox with unread marks, reply by email, mark as handled |
-| Calendar | yes | Rooms free per night for three weeks, season band, closures hatched; a night lists who is staying |
-| Rooms & rates | yes | Base rate, units and "bookable" per room type; seasonal rates list and add form |
-| Closures | later | List with a warning when confirmed bookings overlap; close dates by room type or whole lodge |
+| Calendar | yes | Rooms free per night, three weeks a page, any date back or forward (bookings are never deleted; guests book up to 18 months ahead). Past nights count completed stays up to the day the guest left. A night lists who stayed or is staying, with each guest's room count on the right |
+| Experiences | yes | Departures for two weeks by day: trip, time, who's going (held ones marked), people and vehicles needed (people ÷ a vehicle's seats). Each trip (all run daily): price per person, seats per vehicle, departure times, offered or not |
+| Rooms & rates | yes | Price per night, units and "bookable" per room type |
 
-The prototype's sample data still has one room per booking; Phase 5 reads `booking_rooms` and
-`booking_activities` from the real API, so bookings show every room and trip.
+**As built (migration 0003).** `bookings` gained `checked_in_at`, `checked_out_at` and
+`cancel_reason` (up to 300 characters, shown on the guest's booking page); new tables `admins`,
+`sessions` and `admin_events`. Sign-in ported from NURA: argon2id passwords, a new session ID on
+every sign-in, cookie `se.sid` (httpOnly, SameSite=Lax, Secure in production, 12 h), signed out
+after 8 h idle, and the admin re-read on every request so a removed account stops at once.
+Two-factor (TOTP) is required for `ADMIN` accounts. Login is limited to 5 tries per 15 minutes
+per connection and email (20 wrong per connection); codes to 5 wrong per account.
 
-**Schema changes the admin needs (Phase 5 migration).**
-- `bookings.checked_in_at` (timestamp, null until arrival). "In house" = `CONFIRMED` + checked in.
-  Check-out sets `COMPLETED`.
-- `bookings.cancel_reason` (text), shown on the guest's booking page (and in the cancellation
-  email, once guest emails exist).
-- Staff actions logged (who checked in / cancelled what, when) in an `admin_events` table.
+**Demo account.** `DEMO_ADMIN` (for the case study / portfolio visitors): can open every screen,
+can change nothing (the API refuses anything but reading), and guests' details are masked by the
+API before they leave the server ("Amina O.", "a•••@example.com", "+254 7•• ••• 100"). It
+can't fetch guest links. No two-factor, so give it a password you're happy to publish.
+
+**Accounts.** `npm run create-admin -- --email … --name …` (asks for the password twice, at least
+12 characters, and prints the authenticator key once). `--role DEMO_ADMIN` for the demo account,
+`--reset-2fa` for a lost phone. Running it again for an existing email can set a new password
+(Enter keeps the current one) and signs that admin out everywhere.
+
+**Production database.** The least-privilege app login needs `SELECT, INSERT, UPDATE, DELETE` on
+`admins`, `sessions` and `admin_events` (and `USAGE` on the `admin_events` id sequence), the same
+as the other tables; migrations stay with the owner login.
 
 **Rules carried into the API.** Every `/api/admin/*` route requires a signed-in admin session
 with two-factor completed. Cancelling never refunds automatically (refund in M-Pesa/Paystack

@@ -20,6 +20,8 @@ import { activitiesRouter } from './routes/activities.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { enquiriesRouter } from './routes/enquiries.js';
 import { paymentsRouter } from './routes/payments.js';
+import { adminRouter } from './routes/admin.js';
+import { sessionMiddleware } from './middleware/session.js';
 
 export function createApp() {
   const app = express();
@@ -77,6 +79,9 @@ export function createApp() {
   app.use('/api/activities', activitiesRouter);
   app.use('/api/bookings', bookingsRouter);
   app.use('/api/enquiries', enquiriesRouter);
+  // The admin is the only part with sessions: guests never get a cookie. Gated per request
+  // (middleware/adminGate.js), and behind sameOrigin above like every other write.
+  app.use('/api/admin', sessionMiddleware, adminRouter);
 
   app.use(notFound);
   app.use(errorHandler);

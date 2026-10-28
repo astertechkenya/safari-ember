@@ -189,6 +189,51 @@ describe('M-Pesa', () => {
     expect((await pay(b, { method: 'mpesa' })).status).toBe(202);
   });
 
+  it('keeps waiting on an answer that isn’t final, then confirms when the guest pays', async () => {
+    // The bug Ethan hit (Oct 2026): Safaricom answered the page's check with a non-zero code that
+    // meant "still processing"; it was taken as a failure, then the guest paid on the phone.
+    const b = await hold();
+    await pay(b, { method: 'mpesa' });
+    daraja.fake.outcome.set(lastPushId(), { state: 'unclear', code: '4999' });
+    await forgetLastCheck();
+    expect((await look(b)).body.booking).toMatchObject({ status: 'HELD', payment: { status: 'PENDING' } });
+    daraja.fake.outcome.set(lastPushId(), { state: 'paid' });                // the PIN goes in
+    await forgetLastCheck();
+    expect((await look(b)).body.booking).toMatchObject({ status: 'CONFIRMED', payment: { status: 'PAID' } });
+  });
+
+  it('confirms a payment we had recorded as failed, when Safaricom later says it was paid', async () => {
+    const b = await hold();
+    await pay(b, { method: 'mpesa' });
+    const id = lastPushId();
+    daraja.fake.outcome.set(id, { state: 'failed', code: '1037' });
+    await forgetLastCheck();
+    expect((await look(b)).body.booking.payment.status).toBe('FAILED');
+    // A "failed" callback for it changes nothing, and asks Safaricom nothing
+    const before = daraja.fake.queries.length;
+    await request(app).post(`/api/payments/mpesa/callback/${SECRET}`).send(callbackBody(id, { code: 1037 }));
+    expect(daraja.fake.queries.length).toBe(before);
+    // Then the money turns out to have moved: Safaricom's callback says paid, and its query agrees
+    daraja.fake.outcome.set(id, { state: 'paid' });
+    await request(app).post(`/api/payments/mpesa/callback/${SECRET}`).send(callbackBody(id, { receipt: 'QK77LATE00' }));
+    await until(async () => (await bookingRow(b.ref)).status === 'CONFIRMED');
+    expect(await paymentOf(b.ref)).toMatchObject({ status: 'PAID', receipt: 'QK77LATE00' });
+  });
+
+  it('still won’t believe a "paid" callback for a failed payment unless Safaricom confirms it', async () => {
+    const b = await hold();
+    await pay(b, { method: 'mpesa' });
+    const id = lastPushId();
+    daraja.fake.outcome.set(id, { state: 'failed', code: '1032' });
+    await forgetLastCheck();
+    await look(b);
+    await request(app).post(`/api/payments/mpesa/callback/${SECRET}`).send(callbackBody(id));   // a forged "paid"
+    await until(() => daraja.fake.queries.at(-1)?.CheckoutRequestID === id);
+    await new Promise((r) => setTimeout(r, 200));
+    expect((await paymentOf(b.ref)).status).toBe('FAILED');
+    expect((await bookingRow(b.ref)).status).toBe('HELD');
+  });
+
   it('records a refused push as failed, not stuck', async () => {
     const b = await hold();
     daraja.fake.failNextPush = true;
@@ -414,6 +459,20 @@ describe('the minute job', () => {
     expect(await reconcilePayments()).toBe(1);
     expect((await bookingRow(quiet.ref)).status).toBe('CONFIRMED');
     expect((await bookingRow(young.ref)).status).toBe('HELD');
+  });
+
+  it('gives up on an M-Pesa prompt with no final answer after 3 minutes, so the guest can try again', async () => {
+    const b = await hold();
+    await pay(b, { method: 'mpesa' });
+    daraja.fake.outcome.set(lastPushId(), { state: 'unclear', code: '4999' });
+    await db.execute(sql`update payments set created_at = now() - interval '2 minutes'`);
+    await reconcilePayments();
+    expect((await paymentOf(b.ref)).status).toBe('PENDING');                // 2 minutes: still waiting
+    await db.execute(sql`update payments set created_at = now() - interval '4 minutes'`);
+    await reconcilePayments();
+    expect(await paymentOf(b.ref)).toMatchObject({ status: 'FAILED', result_code: 'NO_ANSWER' });
+    expect((await look(b)).body.booking.payment.message).toMatch(/don’t pay again/);
+    expect((await pay(b, { method: 'mpesa' })).status).toBe(202);
   });
 
   it('gives up on a card page left open for over an hour', async () => {

@@ -1275,8 +1275,7 @@
 
     /* ============================================================
        INQUIRY FORM
-       Simple contact form using Netlify Forms (zero backend needed).
-       Just add netlify attribute and deploy to Netlify — done.
+       Sent to the API (POST /api/enquiries), which saves it for the admin's Enquiries inbox.
     ============================================================ */
     .form-section {
       padding: var(--section-pad);
@@ -1301,6 +1300,10 @@
     .person--chef { padding: 60px 24px 0; }
     .form { width: 100%; display: flex; flex-direction: column; gap: 14px; }
     .form__send { width: 100%; }
+    .form__send[disabled] { opacity: .6; cursor: wait; }
+    /* Why a message didn't go: under the button, read out by screen readers (role="alert") */
+    .form__error { margin: 14px 0 0; padding: 12px 16px; border-left: 2px solid #f0a090; background: rgba(240,160,144,.06);
+      color: var(--cream); font-size: 15px; line-height: 1.5; }
     /* Read by screen readers, invisible on screen */
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     /* Call / WhatsApp / Email as ember icons, no circle. Each link is still 44px square, so the
@@ -2167,7 +2170,7 @@
             <h4 class="cul-dish__name">The Heritage Plate</h4>
             <p class="cul-dish__desc">Slow-braised beef in a rich, aromatic tomato stew, served alongside hand-rolled ugali and freshly prepared sukuma wiki. A tribute to Kenya's most beloved culinary traditions, elevated with care.</p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve stay <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2181,7 +2184,7 @@
             <h4 class="cul-dish__name">The Safari Spread</h4>
             <p class="cul-dish__desc">A generous celebration of the table: flame-kissed skewers, spiced wraps, and golden sliders brought together for those who believe the finest meals are always shared.</p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve stay <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2195,7 +2198,7 @@
             <h4 class="cul-dish__name">The Northern Classic</h4>
             <p class="cul-dish__desc">Inspired by the spice routes of North Africa: tender fish with preserved lemon, roasted vegetables, and vibrant accompaniments that carry the warmth and complexity of the continent.</p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve a table <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve stay <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </div>
@@ -2260,7 +2263,7 @@
               Handcrafted furniture, Italian linens, and a deep soaking tub.
             </p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
@@ -2279,7 +2282,7 @@
               soaking tub, parlour lounge, and private butler service.
             </p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
@@ -2298,7 +2301,7 @@
               bespoke in-room dining, and a rooftop terrace for exclusive use.
             </p>
             <div class="card__footer">
-              <a href="#booking" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
+              <a href="booking.html" class="card__cta">Reserve room <span aria-hidden="true">&rarr;</span></a>
             </div>
           </div>
         </article>
@@ -2487,8 +2490,7 @@
 
     <!-- ============================================================
          CONTACT INQUIRY FORM
-         Uses Netlify Forms for zero-backend form handling.
-         Just add netlify attribute when you deploy to Netlify.
+         Posts to /api/enquiries (see the script at the bottom); lands in the admin's Enquiries.
     ============================================================ -->
     <section class="form-section" id="inquiry" aria-labelledby="inquiry-heading">
       <div class="section__header">
@@ -2497,14 +2499,6 @@
         <div class="rule"></div>
       </div>
 
-      <!--
-        NETLIFY FORMS SETUP:
-        When deploying to Netlify, add the following attributes to the <form> tag:
-          name="contact"
-          netlify
-          netlify-honeypot="bot-field"
-        Netlify will handle form submissions automatically — no backend needed.
-      -->
       <div class="enquire">
         <!-- A named person to write to, centred under the heading. Placeholder portrait and name:
              replace before launch. -->
@@ -2520,17 +2514,13 @@
         <form
           class="form"
           id="inquiryForm"
-          name="contact"
-          method="POST"
-          action="/thank-you.html"
-          netlify
-          netlify-honeypot="bot-field"
           novalidate
           aria-label="Contact inquiry form"
         >
-          <!-- Honeypot field: hidden from humans, catches spam bots -->
-          <p style="display:none">
-            <label>Don't fill this out: <input name="bot-field" /></label>
+          <!-- Honeypot: hidden from people (and screen readers); bots fill in every box they find.
+               The API thanks a filled-in one but saves nothing. -->
+          <p style="display:none" aria-hidden="true">
+            <label>Leave this empty: <input name="website" tabindex="-1" autocomplete="off" /></label>
           </p>
 
           <!-- Three fields only. The placeholders say what each is; the labels are there for
@@ -2556,6 +2546,7 @@
           </div>
 
           <button type="submit" class="btn-primary form__send">Send Enquiry</button>
+          <p class="form__error" id="inquiryError" role="alert" hidden></p>
         </form>
       </div>
     </section>
@@ -2672,20 +2663,54 @@
       });
     })();
 
-    // ---- Inquiry form validation ------------------------------------
-    document.getElementById('inquiryForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        alert('Please enter a valid email address.');
-        return;
+    // ---- Inquiry form: sends to the API, says thank you only once it's saved ----------
+    (function () {
+      const form = document.getElementById('inquiryForm');
+      const errorBox = document.getElementById('inquiryError');
+      const button = form.querySelector('.form__send');
+      function showError(msg, focusEl) {
+        errorBox.textContent = msg; errorBox.hidden = false;
+        if (focusEl) focusEl.focus();
       }
-      // Reset form and show popup
-      this.reset();
-      document.querySelector('.avail-popup__title').innerHTML = 'Thank you for your <em>enquiry</em>';
-      document.querySelector('.avail-popup__text').style.display = '';
-      openAvailPopup();
-    });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        errorBox.hidden = true;
+        const name = form.elements.name.value.trim();
+        const email = form.elements.email.value.trim();
+        const message = form.elements.enquiry.value.trim();
+        if (!name) return showError('Please enter your name.', form.elements.name);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('Please enter a valid email address.', form.elements.email);
+        if (!message) return showError('Please write your enquiry.', form.elements.enquiry);
+
+        button.disabled = true; button.textContent = 'Sending…';
+        fetch('/api/enquiries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ name: name, email: email, message: message, website: form.elements.website.value }),
+        }).then(function (res) {
+          if (res.ok) {
+            // Only now is it really sent: clear the form and say thank you
+            form.reset();
+            button.disabled = false; button.textContent = 'Send Enquiry';
+            // Focus returns to the button on close (it lost focus while disabled, so say so explicitly)
+            openAvailPopup('Thank you for your <em>enquiry</em>',
+              'We’ve received your message. Ophelia or one of the team will reply by email within 24 hours.', button);
+            return;
+          }
+          return res.json().catch(function () { return {}; }).then(function (body) {
+            // The API's messages name the field in code terms ("name: may only contain…"); say it plainly.
+            const err = String(body.error || '');
+            if (res.status === 429) showError('You’ve sent several messages already. Please try again in an hour, or call us.');
+            else if (/^name:/.test(err)) showError('Please check your name: letters, spaces, hyphens and apostrophes only.', form.elements.name);
+            else if (/^email:/.test(err)) showError('Please enter a valid email address.', form.elements.email);
+            else if (/^message:/.test(err)) showError('Your enquiry is too long. Please keep it under 4,000 characters.', form.elements.enquiry);
+            else showError('Your message couldn’t be sent. Please try again in a moment.');
+          });
+        }, function () {
+          showError('Your message couldn’t be sent: check your connection and try again. Nothing was lost; your text is still here.');
+        }).finally(function () { button.disabled = false; button.textContent = 'Send Enquiry'; });
+      });
+    })();
 
 
   </script>
@@ -2965,30 +2990,34 @@
   </script>
 
   <!-- Availability Confirmation Popup -->
-  <div class="avail-popup-overlay" id="availPopup" role="dialog" aria-modal="true">
+  <div class="avail-popup-overlay" id="availPopup" role="dialog" aria-modal="true" aria-labelledby="availPopupTitle">
     <div class="avail-popup">
       <div class="avail-popup__icon">&#10022;</div>
       <div class="avail-popup__rule"></div>
-      <h2 class="avail-popup__title">We'll be in <em>touch</em></h2>
-      <p class="avail-popup__text">Thank you for your interest in Safari Ember. A member of our reservations team will reach out within 24 hours to confirm your availability and guide you through the next steps.</p>
+      <h2 class="avail-popup__title" id="availPopupTitle">We'll be in <em>touch</em></h2>
+      <p class="avail-popup__text">A member of our team will reply by email within 24 hours.</p>
       <button class="avail-popup__btn" onclick="closeAvailPopup()">Close</button>
     </div>
   </div>
   <script>
-    window.openAvailPopup = function() {
-      document.querySelector('.avail-popup__title').innerHTML = "We'll be in <em>touch</em>";
-      document.querySelector('.avail-popup__text').style.display = '';
+    // The popup says whatever it's opened with (our own text only: the title takes <em>).
+    // Focus moves to its Close button, and back to where it was when it closes, so keyboard
+    // and screen-reader users aren't left behind the overlay.
+    var popupReturnFocus = null;
+    window.openAvailPopup = function(titleHtml, text, returnTo) {
+      if (titleHtml) document.querySelector('.avail-popup__title').innerHTML = titleHtml;
+      if (text) document.querySelector('.avail-popup__text').textContent = text;
+      popupReturnFocus = returnTo || document.activeElement;
       document.getElementById('availPopup').classList.add('open');
       document.body.style.overflow = 'hidden';
+      document.querySelector('.avail-popup__btn').focus();
     };
     window.closeAvailPopup = function() {
-      document.getElementById('availPopup').classList.remove('open');
+      var popup = document.getElementById('availPopup');
+      if (!popup.classList.contains('open')) return;
+      popup.classList.remove('open');
       document.body.style.overflow = '';
-    };
-    window.openAvailMessage = function(msg) {
-      document.querySelector('.avail-popup__title').innerHTML = msg;
-      document.querySelector('.avail-popup__text').style.display = 'none';
-      openAvailPopup();
+      if (popupReturnFocus && popupReturnFocus.focus) popupReturnFocus.focus();
     };
     document.getElementById('availPopup').addEventListener('click', function(e) {
       if (e.target === this) closeAvailPopup();

@@ -15,7 +15,7 @@ describe('rooms', () => {
     const seeded = res.body.rooms.filter((r) => !r.slug.startsWith('test-'));
     expect(seeded.map((r) => r.slug)).toEqual(['hearthside-room', 'coalbed-suite', 'ember-penthouse']);
     // The long-rains rate (85%) is the lowest upcoming price: 28,000 × 0.85 = 23,800 → 24,000.
-    expect(seeded[0]).toMatchObject({ name: 'Hearthside Room', kind: 'Deluxe', sleeps: 2, fromKes: 24_000 });
+    expect(seeded[0]).toMatchObject({ name: 'Hearthside Room', kind: 'Deluxe', sleeps: 2, fromKes: 28_000 });
     expect(Object.keys(seeded[0]).sort()).toEqual(['description', 'fromKes', 'kind', 'name', 'sleeps', 'slug']);
   });
 });

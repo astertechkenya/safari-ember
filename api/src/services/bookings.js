@@ -19,7 +19,7 @@
 // committed before the lock was granted.
 import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { roomTypes, seasonalRates, bookings, bookingNights, bookingRooms, bookingActivities, activities } from '../db/schema.js';
+import { roomTypes, bookings, bookingNights, bookingRooms, bookingActivities, activities } from '../db/schema.js';
 import { config } from '../config.js';
 import { httpError } from '../middleware/errors.js';
 import { freeUnits } from './availability.js';
@@ -29,33 +29,14 @@ import { lockRoomTypes, shortfall, withHoldRunning } from './capacity.js';
 import { tripDays, weekdayOf, bookable } from './activities.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
-import { todayInNairobi, daysBetween } from '../lib/dates.js';
-
-/** Seasonal rates that touch the stay, grouped by room type id. */
-async function seasonsFor(roomTypeIds, checkIn, checkOut, executor = db) {
-  if (!roomTypeIds.length) return new Map();
-  const rows = await executor.select().from(seasonalRates).where(and(
-    inArray(seasonalRates.roomTypeId, roomTypeIds),
-    sql`${seasonalRates.startsOn} < ${checkOut}::date`,
-    sql`${seasonalRates.endsOn} > ${checkIn}::date`,
-  ));
-  const map = new Map(roomTypeIds.map((id) => [id, []]));
-  for (const r of rows) map.get(r.roomTypeId).push(r);
-  return map;
-}
+import { daysBetween } from '../lib/dates.js';
 
 const roomCard = (rt) => ({ slug: rt.slug, name: rt.name, kind: rt.kind, description: rt.description, sleeps: rt.sleeps });
 
-/** The rooms list for the site: every active type with its lowest upcoming nightly price. */
+/** The rooms list for the site: every active type with its nightly price. */
 export async function listRooms() {
   const types = await db.select().from(roomTypes).where(eq(roomTypes.active, true)).orderBy(asc(roomTypes.sort), asc(roomTypes.id));
-  const today = todayInNairobi();
-  // A season that hasn't ended yet can make the "from" price lower than the base rate.
-  const seasons = await db.select().from(seasonalRates).where(sql`${seasonalRates.endsOn} > ${today}::date`);
-  return types.map((rt) => ({
-    ...roomCard(rt),
-    fromKes: Math.min(rt.baseRateKes, ...seasons.filter((s) => s.roomTypeId === rt.id).map((s) => s.nightlyRateKes)),
-  }));
+  return types.map((rt) => ({ ...roomCard(rt), fromKes: rt.baseRateKes }));
 }
 
 /**
@@ -75,10 +56,7 @@ export function largestParty(types, maxRooms) {
 /** The availability search: every active room type, how many can be booked, and its price per room. */
 export async function search({ checkIn, checkOut, guests }) {
   const types = await db.select().from(roomTypes).where(eq(roomTypes.active, true)).orderBy(asc(roomTypes.sort), asc(roomTypes.id));
-  const [free, seasons] = await Promise.all([
-    freeUnits({ checkIn, checkOut }),
-    seasonsFor(types.map((t) => t.id), checkIn, checkOut),
-  ]);
+  const free = await freeUnits({ checkIn, checkOut });
   const rooms = types.map((rt) => {
     const left = free.get(rt.id) ?? 0;
     return {
@@ -90,7 +68,7 @@ export async function search({ checkIn, checkOut, guests }) {
       // Exact count only when it's low (FEW_LEFT): "only 2 left" helps the guest decide, but the
       // lodge doesn't advertise how empty it is the rest of the time.
       left: left > 0 && left <= config.FEW_LEFT ? left : null,
-      ...quote(rt, checkIn, checkOut, seasons.get(rt.id), config.DEPOSIT_PERCENT),   // for ONE room
+      ...quote(rt, checkIn, checkOut, config.DEPOSIT_PERCENT),   // for ONE room
     };
   });
   return {
@@ -157,8 +135,7 @@ export async function createHold({ rooms, activities: trips = [], checkIn, check
     if (afterCount) await afterCount();
 
     // 4. Price it, from the rates as they are right now.
-    const seasons = await seasonsFor(types.map((t) => t.id), checkIn, checkOut, tx);
-    for (const l of lines) l.nightly = priceNights(l.roomType, checkIn, checkOut, seasons.get(l.roomType.id));
+    for (const l of lines) l.nightly = priceNights(l.roomType, checkIn, checkOut);
     const q = quoteBooking({
       rooms: lines, activities: tripList.map((t) => ({ people: t.people, priceKes: t.activity.priceKes })),
       depositPercent: config.DEPOSIT_PERCENT,
@@ -245,6 +222,8 @@ export async function publicBooking(ref, { check = false } = {}) {
     // refundDue means money arrived that this booking couldn't use, and the lodge owes it back.
     payment: await paymentSummary(b.id),
     refundDue: b.refundDue,
+    // Why the lodge cancelled (Phase 5), shown on the guest's page until guest emails exist
+    cancelReason: b.status === 'CANCELLED' ? b.cancelReason ?? null : null,
     paymentMethods: paymentMethods(),
   };
 }

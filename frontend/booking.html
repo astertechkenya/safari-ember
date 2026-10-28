@@ -118,10 +118,8 @@
     .room__total { font-family: var(--serif); font-size: 24px; }
     .room__total small { font-family: var(--sans); font-size: 14px; color: var(--warm-mid); }
     .room__deposit { font-size: 14px; color: var(--warm-mid); margin: 2px 0 12px; }
-    .room details { font-size: 14px; color: var(--warm-mid); margin-bottom: 18px; }
-    .room summary { cursor: pointer; color: var(--ember-glow); width: fit-content; }
-    .room details ul { list-style: none; padding: 8px 0 0; margin: 0; }
-    .room details li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+    /* Per night leads (it's what the admin sets and how guests compare hotels); the stay total sits under it */
+    .room__stay { font-size: 14px; color: var(--warm-mid); margin: 4px 0 18px; }
     .room__left { font-size: 13px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--ember-glow); margin: 0 0 10px; }
     .room__why { font-size: 14px; color: var(--warm-dim); margin: 0; }
 
@@ -245,7 +243,6 @@
 
     /* ── Paying the deposit (inside step 3) ──────────────────────────────── */
     .pay { margin-top: 30px; border-top: 1px solid var(--line-soft); padding-top: 26px; text-align: left; }
-    .pay__title { font-family: var(--serif); font-size: 22px; text-align: center; margin-bottom: 10px; }
     .pay__sub { text-align: center; color: var(--warm-mid); margin: 0 0 22px; font-size: 15px; }
     /* The two ways to pay (option B, Oct 2026): side-by-side tiles, each with its own colour,
        icon, title and three numbered steps, so nobody has to read to tell them apart. */
@@ -560,10 +557,9 @@
             '<p class="room__facts">Sleeps ' + r.sleeps + ' per room</p>' +
             '<div class="room__price">' +
               (r.left ? '<p class="room__left">Only ' + r.left + ' left</p>' : '') +
-              '<div class="room__total num">' + money(r.totalKes) + ' <small>per room, ' + plural(data.nights, 'night') + '</small></div>' +
-              '<details><summary>Price per night</summary><ul>' + r.nightly.map(function (x) {
-                return '<li><span>' + day(x.night) + (x.season ? ' · ' + esc(x.season) : '') + '</span><span class="num">' + money(x.rateKes) + '</span></li>';
-              }).join('') + '</ul></details>' +
+              // One price all year, so every night costs the same: show it once, then the stay
+              '<div class="room__total num">' + money(r.nightly[0].rateKes) + ' <small>/ night</small></div>' +
+              '<p class="room__stay num">' + money(r.totalKes) + ' for ' + plural(data.nights, 'night') + ' · per room</p>' +
               (r.available
                 ? '<div class="count" role="group" aria-label="How many ' + esc(r.name) + ' rooms">' +
                     '<button class="count__btn" type="button" data-dec="' + esc(r.slug) + '" aria-label="One fewer ' + esc(r.name) + '">&minus;</button>' +
@@ -861,8 +857,8 @@
       if (p && p.status === 'PENDING' && p.sent) return waitingHtml(b);
       var problem = p && (p.status === 'FAILED' || p.status === 'FLAGGED') && p.message
         ? '<p class="pay__problem" role="alert">' + esc(p.message) + (p.status === 'FAILED' ? ' You can try again below.' : '') + '</p>' : '';
-      return '<div class="pay" aria-labelledby="payTitle">' +
-        '<h3 class="pay__title" id="payTitle">Pay the deposit to confirm</h3>' +
+      // No heading of its own: it sits right under the page's "Pay deposit to confirm"
+      return '<div class="pay" role="group" aria-label="Pay the deposit">' +
         '<p class="pay__sub num">' + money(b.depositKes) + ' now · ' + money(b.balanceKes) + ' balance later</p>' + problem +
         '<div class="pay__ways">' +
           (ways.indexOf('mpesa') > -1 ?
@@ -902,10 +898,13 @@
       $('step-hold').innerHTML = '<div class="hold' + (ok ? ' hold--ok' : '') + '">' +
         '<span class="status status--' + esc(b.status) + '">' + (STATUS[b.status] || esc(b.status)) + '</span>' +
         '<div class="rule" role="presentation"></div>' +
-        '<h2>' + (held ? (rooms > 1 ? 'Your rooms are <em>held</em>, ' : 'Your room is <em>held</em>, ') : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +
-          (b.status === 'EXPIRED' ? '' : esc(b.guest.firstName)) + '</h2>' +
+        '<h2>' + (held ? 'Pay deposit to <em>confirm</em>' : b.status === 'EXPIRED' ? 'This hold has <em>expired</em>' : b.status === 'CANCELLED' ? 'This booking was <em>cancelled</em>' : b.status === 'CONFIRMED' ? 'You\'re <em>booked</em>, ' : 'Your <em>booking</em>, ') +
+          (held || b.status === 'EXPIRED' || b.status === 'CANCELLED' ? '' : esc(b.guest.firstName)) + '</h2>' +
         '<p style="margin:14px 0 0;color:var(--warm-mid)">Booking reference</p><div class="ref">' + esc(b.ref) + '</div>' +
         (held ? '<p class="timer" id="timer">Held for <b>15:00</b></p>' : '') +
+        // Unpaid: the payment comes first, before the stay details, so the page can't be mistaken
+        // for a confirmation (Oct 2026). The headline above already says what to do.
+        (held ? payHtml(b) : '') +
         '<dl class="hold__grid num">' +
           '<div><dt>' + (rooms > 1 ? 'Rooms' : 'Room') + '</dt><dd>' + b.rooms.map(function (r) { return (r.units > 1 ? r.units + ' × ' : '') + esc(r.name); }).join('<br>') + '</dd></div>' +
           '<div><dt>Guests</dt><dd>' + b.guests + '</dd></div>' +
@@ -917,15 +916,18 @@
           '<div><dt>Total</dt><dd>' + money(b.totalKes) + ' · ' + plural(b.nights, 'night') + '</dd></div>' +
           (b.status === 'CONFIRMED' && paid
             ? '<div><dt>Deposit paid</dt><dd>' + money(b.depositKes) + '</dd></div><div><dt>Balance</dt><dd>' + money(b.balanceKes) + '</dd></div>'
-            : '<div><dt>Deposit to confirm</dt><dd>' + money(b.depositKes) + '</dd></div>') +
+            : '<div><dt>' + (held ? 'Deposit to confirm' : 'Deposit (30%)') + '</dt><dd>' + money(b.depositKes) + '</dd></div>') +
         '</dl>' +
-        (held ? payHtml(b) : '') +
         (b.status === 'CONFIRMED' ? '<div class="paid"><b>Your deposit is in and your ' + (rooms > 1 ? 'rooms are' : 'room is') + ' yours.</b>' +
             (paid && p.receipt ? ' Receipt <span class="num">' + esc(p.receipt) + '</span>.' : '') +
             (refund ? ' A second payment also reached us for this booking; we\'ll refund it and be in touch.' : '') + '</div>' : '') +
         (b.status === 'EXPIRED' && refund ? '<div class="next next--bad"><b>Your deposit arrived after the hold ran out, and the room had been booked by then.</b> We\'re sorry. We\'ll refund it in full and be in touch by email.' +
             (p && p.receipt ? ' Receipt <span class="num">' + esc(p.receipt) + '</span>.' : '') + '</div>' : '') +
         (b.status === 'EXPIRED' && !refund ? '<div class="next">The 15 minutes passed without a deposit, so the room went back on sale. It may well still be free.</div>' : '') +
+        // The lodge's reason, typed in the admin when cancelling (the API sends it only for CANCELLED)
+        (b.status === 'CANCELLED' ? '<div class="next next--bad"><b>The lodge cancelled this booking.</b>' +
+            (b.cancelReason ? ' Their note: “' + esc(b.cancelReason) + '”' : '') +
+            (paid ? ' About your deposit of ' + money(b.depositKes) + ': reply to your booking email or use the contact form and the lodge will sort it out with you.' : '') + '</div>' : '') +
         '<p class="fine" style="margin-top:22px">Keep this page\'s link: it\'s your private link to this booking. Don\'t share it.</p>' +
         '<div class="hold__actions">' +
           ((b.status === 'EXPIRED' || b.status === 'CANCELLED') ? '<a class="btn" href="' + esc(again) + '">Check these dates again</a>' : '') +
