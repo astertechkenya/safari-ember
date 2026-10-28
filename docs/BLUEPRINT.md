@@ -77,9 +77,9 @@ and inserts. A second booking for the same type waits for the first to finish, t
 again and sees 0 left. Other room types are not blocked. The tests fire simultaneous bookings
 at the last unit to prove only one wins.
 
-**Closures.** Handled physically by the lodge, not in the admin (decided Oct 2026): there is no
-Closures screen. The `closures` table and its rule stay in the booking engine (a row blocks units
-for its dates and they count as taken), but nothing in the admin creates or shows them.
+**Closures.** Handled physically by the lodge (decided Oct 2026). There is no closures table or
+screen (removed in migration 0006). To stop selling a room type, untick "Bookable" or lower its
+units in Rooms & rates.
 
 **Booking reference.** Guests see a short reference like `SE-7K3QXM` (no 0/O or 1/I to misread
 on the phone), never the database id. Their confirmation link is signed, like NURA's order
@@ -89,14 +89,13 @@ links, so nobody can open someone else's booking by guessing.
 
 ```
 room_types       id, slug, name, kind, description, sleeps, units, base_rate_kes, sort, active
-closures         id, room_type_id (null = every type), starts_on, ends_on (exclusive), units, reason
 bookings         id, ref, check_in, check_out, guests, nights, total_kes, deposit_kes,
                  status, hold_expires_at, first_name, last_name, email, phone, requests,
                  created_at, confirmed_at, cancelled_at, refund_due
 booking_rooms    booking_id, room_type_id, units    (which rooms, how many of each)
 booking_nights   booking_id, room_type_id, night, rate_kes   (price of one unit that night, frozen)
 activities       id, slug, name, summary, duration_minutes, price_kes (per person), seats (one vehicle, for staff: not a limit),
-                 departure_times (HH:MM[]), weekdays (1 = Mon … 7 = Sun), sort, active
+                 departure_times (HH:MM[]), sort, active (every trip runs daily)
 booking_activities id, booking_id, activity_id, day, departs, people, price_kes (frozen)
 payments         id, booking_id, provider (DARAJA | PAYSTACK), status, amount_kes, received_kes,
                  phone, provider_ref, receipt, result_code, failure_reason, raw, checked_at, created_at
@@ -130,7 +129,7 @@ never changes what an existing guest owes.
 | `POST /api/payments/mpesa/callback/:secret` | Safaricom's result (a hint: we then ask Safaricom ourselves) |
 | `POST /api/payments/paystack/webhook` | Paystack's signed events (a hint: we then ask Paystack ourselves) |
 | `POST /api/enquiries` | The "Get in touch" form (`name` or `firstName` + `lastName`, `email`, `message`, optional extras), saved for the admin inbox and (Phase 4) emailed to the lodge |
-| `/api/admin/*` (Phase 5) | The admin: see "Launch scope" for the nineteen routes |
+| `/api/admin/*` (Phase 5) | The admin: see "Launch scope" for the twenty routes |
 
 ## Deposits (Phase 3)
 
@@ -178,8 +177,13 @@ for an hour. On a laptop Safaricom can't reach the callback, so the page's polli
 page says so. Paystack test keys take Paystack's test cards. Production refuses to start with a
 Paystack test key alongside live Daraja.
 
-**Refunds are manual for now.** `refund_due` bookings and `FLAGGED` payments will be listed in
-the admin (Phase 5); until then, they're in the database and the logs (`refund due`, `FLAGGED`).
+**Refunds (built Oct 2026).** The money goes back by hand, from M-Pesa or Paystack; the system
+makes sure nobody misses it. A booking owes money while it has `refund_due` or a `FLAGGED`
+(wrong-amount) payment. Then: the lodge is emailed at once (`lodge_refund` / `lodge_flagged`),
+Today shows "Refunds to make", the Bookings list gets a Refunds tab and a "Refund due" mark, and
+the booking shows what arrived and why. "Mark refund sent" (`POST /api/admin/bookings/:ref/refund-sent`)
+clears `refund_due`, turns wrong-amount payments `REFUNDED` (migration 0006), and is logged with
+who did it. The demo account can't press it.
 
 ## Several rooms and experiences (Phase 3b, Oct 2026)
 
@@ -190,7 +194,7 @@ guest may pick (`maxUnits`) and whether the free rooms can sleep the party at al
 
 **Experiences are add-ons.** Trips (Nairobi National Park game drive, Giraffe Centre, Nairobi
 Safari Walk) can only be added to a room booking, never booked alone. Each leaves at set times
-on set weekdays (Nairobi time). Rules:
+every day (Nairobi time). Rules:
 
 - Any day from check-in to check-out *inclusive* (a morning drive before an 11:00 check-out).
 - Bookable until `ACTIVITY_CUTOFF_MINUTES` (default 120) before it leaves.
@@ -244,7 +248,7 @@ then widened the same week to include Calendar and Rooms & rates).
 Closures was later dropped from the admin altogether (handled physically), so the `LAUNCH` /
 `LATER` switch that hid it is gone too.
 
-**At launch (built Oct 2026).** Nineteen admin routes. Login and logout are open; every other one
+**At launch (built Oct 2026).** Twenty admin routes. Login and logout are open; every other one
 requires a signed-in admin with two-factor done (`me` and `login/code` also answer mid-sign-in):
 
 | Route | For |
@@ -254,6 +258,7 @@ requires a signed-in admin with two-factor done (`me` and `login/code` also answ
 | `GET /api/admin/bookings?q=&status=&room=` | Search and filter |
 | `GET /api/admin/bookings/:ref` | One booking: rooms, experiences, frozen prices, payments, history |
 | `POST /api/admin/bookings/:ref/check-in`, `/check-out`, `/cancel` | The daily actions (cancel takes a reason) |
+| `POST /api/admin/bookings/:ref/refund-sent` | The lodge sent back money it owed (see "Refunds") |
 | `GET /api/admin/bookings/:ref/link` | The guest's private booking link, to copy and send by hand (not for the demo account) |
 | `GET /api/admin/calendar?from=` | Three weeks: rooms free per type per night, closed units |
 | `GET /api/admin/calendar/night?date=&room=` | Who is staying in a room type that night |
@@ -280,7 +285,7 @@ on any future night (the API refuses with the night and the count). Every change
 
 **Still non-negotiable at launch.** Server-side sign-in checks on every `/api/admin/*` route
 (the hidden admin page is not protection), the least-privilege production database login,
-migrations 0002 to 0005 run on production before the code that needs them, and tests for check-in,
+migrations 0002 to 0006 run on production before the code that needs them, and tests for check-in,
 check-out, cancel and the units rule.
 
 ## Admin (Phase 5, built Oct 2026)

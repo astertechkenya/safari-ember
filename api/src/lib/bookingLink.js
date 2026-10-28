@@ -41,5 +41,22 @@ export function bookingTokenValid(ref, token, { now = Date.now(), secret = confi
 /**
  * The full link for the confirmation page, emails and Paystack's return. Pass the booking's
  * createdAt as `now` and the link is the same every time it's made, so a guest only ever sees one.
+ * `site`: where to send the guest back to (siteFor below); the site's address by default.
  */
-export const bookingUrl = (ref, opts) => `${config.SITE_URL}/booking.html#${ref}.${bookingToken(ref, opts)}`;
+export const bookingUrl = (ref, { site = config.SITE_URL, ...opts } = {}) => `${site}/booking.html#${ref}.${bookingToken(ref, opts)}`;
+
+// Addresses on a home network (this computer, or a phone on the same Wi-Fi via server.py).
+const LAN_HOST = /^(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):\d{2,5}$/;
+
+/**
+ * The site address a guest is using, for sending them back after a card payment.
+ * In production: always SITE_URL, whatever the request says (a header is never trusted there).
+ * In development: the address the page was opened on, when server.py says so and it's on the home
+ * network. A phone opens http://192.168.x.x:8000, and sending it back to "localhost" would mean
+ * the phone itself, where nothing is running.
+ */
+export function siteFor(req) {
+  if (config.isProd) return config.SITE_URL;
+  const host = req.get('x-forwarded-host');
+  return host && LAN_HOST.test(host) ? `http://${host}` : config.SITE_URL;
+}

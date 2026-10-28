@@ -1,7 +1,7 @@
 // activities.js: the trips a guest can add to a stay.
 //
-// An activity leaves at set times (departureTimes, Nairobi time) on set weekdays. A departure is
-// one activity on one day at one time.
+// An activity leaves at set times (departureTimes, Nairobi time), every day (the lodge runs all
+// its trips daily: decided Oct 2026). A departure is one activity on one day at one time.
 //
 // No seat limit: guests choose a departure and how many people, and that's all. If a departure
 // has more people than one vehicle holds (activities.seats, kept as information for staff), the
@@ -18,12 +18,6 @@ import { db } from '../db/client.js';
 import { activities } from '../db/schema.js';
 import { config } from '../config.js';
 import { addDays } from '../lib/dates.js';
-
-/** ISO weekday of a YYYY-MM-DD date: 1 = Monday … 7 = Sunday. */
-export function weekdayOf(day) {
-  const d = new Date(`${day}T00:00:00Z`).getUTCDay();   // 0 = Sunday
-  return d === 0 ? 7 : d;
-}
 
 /** The moment a departure leaves. Nairobi is UTC+3 all year (no daylight saving). */
 export const departsAt = (day, time) => new Date(`${day}T${time}:00+03:00`);
@@ -48,7 +42,7 @@ export async function activitiesFor({ checkIn, checkOut, now = new Date() }) {
   const days = tripDays(checkIn, checkOut);
   return list.map((a) => ({
     ...card(a),
-    departures: days.filter((d) => a.weekdays.includes(weekdayOf(d))).flatMap((day) =>
+    departures: days.flatMap((day) =>
       [...a.departureTimes].sort().filter((time) => bookable(day, time, now)).map((time) => ({ day, time }))),
   }));
 }

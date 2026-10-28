@@ -26,7 +26,7 @@ import { freeUnits } from './availability.js';
 import { checkBookingPayment, paymentSummary, paymentMethods } from './payments.js';
 import { quote, priceNights, quoteBooking } from './pricing.js';
 import { lockRoomTypes, shortfall, withHoldRunning } from './capacity.js';
-import { tripDays, weekdayOf, bookable } from './activities.js';
+import { tripDays, bookable } from './activities.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
 import { daysBetween } from '../lib/dates.js';
@@ -89,7 +89,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
  * Hold rooms (and any activities) while the guest pays the deposit. See the top of this file and
  * services/capacity.js for the locking. Rules (docs/BLUEPRINT.md):
  *   rooms       one or more types, at most MAX_ROOMS units in all, sleeping the whole party
- *   activities  on a day from check-in to check-out, on a weekday and at a time the trip runs,
+ *   activities  on a day from check-in to check-out, at a time the trip runs,
  *               at least ACTIVITY_CUTOFF_MINUTES ahead, for 1 to `guests` people
  * `afterCount` is for tests only: it pauses between counting and inserting, the exact moment two
  * guests could collide, so the test can force the race instead of hoping it happens.
@@ -121,7 +121,7 @@ export async function createHold({ rooms, activities: trips = [], checkIn, check
         const a = bySlug.get(t.activity);
         if (!a) throw httpError(404, 'One of those activities is not available to book');
         if (!days.includes(t.day)) throw httpError(400, `${a.name} must be on a day of your stay`);
-        if (!a.weekdays.includes(weekdayOf(t.day)) || !a.departureTimes.includes(t.time)) {
+        if (!a.departureTimes.includes(t.time)) {
           throw httpError(400, `${a.name} doesn’t leave at ${t.time} on ${t.day}`);
         }
         if (!bookable(t.day, t.time)) throw httpError(400, `${a.name} at ${t.time} on ${t.day} is too soon to book. Please choose a later departure.`);

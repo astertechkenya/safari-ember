@@ -1,9 +1,9 @@
-// The booking engine against a real Postgres: availability, holds, overbooking, expiry, closures.
+// The booking engine against a real Postgres: availability, holds, overbooking, expiry.
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { sql, eq } from 'drizzle-orm';
 import { createApp } from '../src/app.js';
 import { db, pool } from '../src/db/client.js';
-import { roomTypes, closures, bookings } from '../src/db/schema.js';
+import { roomTypes, bookings } from '../src/db/schema.js';
 import { expireHolds, createHold, largestParty } from '../src/services/bookings.js';
 import { freeUnits } from '../src/services/availability.js';
 import { addDays } from '../src/lib/dates.js';
@@ -19,7 +19,7 @@ beforeAll(async () => {
   [solo] = await db.insert(roomTypes).values({ slug: 'test-solo', name: 'Test Solo', kind: 'Test', description: 'x', sleeps: 4, units: 1, baseRateKes: 50_000, sort: 91 }).returning();
 });
 beforeEach(async () => {
-  await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities, closures restart identity cascade`);
+  await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities restart identity cascade`);
 });
 
 const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.com', phone: '0712345678' };
@@ -53,9 +53,8 @@ describe('availability search', () => {
     const three = await search(inDays(40), inDays(42), 3);
     expect(roomIn(three, 'test-pair')).toMatchObject({ available: true, maxUnits: 2 });
     expect(three.body).toMatchObject({ partyFits: true, maxRooms: 6 });
-    // With every room closed, not even one guest fits.
-    await db.insert(closures).values({ roomTypeId: null, startsOn: inDays(45), endsOn: inDays(46), reason: 'Closed' });
-    expect((await search(inDays(45), inDays(46), 1)).body.partyFits).toBe(false);
+    // With nothing free, not even one guest fits.
+    expect(largestParty([{ sleeps: 2, free: 0 }, { sleeps: 4, free: 0 }], 6)).toBe(0);
   });
 
   it('refuses impossible stays with a readable reason', async () => {
@@ -316,26 +315,15 @@ describe('expired holds', () => {
   });
 });
 
-describe('closures', () => {
-  it('take units out of sale for their nights only', async () => {
-    await db.insert(closures).values({ roomTypeId: pair.id, startsOn: inDays(120), endsOn: inDays(122), units: 1, reason: 'Repainting' });
-    expect(roomIn(await search(inDays(120), inDays(121)), 'test-pair').left).toBe(1);
-    expect(roomIn(await search(inDays(122), inDays(123)), 'test-pair').left).toBe(2);   // ends_on is free
-    await book('test-pair', inDays(121), inDays(122));
-    expect((await book('test-pair', inDays(121), inDays(122))).status).toBe(409);
-  });
-
-  it('can close every room type at once', async () => {
-    await db.insert(closures).values({ roomTypeId: null, startsOn: inDays(130), endsOn: inDays(131), reason: 'Private event' });
-    const res = await search(inDays(129), inDays(132));
-    expect(res.body.rooms.every((r) => !r.available)).toBe(true);
-    expect((await search(inDays(131), inDays(132))).body.rooms.some((r) => r.available)).toBe(true);
-  });
-
-  it('never make the free count negative', async () => {
-    await db.insert(closures).values({ roomTypeId: solo.id, startsOn: inDays(140), endsOn: inDays(141), units: 5, reason: 'Overlapping closures' });
-    await db.insert(closures).values({ roomTypeId: null, startsOn: inDays(140), endsOn: inDays(141), reason: 'And another' });
-    expect((await freeUnits({ checkIn: inDays(140), checkOut: inDays(141), roomTypeId: solo.id })).get(solo.id)).toBe(0);
+describe('the free count', () => {
+  it('never goes below zero, even if units were lowered under the rooms booked', async () => {
+    expect((await book('test-solo', inDays(140), inDays(141))).status).toBe(201);
+    await db.update(roomTypes).set({ units: 0 }).where(eq(roomTypes.id, solo.id));   // straight in the database
+    try {
+      expect((await freeUnits({ checkIn: inDays(140), checkOut: inDays(141), roomTypeId: solo.id })).get(solo.id)).toBe(0);
+    } finally {
+      await db.update(roomTypes).set({ units: 1 }).where(eq(roomTypes.id, solo.id));
+    }
   });
 });
 

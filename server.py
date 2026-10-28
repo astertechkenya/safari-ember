@@ -71,6 +71,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         origin_key = next((k for k in headers if k.lower() == "origin"), None)
         if origin_key and headers[origin_key] == "http://" + (self.headers.get("Host") or ""):
             headers[origin_key] = SITE_ORIGIN
+        # Which address the page was opened on (this computer, or the phone's 192.168.x.x), as
+        # Netlify's proxy says too. The API sends a card payer back there after Paystack; it only
+        # believes home-network addresses, and never in production (api/src/lib/bookingLink.js).
+        headers["X-Forwarded-Host"] = self.headers.get("Host") or ""
         try:
             conn = http.client.HTTPConnection(API_HOST, API_PORT, timeout=30)
             conn.request(self.command, self.path, body=body, headers=headers)

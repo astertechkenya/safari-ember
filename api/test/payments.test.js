@@ -278,6 +278,17 @@ describe('cards (Paystack)', () => {
     expect(res.body.booking.payment).toMatchObject({ status: 'PENDING', method: 'card', amountKes: res.body.booking.depositKes });
   });
 
+  it('returns a phone on the home Wi-Fi to its own address, and ignores any other address', async () => {
+    const viaPhone = await hold();
+    await as(app).post(`/api/bookings/${viaPhone.ref}/pay`).set('x-booking-token', viaPhone.token)
+      .set('x-forwarded-host', '192.168.1.20:8000').send({ method: 'card' });
+    expect(paystack.fake.inits.at(-1).callback_url).toBe(`http://192.168.1.20:8000/booking.html#${viaPhone.ref}.${viaPhone.token}`);
+    const spoofed = await hold();
+    await as(app).post(`/api/bookings/${spoofed.ref}/pay`).set('x-booking-token', spoofed.token)
+      .set('x-forwarded-host', 'evil.example:8000').send({ method: 'card' });
+    expect(paystack.fake.inits.at(-1).callback_url).toBe(`http://localhost:8000/booking.html#${spoofed.ref}.${spoofed.token}`);
+  });
+
   it('reuses the open page for another card attempt', async () => {
     const b = await hold();
     const first = await pay(b, { method: 'card' });

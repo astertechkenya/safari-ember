@@ -7,6 +7,8 @@
 //     expired        the 15-minute hold ran out without a deposit
 //   To the lodge (LODGE_EMAIL; each links to the admin)
 //     lodge_booking  a new confirmed booking
+//     lodge_refund   a deposit arrived that the booking couldn't use: the lodge owes it back
+//     lodge_flagged  a payment of the wrong amount arrived: the lodge owes it back
 //     enquiry        a new message from the website's "Get in touch" form
 //
 // Rules, as in NURA:
@@ -20,7 +22,7 @@
 // Until there's a verified domain, Resend delivers only to the account owner's address, so
 // guests' emails are "held" (logged, not sent): MAIL_ONLY_TO in config.js. The code is the same
 // either way; adding the domain is a settings change.
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { bookings, bookingRooms, bookingActivities, bookingEmails, activities, payments, roomTypes } from '../db/schema.js';
 import { config } from '../config.js';
@@ -61,21 +63,24 @@ export function layout({ heading, intro, body = '', button }) {
 export async function loadForEmail(bookingId) {
   const [b] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
   if (!b) return null;
-  const [rooms, trips, [paid]] = await Promise.all([
+  const [rooms, trips, [paid], [flagged]] = await Promise.all([
     db.select({ name: roomTypes.name, units: bookingRooms.units }).from(bookingRooms)
       .innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId))
       .where(eq(bookingRooms.bookingId, b.id)).orderBy(asc(roomTypes.sort), asc(roomTypes.id)),
     db.select({ name: activities.name, day: bookingActivities.day, time: bookingActivities.departs, people: bookingActivities.people })
       .from(bookingActivities).innerJoin(activities, eq(activities.id, bookingActivities.activityId))
       .where(eq(bookingActivities.bookingId, b.id)).orderBy(asc(bookingActivities.day), asc(bookingActivities.departs)),
-    db.select({ provider: payments.provider, receipt: payments.receipt }).from(payments)
-      .where(and(eq(payments.bookingId, b.id), eq(payments.status, 'PAID'))).limit(1),
+    // The latest paid deposit (for a refund: the one that arrived too late, or the second one)
+    db.select({ provider: payments.provider, receipt: payments.receipt, amountKes: payments.amountKes }).from(payments)
+      .where(and(eq(payments.bookingId, b.id), eq(payments.status, 'PAID'))).orderBy(desc(payments.createdAt)).limit(1),
+    db.select({ provider: payments.provider, receipt: payments.receipt, amountKes: payments.amountKes, receivedKes: payments.receivedKes })
+      .from(payments).where(and(eq(payments.bookingId, b.id), eq(payments.status, 'FLAGGED'))).orderBy(desc(payments.createdAt)).limit(1),
   ]);
   return {
     id: b.id, ref: b.ref, status: b.status, firstName: b.firstName, email: b.email,
     checkIn: b.checkIn, checkOut: b.checkOut, nights: b.nights, guests: b.guests,
     totalKes: b.totalKes, depositKes: b.depositKes, cancelReason: b.cancelReason,
-    rooms, trips, paid: paid ?? null,
+    rooms, trips, paid: paid ?? null, flagged: flagged ?? null,
     // The same private link the guest was given when they booked (signed from its creation time)
     link: bookingUrl(b.ref, { now: b.createdAt.getTime() }),
     adminLink: `${config.SITE_URL}/admin/#/booking/${b.ref}`,
@@ -168,6 +173,34 @@ export function lodgeBookingMessage(b) {
   };
 }
 
+/**
+ * Money the lodge owes back. Says what happened, how much, by which method and the receipt,
+ * and what to do: send it back from M-Pesa or Paystack, then "Mark refund sent" in the admin.
+ */
+export function lodgeRefundMessage(kind, b) {
+  const p = kind === 'lodge_flagged' ? b.flagged : b.paid;
+  const by = method(p) ?? 'M-Pesa or card';
+  const a = /^M/.test(by) ? 'An' : 'A';                // "An M-Pesa payment", "A card payment"
+  const what = kind === 'lodge_flagged'
+    ? `${a} ${by} payment of ${p?.receivedKes != null ? kes(p.receivedKes) : 'an amount in another currency'} arrived for booking ${b.ref}, but ${kes(p?.amountKes ?? b.depositKes)} was asked for, so it wasn't accepted as the deposit. The booking is unchanged.`
+    : `${a} ${by} deposit of ${kes(p?.amountKes ?? b.depositKes)} arrived for booking ${b.ref} that it couldn't use: ${b.status === 'EXPIRED' ? 'the hold had run out and the room had gone to someone else' : `the booking was already ${b.status === 'CANCELLED' ? 'cancelled' : 'paid'}`}.`;
+  const todo = 'Send it back from your M-Pesa or Paystack dashboard, then press "Mark refund sent" on the booking in the admin.';
+  const receipt = p?.receipt ? `Receipt: ${p.receipt}` : '';
+  return {
+    to: config.LODGE_EMAIL,
+    subject: `Refund due: ${b.ref} · Safari Ember`,
+    text: `${what}
+${receipt ? `${receipt}
+` : ''}
+${todo}
+
+Open in the admin: ${b.adminLink}
+`,
+    html: layout({ heading: 'A refund is due', intro: `${esc(what)}${receipt ? `<br>${esc(receipt)}` : ''}<br><br>${esc(todo)}`,
+      button: { href: b.adminLink, label: 'Open in the admin' } }),
+  };
+}
+
 export function lodgeEnquiryMessage() {
   const link = `${config.SITE_URL}/admin/#/enquiries`;
   return {
@@ -182,6 +215,7 @@ export function lodgeEnquiryMessage() {
 /* ── Sending ────────────────────────────────────────────────────────────────────── */
 
 const GUEST_KINDS = new Set(['confirmed', 'cancelled', 'expired']);
+const LODGE_KINDS = new Set(['lodge_booking', 'lodge_refund', 'lodge_flagged']);
 
 /**
  * Sends one booking email (a guest's, or 'lodge_booking'), at most once per booking and kind,
@@ -189,7 +223,7 @@ const GUEST_KINDS = new Set(['confirmed', 'cancelled', 'expired']);
  */
 export function queueBookingEmail(bookingId, kind) {
   return inBackground(`booking email ${kind}`, async () => {
-    if (kind === 'lodge_booking' && !config.LODGE_EMAIL) return 'skipped';     // no lodge address set
+    if (LODGE_KINDS.has(kind) && !config.LODGE_EMAIL) return 'skipped';     // no lodge address set
     // Claim first: the primary key (booking_id, kind) lets exactly one caller through.
     const claimed = await db.insert(bookingEmails).values({ bookingId, kind }).onConflictDoNothing().returning();
     if (!claimed.length) return 'duplicate';
@@ -197,7 +231,8 @@ export function queueBookingEmail(bookingId, kind) {
       .where(and(eq(bookingEmails.bookingId, bookingId), eq(bookingEmails.kind, kind)));
     try {
       const b = await loadForEmail(bookingId);
-      const status = await sendMail(GUEST_KINDS.has(kind) ? guestMessage(kind, b) : lodgeBookingMessage(b));
+      const status = await sendMail(GUEST_KINDS.has(kind) ? guestMessage(kind, b)
+        : kind === 'lodge_booking' ? lodgeBookingMessage(b) : lodgeRefundMessage(kind, b));
       await mark(status);
       return status;
     } catch (err) {

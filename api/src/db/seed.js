@@ -34,17 +34,17 @@ export const ACTIVITIES = [
   {
     slug: 'nairobi-national-park', name: 'Nairobi National Park game drive', sort: 1,
     summary: 'A guided game drive in an open safari vehicle: lions, rhinos and giraffes with the city skyline behind them. Park entry fees are paid at the gate.',
-    durationMinutes: 300, priceKes: 9_500, seats: 6, departureTimes: ['06:30', '14:30'], weekdays: [1, 2, 3, 4, 5, 6, 7],
+    durationMinutes: 300, priceKes: 9_500, seats: 6, departureTimes: ['06:30', '14:30'],
   },
   {
     slug: 'giraffe-centre', name: 'Giraffe Centre', sort: 2,
     summary: 'Meet the endangered Rothschild’s giraffes at eye level from the raised platform. Return transfer and a guide; the centre’s entry fee is paid at the door.',
-    durationMinutes: 240, priceKes: 5_500, seats: 10, departureTimes: ['09:30', '13:30'], weekdays: [1, 2, 3, 4, 5, 6, 7],
+    durationMinutes: 240, priceKes: 5_500, seats: 10, departureTimes: ['09:30', '13:30'],
   },
   {
     slug: 'nairobi-safari-walk', name: 'Nairobi Safari Walk', sort: 3,
     summary: 'A raised boardwalk through wetland, savannah and forest, past animals rescued and cared for by Kenya Wildlife Service. Return transfer and a guide; entry is paid at the gate.',
-    durationMinutes: 240, priceKes: 5_000, seats: 10, departureTimes: ['09:00', '14:00'], weekdays: [1, 2, 3, 4, 5, 6, 7],
+    durationMinutes: 240, priceKes: 5_000, seats: 10, departureTimes: ['09:00', '14:00'],
   },
 ];
 

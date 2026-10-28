@@ -36,21 +36,6 @@ export const roomTypes = pgTable('room_types', {
   check('room_types_rate_check', sql`${t.baseRateKes} > 0`),
 ]);
 
-// Units taken out of sale for some nights: maintenance, a private event, the lodge closed.
-// roomTypeId null = every room type. units null = all units of the type(s).
-export const closures = pgTable('closures', {
-  id: serial().primaryKey(),
-  roomTypeId: integer().references(() => roomTypes.id, { onDelete: 'cascade' }),
-  startsOn: date({ mode: 'string' }).notNull(),
-  endsOn: date({ mode: 'string' }).notNull(),
-  units: integer(),
-  reason: varchar({ length: 200 }).notNull(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-}, (t) => [
-  index('closures_dates_idx').on(t.startsOn, t.endsOn),
-  check('closures_dates_check', sql`${t.endsOn} > ${t.startsOn}`),
-  check('closures_units_check', sql`${t.units} is null or ${t.units} > 0`),
-]);
 
 // ── Bookings ───────────────────────────────────────────────────────────────────────────────
 //   HELD       a unit is held while the guest pays the deposit (until holdExpiresAt)
@@ -130,7 +115,7 @@ export const bookingNights = pgTable('booking_nights', {
 
 // ── Activities (add-ons to a stay) ─────────────────────────────────────────────────────────
 // Trips the lodge runs: transport and a guide to Nairobi National Park, the Giraffe Centre…
-// Each leaves at set times on set weekdays. No seat limit is enforced: staff arrange vehicles
+// Each leaves at set times, every day. No seat limit is enforced: staff arrange vehicles
 // for however many book (see services/activities.js).
 export const activities = pgTable('activities', {
   id: serial().primaryKey(),
@@ -141,7 +126,6 @@ export const activities = pgTable('activities', {
   priceKes: integer().notNull(),                      // per person
   seats: integer().notNull(),                         // one vehicle's seats: for staff planning, not a limit
   departureTimes: varchar({ length: 5 }).array().notNull(),   // ['06:30', '15:00'], Nairobi time
-  weekdays: integer().array().notNull(),              // 1 = Monday … 7 = Sunday
   sort: integer().notNull().default(0),
   active: boolean().notNull().default(true),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -179,7 +163,8 @@ export const bookingActivities = pgTable('booking_activities', {
 //   FLAGGED   paid, but not the amount we asked for: a person decides (admin, Phase 5)
 // A row only ever moves forward from PENDING, once (every update says "where status = PENDING").
 export const paymentProvider = pgEnum('payment_provider', ['DARAJA', 'PAYSTACK']);
-export const paymentStatus = pgEnum('payment_status', ['PENDING', 'PAID', 'FAILED', 'FLAGGED']);
+// REFUNDED: a FLAGGED payment (the wrong amount) that the lodge sent back (admin: "Mark refund sent")
+export const paymentStatus = pgEnum('payment_status', ['PENDING', 'PAID', 'FAILED', 'FLAGGED', 'REFUNDED']);
 
 export const payments = pgTable('payments', {
   // Random, not 1, 2, 3: it's also the reference Paystack sees, and it shouldn't reveal how many

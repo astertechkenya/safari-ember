@@ -13,20 +13,24 @@ import { expireHolds } from '../src/services/bookings.js';
 import { cancel, bookingDetail } from '../src/services/admin.js';
 import { resetTokenCache } from '../src/services/daraja.js';
 import { as, inDays } from './helpers.js';
-import { startFakeDaraja } from './fakeDaraja.js';
+import { startFakeDaraja, callbackBody } from './fakeDaraja.js';
+import request from 'supertest';
 
 const app = createApp();
 const LODGE = 'lodge@example.test';
-let daraja, room;
+let daraja, room, one;
 
 beforeAll(async () => {
   daraja = await startFakeDaraja();
   [room] = await db.insert(roomTypes).values({ slug: 'test-mail', name: 'Test Mail Room', kind: 'Test', description: 'x', sleeps: 2, units: 2, baseRateKes: 20_000, sort: 97 }).returning();
+  // One unit, so "the room went to someone else" is easy to arrange
+  [one] = await db.insert(roomTypes).values({ slug: 'test-mail-one', name: 'Test Mail One', kind: 'Test', description: 'x', sleeps: 2, units: 1, baseRateKes: 20_000, sort: 98 }).returning();
 });
 afterAll(async () => {
   await daraja.close();
   await db.execute(sql`truncate bookings, booking_rooms, booking_nights, booking_activities, payments, booking_emails, enquiries restart identity cascade`);
   await db.delete(roomTypes).where(eq(roomTypes.id, room.id));
+  await db.delete(roomTypes).where(eq(roomTypes.id, one.id));
   await pool.end();
 });
 beforeEach(async () => {
@@ -38,9 +42,8 @@ beforeEach(async () => {
 
 const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.com', phone: '0712345678' };
 let nextStay = 0;                     // its own dates each time, inside the 18-month horizon
-async function hold(extra = {}) {
-  const at = 200 + nextStay++ * 3;
-  const res = await as(app).post('/api/bookings').send({ rooms: [{ room: 'test-mail', units: 1 }], checkIn: inDays(at), checkOut: inDays(at + 2), guests: 2, ...guest, ...extra });
+async function hold(extra = {}, { roomSlug = 'test-mail', at = 200 + nextStay++ * 3 } = {}) {
+  const res = await as(app).post('/api/bookings').send({ rooms: [{ room: roomSlug, units: 1 }], checkIn: inDays(at), checkOut: inDays(at + 2), guests: 2, ...guest, ...extra });
   expect(res.status).toBe(201);
   return { ref: res.body.booking.ref, token: res.body.token };
 }
@@ -131,6 +134,43 @@ describe('when a hold runs out', () => {
     expect(await expireHolds()).toBe(0);
     await mailSettled();
     expect(outbox).toHaveLength(1);
+  });
+});
+
+describe('when the lodge owes money back', () => {
+  const until = async (check) => { for (let n = 0; n < 200; n++) { if (await check()) return; await new Promise((r) => setTimeout(r, 25)); } throw new Error('timed out'); };
+
+  it('alerts the lodge when a deposit arrives after the room went to someone else', async () => {
+    const a = await hold({}, { roomSlug: 'test-mail-one', at: 400 });
+    await as(app).post(`/api/bookings/${a.ref}/pay`).set('x-booking-token', a.token).send({ method: 'mpesa' });
+    const push = [...daraja.fake.outcome.keys()].at(-1);
+    // The hold runs out, and someone else takes the only room
+    await db.update(bookings).set({ holdExpiresAt: sql`now() - interval '1 minute'` }).where(eq(bookings.ref, a.ref));
+    await hold({ email: 'other@example.com' }, { roomSlug: 'test-mail-one', at: 400 });
+    daraja.fake.outcome.set(push, { state: 'paid' });                 // then the first guest's money lands
+    await db.execute(sql`update payments set checked_at = null`);
+    await look(a);
+    await mailSettled();
+    const [m] = to(LODGE);
+    expect(m.subject).toBe(`Refund due: ${a.ref} · Safari Ember`);
+    expect(m.text).toMatch(/the hold had run out and the room had gone to someone else/);
+    expect(m.text).toMatch(/press "Mark refund sent"/);
+    expect(m.text).toContain(`/admin/#/booking/${a.ref}`);
+    expect(to('amina@example.com').filter((x) => /confirmed/.test(x.subject))).toHaveLength(0);
+  });
+
+  it('alerts the lodge when a payment of the wrong amount arrives', async () => {
+    const b = await hold();
+    await as(app).post(`/api/bookings/${b.ref}/pay`).set('x-booking-token', b.token).send({ method: 'mpesa' });
+    const push = [...daraja.fake.outcome.keys()].at(-1);
+    daraja.fake.outcome.set(push, { state: 'paid' });
+    // Safaricom's callback reports KES 5 where KES 1 (the sandbox amount) was asked for
+    await request(app).post('/api/payments/mpesa/callback/test-only-callback-secret-0123456789abcdef').send(callbackBody(push, { amount: 5 }));
+    await until(async () => (await db.select().from(payments).where(eq(payments.providerRef, push)))[0].status === 'FLAGGED');
+    await mailSettled();
+    const [m] = to(LODGE);
+    expect(m.subject).toBe(`Refund due: ${b.ref} · Safari Ember`);
+    expect(m.text).toMatch(/^An M-Pesa payment of KES 5 arrived .* but KES 1 was asked for/);
   });
 });
 

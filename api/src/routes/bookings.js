@@ -14,7 +14,7 @@ import { isIsoDate } from '../lib/dates.js';
 import { config } from '../config.js';
 import { personName, email, phone, freeText } from '../lib/fields.js';
 import { REF_PATTERN } from '../lib/ref.js';
-import { bookingTokenValid } from '../lib/bookingLink.js';
+import { bookingTokenValid, siteFor } from '../lib/bookingLink.js';
 import { createHold, publicBooking } from '../services/bookings.js';
 import { startPayment } from '../services/payments.js';
 import { wakeJobs } from '../jobs/index.js';
@@ -102,7 +102,8 @@ bookingsRouter.post('/:ref/pay',
   validate(payBody),
   async (req, res) => {
     const ref = linkRef(req);
-    const { url } = await startPayment(ref, req.valid.body);
+    // site: back to the address the guest is on (a phone on the Wi-Fi in development; lib/bookingLink.js)
+    const { url } = await startPayment(ref, req.valid.body, { site: siteFor(req) });
     wakeJobs();   // a payment is waiting: the job checks it if no callback arrives
     res.set('Cache-Control', 'no-store');
     res.status(202).json({ booking: await publicBooking(ref), ...(url ? { url } : {}) });

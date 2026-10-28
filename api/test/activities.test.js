@@ -4,23 +4,19 @@ import { sql, eq } from 'drizzle-orm';
 import { createApp } from '../src/app.js';
 import { db, pool } from '../src/db/client.js';
 import { roomTypes, activities } from '../src/db/schema.js';
-import { bookable, weekdayOf, tripDays } from '../src/services/activities.js';
+import { bookable, tripDays } from '../src/services/activities.js';
 import { as, inDays } from './helpers.js';
 
 const app = createApp();
 afterAll(() => pool.end());
 
 // Test-only room and trips, so numbers don't depend on the seed's placeholders.
-let trip, weekly;
+let trip;
 beforeAll(async () => {
   await db.insert(roomTypes).values({ slug: 'test-trip-room', name: 'Trip Room', kind: 'Test', description: 'x', sleeps: 4, units: 20, baseRateKes: 10_000, sort: 92 });
   [trip] = await db.insert(activities).values({
     slug: 'test-trip', name: 'Test Trip', summary: 'x', durationMinutes: 120, priceKes: 2_000, seats: 3,
-    departureTimes: ['10:00', '15:00'], weekdays: [1, 2, 3, 4, 5, 6, 7], sort: 90,
-  }).returning();
-  [weekly] = await db.insert(activities).values({
-    slug: 'test-weekly', name: 'Weekly Trip', summary: 'x', durationMinutes: 120, priceKes: 1_000, seats: 10,
-    departureTimes: ['09:00'], weekdays: [1], sort: 91,                 // Mondays only
+    departureTimes: ['10:00', '15:00'], sort: 90,
   }).returning();
 });
 beforeEach(async () => {
@@ -31,7 +27,6 @@ const guest = { firstName: 'Amina', lastName: 'Otieno', email: 'amina@example.co
 const book = (trips, { checkIn = inDays(60), checkOut = inDays(62), guests = 2, ...extra } = {}) =>
   as(app).post('/api/bookings').send({ rooms: [{ room: 'test-trip-room', units: 1 }], activities: trips, checkIn, checkOut, guests, ...guest, ...extra });
 const listFor = (checkIn, checkOut) => as(app).get(`/api/activities?checkIn=${checkIn}&checkOut=${checkOut}`);
-const nextMonday = (from) => { let d = from; while (weekdayOf(inDays(d)) !== 1) d += 1; return d; };
 
 describe('listing activities for a stay', () => {
   it('lists the seeded trips with their price per person', async () => {
@@ -48,12 +43,6 @@ describe('listing activities for a stay', () => {
     const t = res.body.activities.find((a) => a.slug === 'test-trip');
     expect(t).toMatchObject({ name: 'Test Trip', priceKes: 2_000, durationMinutes: 120 });
     expect(t.departures).toEqual([60, 61, 62].flatMap((n) => ['10:00', '15:00'].map((time) => ({ day: inDays(n), time }))));
-  });
-
-  it('only lists weekdays the trip runs', async () => {
-    const mon = nextMonday(60);
-    const res = await listFor(inDays(mon - 1), inDays(mon + 1));
-    expect(res.body.activities.find((a) => a.slug === 'test-weekly').departures.map((d) => d.day)).toEqual([inDays(mon)]);
   });
 
   it('stops offering a departure ACTIVITY_CUTOFF_MINUTES before it leaves', () => {
@@ -85,7 +74,6 @@ describe('adding activities to a booking', () => {
   });
 
   it('keeps each trip to the schedule and the party', async () => {
-    const mon = nextMonday(70);
     const cases = [
       [[{ activity: 'test-trip', day: inDays(65), time: '10:00', people: 1 }], 400, 'Test Trip must be on a day of your stay'],
       [[{ activity: 'test-trip', day: inDays(61), time: '11:00', people: 1 }], 400, `Test Trip doesn’t leave at 11:00 on ${inDays(61)}`],
@@ -100,9 +88,6 @@ describe('adding activities to a booking', () => {
       expect(res.status, JSON.stringify(trips)).toBe(status);
       expect(res.body.error).toBe(error);
     }
-    const notMonday = await book([{ activity: 'test-weekly', day: inDays(mon + 1), time: '09:00', people: 1 }], { checkIn: inDays(mon), checkOut: inDays(mon + 2) });
-    expect(notMonday.body.error).toBe(`Weekly Trip doesn’t leave at 09:00 on ${inDays(mon + 1)}`);
-    expect((await book([{ activity: 'test-weekly', day: inDays(mon), time: '09:00', people: 1 }], { checkIn: inDays(mon), checkOut: inDays(mon + 2) })).status).toBe(201);
   });
 
   it('refuses a trip that has been switched off', async () => {

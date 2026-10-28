@@ -6,9 +6,10 @@
 //   GET  /api/admin/me                                  who am I, and do I still need my code?
 //
 //   GET   /api/admin/today                          arrivals, departures, in house, holds, tonight
-//   GET   /api/admin/bookings?q=&status=&room=      search and filter (status: upcoming, inhouse, held, past, cancelled, all)
+//   GET   /api/admin/bookings?q=&status=&room=      search and filter (status: upcoming, inhouse, held, past, cancelled, refunds, all)
 //   GET   /api/admin/bookings/:ref                  one booking: rooms, trips, prices, payments, history
 //   GET   /api/admin/bookings/:ref/link            the guest's private link (the very one they were given)
+//   POST  /api/admin/bookings/:ref/refund-sent      the lodge sent back money it owed
 //   POST  /api/admin/bookings/:ref/check-in
 //   POST  /api/admin/bookings/:ref/check-out
 //   POST  /api/admin/bookings/:ref/cancel         { reason }
@@ -39,7 +40,7 @@ import { verifyCode } from '../lib/totp.js';
 import { isIsoDate, todayInNairobi } from '../lib/dates.js';
 import { bookingUrl } from '../lib/bookingLink.js';
 import {
-  today, listBookings, LIST_FILTERS, bookingDetail, checkIn, checkOut, cancel, calendar, night,
+  today, listBookings, LIST_FILTERS, refundsOwed, refundSent, bookingDetail, checkIn, checkOut, cancel, calendar, night,
   listRooms, updateRoom, departures, listTrips, updateTrip, listEnquiries, setEnquiryStatus,
 } from '../services/admin.js';
 
@@ -123,7 +124,8 @@ adminRouter.get('/bookings', validate(z.strictObject({
   status: z.enum(LIST_FILTERS).default('upcoming'),
   room: z.coerce.number().int().positive().optional(),
 }), 'query'), async (req, res) => {
-  res.json({ bookings: await listBookings(req.valid.query, req.masked) });
+  const [list, refunds] = await Promise.all([listBookings(req.valid.query, req.masked), refundsOwed()]);
+  res.json({ bookings: list, refundsOwed: refunds });      // refundsOwed: whether to show the Refunds tab
 });
 
 adminRouter.get('/bookings/:ref', validate(refParams, 'params'), async (req, res) => {
@@ -149,6 +151,11 @@ adminRouter.post('/bookings/:ref/check-in', validate(refParams, 'params'), async
 });
 adminRouter.post('/bookings/:ref/check-out', validate(refParams, 'params'), async (req, res) => {
   await checkOut(req.valid.params.ref, req.admin.id);
+  res.json({ booking: await bookingDetail(req.valid.params.ref, req.masked) });
+});
+// The lodge has sent back money it owed (from M-Pesa or Paystack): clears the refund
+adminRouter.post('/bookings/:ref/refund-sent', validate(refParams, 'params'), async (req, res) => {
+  await refundSent(req.valid.params.ref, req.admin.id);
   res.json({ booking: await bookingDetail(req.valid.params.ref, req.masked) });
 });
 adminRouter.post('/bookings/:ref/cancel', validate(refParams, 'params'),

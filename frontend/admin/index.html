@@ -264,6 +264,7 @@
     td a.ref { color: var(--text); text-decoration: none; }
     td a.ref:hover { color: var(--ember-hi); text-decoration: underline; }
     .sub { display: block; font-size: 13px; color: var(--dim); }
+    .table-wrap--sand .sub.owed { color: var(--sand-ember); font-weight: 600; margin-top: 4px; }   /* "Refund due" under the status */
 
     /* The bookings list on sand, like the Today sheets: dark ink on paper for reading data.
        (The filters bar above stays on the dark panel: its fields are sand already.) */
@@ -318,6 +319,7 @@
     .request { background: var(--panel-2); border-left: 3px solid var(--ember); padding: 14px 18px; margin: 0 0 20px; }
     .request__k { display: block; font-size: 13px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ember-hi); }
     .request p { margin: 6px 0 0; font-size: 17px; color: var(--text); }
+    .request .btn { margin-top: 14px; }
     .panel--sand { background: var(--field); color: var(--field-ink); border: 0; border-left: 3px solid var(--ember); }
     .panel--sand .panel__head { border-bottom: 1px solid rgba(28, 22, 16, .2); padding: 16px 20px 12px; }
     .panel--sand .panel__head h2 { font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #522b0a; }
@@ -746,8 +748,11 @@
         return '<a class="notice" href="' + href + '"' + (extra || '') + '><span class="notice__n">' + n + '</span>' +
           '<span><span class="notice__k">' + label + '</span><span class="notice__s">' + sub + '</span></span></a>';
       }
-      var holds = t.holds, newEnq = t.newEnquiries;
-      var notes = (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', 'waiting for a deposit · ' +
+      var holds = t.holds, newEnq = t.newEnquiries, refunds = t.refunds;
+      S.refunds = refunds;
+      // Money owed back comes first: it's the one a guest is waiting on
+      var notes = (refunds ? notice(refunds, refunds === 1 ? 'Refund' : 'Refunds', 'to make: money owed back to a guest', '#/bookings', ' data-act="showrefunds"') : '') +
+                  (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', 'waiting for a deposit · ' +
                        '<span class="timer" data-expires="' + holds[0].holdExpiresAt + '">–:–</span>', '#/bookings', ' data-act="showheld"') : '') +
                   (newEnq ? notice(newEnq, newEnq === 1 ? 'Enquiry' : 'Enquiries', 'new, to answer', '#/enquiries') : '');
       var guests = t.inHouse.guests;
@@ -771,7 +776,7 @@
     }
 
     /* Bookings: everything, searchable. Default view = what's coming up. */
-    var FILTERS = [['upcoming', 'Upcoming'], ['inhouse', 'In house'], ['held', 'Held'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All']];   // "Cancelled" includes lapsed holds
+    var FILTERS = [['upcoming', 'Upcoming'], ['inhouse', 'In house'], ['held', 'Held'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['refunds', 'Refunds'], ['all', 'All']];   // Refunds shows only while money is owed   // "Cancelled" includes lapsed holds
     function bookingRowsHtml(list) {
       if (!list.length) return '<tr><td colspan="8" class="empty">No bookings match.</td></tr>';
       return list.map(function (b) {
@@ -784,7 +789,7 @@
           '<td class="right num c-count" data-label="Guests">' + b.guests + '</td>' +
           '<td class="c-stay num" data-label="Stay">' + stayLabel(b) + '<span class="sub c-hide">' + plural(b.nights, 'night') + '</span></td>' +
           '<td class="right num c-money" data-label="Total">' + money(b.totalKes) + '<span class="sub">' + (b.depositPaid ? 'Deposit paid' : 'No deposit yet') + '</span></td>' +
-          '<td class="c-status">' + chip(b.status) + '</td></tr>';
+          '<td class="c-status">' + chip(b.status) + (b.refundOwed ? '<span class="sub owed">Refund due</span>' : '') + '</td></tr>';
       }).join('');
     }
     function bookingsQuery() {
@@ -793,7 +798,7 @@
     function viewBookings(d) {
       return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone. "Cancelled" includes holds that ran out.</p></div></div>' +
         '<section class="panel">' +
-          '<div class="tabs" role="group" aria-label="Show">' + FILTERS.map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+          '<div class="tabs" role="group" aria-label="Show">' + FILTERS.filter(function (f) { return f[0] !== 'refunds' || d.refundsOwed || S.bookingsFilter === 'refunds'; }).map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
           '<div class="filters">' +
             '<label class="sr-only" for="q">Search bookings</label><input class="input search" id="q" type="search" placeholder="Search name, reference, email or phone…" maxlength="60" value="' + esc(S.bookingsQ) + '" />' +
             '<label class="sr-only" for="room">Room type</label><select class="input" id="room"><option value="all">All rooms</option>' +
@@ -822,7 +827,13 @@
           '</div></div>' +
         // The guest's request is an alert, styled like Today's notifications (not sand: sand is for data)
         (b.requests ? '<div class="request"><span class="request__k">Guest request</span><p>' + esc(b.requests) + '</p></div>' : '') +
-        (b.refundDue ? '<div class="request"><span class="request__k">Refund due</span><p>A deposit reached us that this booking couldn’t use. Refund it from M-Pesa or Paystack.</p></div>' : '') +
+        (b.refundOwed ? '<div class="request" role="status"><span class="request__k">Refund due</span>' +
+          (b.refundDue ? '<p>A deposit reached us that this booking couldn’t use' + (st === 'EXPIRED' ? ': the hold had run out and the room had gone to someone else.' : '.') + '</p>' : '') +
+          b.payments.filter(function (p) { return p.status === 'FLAGGED'; }).map(function (p) {
+            return '<p>' + (p.provider === 'M-Pesa' ? 'An' : 'A') + ' ' + esc(p.provider) + ' payment of ' + (p.receivedKes != null ? money(p.receivedKes) : 'an amount in another currency') + ' arrived where ' + money(p.amountKes) + ' was asked for, so it wasn’t taken as the deposit.</p>';
+          }).join('') +
+          '<p>Send it back from M-Pesa or Paystack, then mark it here.</p>' +
+          (ro ? '' : '<button class="btn btn--primary" data-act="refundsent" data-ref="' + b.ref + '">Mark refund sent</button>') + '</div>' : '') +
         '<div class="detail detail--sand">' +
           '<div class="stack">' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>Stay</h2></div><div class="panel__body"><dl class="kv">' +
@@ -856,9 +867,10 @@
               '<div><span>Total</span><span>' + money(b.totalKes) + '</span></div>' +
               '<div><span>Deposit (30%)</span><span>' + money(b.depositKes) + '</span></div>' +
               b.payments.map(function (p) {
-                return '<div class="hint"><span>' + esc(p.provider) + (p.receipt ? ' · ' + esc(p.receipt) : '') + '</span><span>' + (p.status === 'PAID' ? 'paid' : 'to check') + '</span></div>';
+                return '<div class="hint"><span>' + esc(p.provider) + (p.receipt ? ' · ' + esc(p.receipt) : '') + '</span><span>' +
+                  ({ PAID: 'paid', FLAGGED: 'wrong amount', REFUNDED: 'refunded' }[p.status] || '') + '</span></div>';
               }).join('') +
-              '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(b.balanceKes)) + '</span></div>' +
+              '<div class="total"><span>' + (st === 'CANCELLED' || st === 'EXPIRED' ? 'Balance' : st === 'COMPLETED' ? 'Balance, paid at check-out' : 'Balance due at the lodge') + '</span><span class="due">' + (st === 'CANCELLED' || st === 'EXPIRED' ? '—' : money(b.balanceKes)) + '</span></div>' +
             '</div></section>' +
             '<section class="panel panel--sand"><div class="panel__head"><h2>History</h2></div><div class="panel__body"><ol class="timeline">' +
               b.history.map(function (e) { return '<li><div>' + esc(e.what) + '<small>' + fmtDateTime(e.at) + (e.by ? ' · ' + esc(e.by) : '') + '</small></div></li>'; }).join('') +
@@ -1018,7 +1030,7 @@
       today: { title: 'Today', load: function () { return api('/today'); }, view: viewToday },
       bookings: { title: 'Bookings', view: viewBookings, load: function () {
         return Promise.all([api(bookingsQuery()), S.rooms ? Promise.resolve({ rooms: S.rooms }) : api('/rooms')])
-          .then(function (r) { S.rooms = r[1].rooms; return { bookings: r[0].bookings, rooms: S.rooms }; });
+          .then(function (r) { S.rooms = r[1].rooms; return { bookings: r[0].bookings, refundsOwed: r[0].refundsOwed, rooms: S.rooms }; });
       } },
       booking: { title: 'Booking', nav: 'bookings', view: viewBooking, load: function (ref) {
         return api('/bookings/' + encodeURIComponent(ref)).then(function (r) { return r.booking; });
@@ -1244,6 +1256,11 @@
         var ref = b.dataset.ref;
         switch (b.dataset.act) {
           case 'showheld': S.bookingsFilter = 'held'; break;   // the link itself then opens #/bookings
+          case 'showrefunds': S.bookingsFilter = 'refunds'; break;
+          case 'refundsent':
+            confirmDialog({ title: 'Mark the refund as sent?', body: 'Only once the money has gone back to the guest from M-Pesa or Paystack. This clears it from Today and the Refunds list.', ok: 'Mark refund sent',
+              onOk: function () { api('/bookings/' + ref + '/refund-sent', { method: 'POST' }).then(function () { refresh('Refund marked as sent.'); }, failed); } });
+            break;
           case 'checkin':
             busy(b, true, 'Checking in…');
             api('/bookings/' + ref + '/check-in', { method: 'POST' })

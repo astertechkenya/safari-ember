@@ -98,7 +98,7 @@ async function keepHeld(tx, b) {
  *   method 'mpesa': phone optional (the booking's own number if it's a Kenyan mobile)
  * Returns { paymentId, url? }: url only for cards (Paystack's page).
  */
-export async function startPayment(ref, { method, phone }) {
+export async function startPayment(ref, { method, phone }, { site } = {}) {
   if (!paymentMethods().includes(method)) throw httpError(400, 'That payment method isn’t available.');
   const [b0] = await db.select().from(bookings).where(eq(bookings.ref, ref));
   if (!b0) throw httpError(404, 'Booking not found.');
@@ -156,7 +156,7 @@ export async function startPayment(ref, { method, phone }) {
     await pushPayment(created.paymentId);
     return { paymentId: created.paymentId };
   }
-  const url = await openCardPage(created.paymentId);
+  const url = await openCardPage(created.paymentId, site);
   if (!url) throw httpError(502, 'We couldn’t open the card payment page. Please try again in a moment.');
   return { paymentId: created.paymentId, url };
 }
@@ -196,7 +196,7 @@ async function pushPayment(paymentId) {
 }
 
 /** Opens Paystack's page for a committed PENDING card payment. Returns its address, or null. */
-async function openCardPage(paymentId) {
+async function openCardPage(paymentId, site) {
   const [p] = await db.select({ id: payments.id, amountKes: payments.amountKes, ref: bookings.ref, email: bookings.email, bookedAt: bookings.createdAt })
     .from(payments).innerJoin(bookings, eq(payments.bookingId, bookings.id))
     .where(and(eq(payments.id, paymentId), eq(payments.status, 'PENDING')));
@@ -204,7 +204,7 @@ async function openCardPage(paymentId) {
   // Back to the guest's private booking page. Paystack adds ?trxref=…&reference=… to it; the
   // page ignores those and simply checks the booking (which settles the payment, below).
   // The very link the guest already has (made as of the booking's creation).
-  const back = bookingUrl(p.ref, { now: p.bookedAt.getTime() });
+  const back = bookingUrl(p.ref, { now: p.bookedAt.getTime(), site });
   try {
     const { authorizationUrl } = await initialize({
       email: p.email, amountKes: p.amountKes,
@@ -251,7 +251,7 @@ async function markPaid(paymentId, from = {}) {
       raw: from.raw ?? null,
       updatedAt: now,
     }).where(eq(payments.id, p.id));
-    if (wrongAmount) return { flagged: true, paymentId };
+    if (wrongAmount) return { flagged: true, paymentId, bookingId: p.bookingId };
 
     // Lock order: payment → booking → room types (services/capacity.js). Booking
     // creation locks only room types; nothing locks a booking then waits on a
@@ -264,7 +264,7 @@ async function markPaid(paymentId, from = {}) {
       if (!(await bookingStillFits(tx, b))) { await confirm(); return { confirmed: b.ref, bookingId: b.id, late: true }; }
     }
     await tx.update(bookings).set({ refundDue: true, ...(b.status === 'HELD' ? { status: 'EXPIRED' } : {}) }).where(eq(bookings.id, b.id));
-    return { refundDue: b.ref, status: b.status };
+    return { refundDue: b.ref, bookingId: b.id, status: b.status };
   });
   if (outcome?.confirmed) {
     logger.info({ ref: outcome.confirmed, late: Boolean(outcome.late) }, 'deposit paid: booking confirmed');
@@ -272,8 +272,16 @@ async function markPaid(paymentId, from = {}) {
     queueBookingEmail(outcome.bookingId, 'confirmed');
     queueBookingEmail(outcome.bookingId, 'lodge_booking');
   }
-  if (outcome?.refundDue) logger.warn({ ref: outcome.refundDue, status: outcome.status }, 'deposit arrived but the booking can’t use it: refund due');
-  if (outcome?.flagged) logger.warn({ paymentId }, 'deposit amount mismatch: payment FLAGGED for review');
+  // Money the lodge owes back: on Today's notice and the Refunds tab, and emailed to the lodge
+  // now, so nobody has to go looking (emails.js).
+  if (outcome?.refundDue) {
+    logger.warn({ ref: outcome.refundDue, status: outcome.status }, 'deposit arrived but the booking can’t use it: refund due');
+    queueBookingEmail(outcome.bookingId, 'lodge_refund');
+  }
+  if (outcome?.flagged) {
+    logger.warn({ paymentId }, 'deposit amount mismatch: payment FLAGGED for review');
+    queueBookingEmail(outcome.bookingId, 'lodge_flagged');
+  }
 }
 
 /**
@@ -421,6 +429,8 @@ export async function paymentSummary(bookingId) {
     phone: maskPhone(p.phone),
     amountKes: p.amountKes,                 // what was asked for (a token amount in the M-Pesa sandbox)
     receipt: p.status === 'PAID' ? p.receipt : null,
-    message: p.status === 'FAILED' ? p.failureReason : p.status === 'FLAGGED' ? 'We’re checking this payment and will be in touch.' : null,
+    message: p.status === 'FAILED' ? p.failureReason
+      : p.status === 'FLAGGED' ? 'We’re checking this payment and will be in touch.'
+      : p.status === 'REFUNDED' ? 'That payment was the wrong amount, so the lodge has refunded it. You can pay the deposit again below.' : null,
   };
 }

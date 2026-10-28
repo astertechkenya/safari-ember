@@ -57,7 +57,7 @@ beforeAll(async () => {
   ]);
   [{ id: demoId }] = await db.insert(admins).values({ email: 'demo@example.com', name: 'Visitor', role: 'DEMO_ADMIN', passwordHash }).returning();
   [trip] = await db.insert(activities).values({ slug: 'test-admin-trip', name: 'Admin Test Trip', summary: 'x', durationMinutes: 120,
-    priceKes: 3_000, seats: 3, departureTimes: ['09:00', '14:00'], weekdays: [1, 2, 3, 4, 5, 6, 7], sort: 96 }).returning();
+    priceKes: 3_000, seats: 3, departureTimes: ['09:00', '14:00'], sort: 96 }).returning();
   [room] = await db.insert(roomTypes).values({ slug: 'test-admin-room', name: 'Admin Test Room', kind: 'Test', description: 'x', sleeps: 2, units: 3, baseRateKes: 20_000, sort: 95 }).returning();
 });
 beforeEach(async () => {
@@ -357,6 +357,35 @@ describe('experiences', () => {
     } finally {
       await db.update(activities).set({ priceKes: 3_000, departureTimes: ['09:00', '14:00'], active: true }).where(eq(activities.id, trip.id));
     }
+  });
+});
+
+describe('refunds', () => {
+  it('counts money owed on Today, lists it under Refunds, and clears it when the refund is sent', async () => {
+    const late = await confirmed(inDays(70), inDays(72));          // a deposit it couldn't use
+    await db.update(bookings).set({ refundDue: true }).where(eq(bookings.ref, late));
+    const wrong = await confirmed(inDays(74), inDays(76));         // a payment of the wrong amount
+    const [w] = await db.select().from(bookings).where(eq(bookings.ref, wrong));
+    await db.insert(payments).values({ bookingId: w.id, provider: 'DARAJA', status: 'FLAGGED', amountKes: 1, receivedKes: 5, providerRef: 'flag-' + wrong });
+    await confirmed(inDays(78), inDays(80));                       // nothing owed
+
+    const b = await signedIn();
+    expect((await b.get('/api/admin/today')).body.refunds).toBe(2);
+    const list = (await b.get('/api/admin/bookings?status=refunds')).body;
+    expect(list.refundsOwed).toBe(2);
+    expect(list.bookings.map((x) => [x.ref, x.refundOwed])).toEqual([[late, true], [wrong, true]]);
+
+    const one = await b.post(`/api/admin/bookings/${late}/refund-sent`);
+    expect(one.status).toBe(200);
+    expect(one.body.booking).toMatchObject({ refundDue: false, refundOwed: false });
+    expect(one.body.booking.history.at(-1)).toMatchObject({ what: 'Refund sent', by: 'Ethan K.' });
+    const two = await b.post(`/api/admin/bookings/${wrong}/refund-sent`);
+    expect(two.body.booking.payments.find((p) => p.receivedKes === 5)).toMatchObject({ status: 'REFUNDED' });
+    expect((await b.get('/api/admin/today')).body.refunds).toBe(0);
+
+    expect((await b.post(`/api/admin/bookings/${late}/refund-sent`)).status).toBe(409);       // nothing owed now
+    await db.update(bookings).set({ refundDue: true }).where(eq(bookings.ref, late));
+    expect((await (await demo()).post(`/api/admin/bookings/${late}/refund-sent`)).status).toBe(403);
   });
 });
 

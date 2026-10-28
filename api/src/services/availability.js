@@ -1,7 +1,7 @@
 // availability.js: how many units of a room type are free for EVERY night of a stay.
 //
 // For each night of the stay, per room type:
-//     free = units − units held by bookings that night − units closed that night
+//     free = units − units held by bookings that night
 // (a booking can hold several units of a type: booking_rooms.units)
 // and a stay is possible only if the SMALLEST of those is at least 1: one fully booked night
 // in the middle blocks the whole stay.
@@ -11,7 +11,8 @@
 // tidied it into EXPIRED yet. So availability never waits on a timer.
 //
 // A booking occupies the nights check_in ≤ night < check_out: the check-out day is free for the
-// next guest. Closures work the same way ([starts_on, ends_on)).
+// next guest. (Closing rooms is handled physically by the lodge, not here: decided Oct 2026.
+// To stop selling a room type, untick "Bookable" or lower its units in the admin.)
 //
 // One query does the whole calculation inside Postgres, for one room type or all of them.
 // `executor` is the database or a transaction: booking creation (services/bookings.js) runs it
@@ -28,7 +29,7 @@ export async function freeUnits({ checkIn, checkOut, roomTypeId = null, executor
       select generate_series(${checkIn}::date, ${checkOut}::date - 1, interval '1 day')::date as night
     )
     select rt.id as room_type_id,
-           min(greatest(0, rt.units - taken.n - least(rt.units, closed.n)))::int as free
+           min(greatest(0, rt.units - taken.n))::int as free
       from room_types rt
      cross join nights
      cross join lateral (
@@ -39,13 +40,6 @@ export async function freeUnits({ checkIn, checkOut, roomTypeId = null, executor
                and b.check_in <= nights.night and b.check_out > nights.night
                and (b.status = 'CONFIRMED' or (b.status = 'HELD' and b.hold_expires_at > now()))
           ) taken
-     cross join lateral (
-            -- a closure for every type (room_type_id null) or this type; units null = all of them
-            select coalesce(sum(coalesce(c.units, rt.units)), 0)::int as n
-              from closures c
-             where (c.room_type_id = rt.id or c.room_type_id is null)
-               and c.starts_on <= nights.night and c.ends_on > nights.night
-          ) closed
      where rt.active
        and (${roomTypeId}::int is null or rt.id = ${roomTypeId}::int)
      group by rt.id`);

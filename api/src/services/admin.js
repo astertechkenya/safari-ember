@@ -3,7 +3,7 @@
 // Counting follows the booking engine EXACTLY, so the admin and the website never disagree:
 //   - a booking takes its rooms while CONFIRMED, or HELD with a hold that hasn't run out, judged
 //     by the database's clock (now()), never this server's (see capacity.js, withHoldRunning);
-//   - nights are check_in ≤ night < check_out; closures the same; units null = all units.
+//   - nights are check_in ≤ night < check_out.
 //
 // Shown status (what staff see) is the stored status, refined:
 //   HELD whose hold has run out → EXPIRED (the expiry job may not have caught up yet)
@@ -18,7 +18,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   bookings, bookingRooms, bookingNights, bookingActivities, activities, payments, roomTypes,
-  closures, enquiries, adminEvents, bookingEmails,
+  enquiries, adminEvents, bookingEmails,
 } from '../db/schema.js';
 import { httpError } from '../middleware/errors.js';
 import { addDays, todayInNairobi } from '../lib/dates.js';
@@ -79,12 +79,21 @@ async function summarise(rows, masked) {
     holdExpiresAt: r.shown === 'HELD' ? new Date(r.hold_expires_at).getTime() : null,
     checkedInAt: r.checked_in_at ? new Date(r.checked_in_at).getTime() : null,
     requests: r.requests,
+    refundOwed: Boolean(r.refund_owed),
   }));
 }
 
+/**
+ * Money the lodge owes back on booking b: a deposit it couldn't use (refund_due: it arrived after
+ * the hold ran out and the room was gone, or a second payment), or a payment of the wrong amount
+ * (FLAGGED). Cleared by "Mark refund sent" (refundSent below).
+ */
+const REFUND_OWED = sql`(b.refund_due or exists (select 1 from payments p where p.booking_id = b.id and p.status = 'FLAGGED'))`;
+
 const LIST_COLUMNS = sql`b.id, b.ref, b.check_in::text, b.check_out::text, b.nights, b.guests, b.first_name, b.last_name,
   b.email, b.phone, b.total_kes, b.deposit_kes, b.hold_expires_at, b.checked_in_at, b.requests, ${SHOWN} as shown,
-  exists (select 1 from payments p where p.booking_id = b.id and p.status = 'PAID') as deposit_paid`;
+  exists (select 1 from payments p where p.booking_id = b.id and p.status = 'PAID') as deposit_paid,
+  ${REFUND_OWED} as refund_owed`;
 
 /* ── Today ───────────────────────────────────────────────────────────────────────────── */
 
@@ -103,6 +112,7 @@ export async function today(masked) {
   const occ = await occupancy(t, addDays(t, 1));
   const tonight = occ.reduce((s, r) => ({ open: s.open + r.nights[0].open, taken: s.taken + r.nights[0].taken }), { open: 0, taken: 0 });
   const [{ n: newEnquiries }] = (await db.execute(sql`select count(*)::int as n from enquiries where status = 'NEW'`)).rows;
+  const refunds = await refundsOwed();
   return {
     date: t,
     arrivals: all.filter((b) => b.checkIn === t && (b.status === 'CONFIRMED' || b.status === 'INHOUSE')),
@@ -113,12 +123,19 @@ export async function today(masked) {
     holds: all.filter((b) => b.status === 'HELD').sort((a, b) => a.holdExpiresAt - b.holdExpiresAt),
     tonight,
     newEnquiries,
+    refunds,
   };
 }
 
 /* ── Bookings ────────────────────────────────────────────────────────────────────────── */
 
-export const LIST_FILTERS = ['upcoming', 'inhouse', 'held', 'past', 'cancelled', 'all'];
+export const LIST_FILTERS = ['upcoming', 'inhouse', 'held', 'past', 'cancelled', 'refunds', 'all'];
+
+/** How many bookings have money to send back. Today's notice and the Refunds tab. */
+export async function refundsOwed() {
+  const { rows: [{ n }] } = await db.execute(sql`select count(*)::int as n from bookings b where ${REFUND_OWED}`);
+  return n;
+}
 
 export async function listBookings({ q, status = 'upcoming', room }, masked) {
   const t = todayInNairobi();
@@ -128,6 +145,7 @@ export async function listBookings({ q, status = 'upcoming', room }, masked) {
     held: sql`${SHOWN} = 'HELD'`,
     past: sql`b.status = 'COMPLETED'`,
     cancelled: sql`${SHOWN} in ('CANCELLED', 'EXPIRED')`,
+    refunds: REFUND_OWED,
     all: sql`true`,
   }[status];
   // Search: reference, names, email or phone. The demo admin can't search by the hidden fields.
@@ -137,7 +155,7 @@ export async function listBookings({ q, status = 'upcoming', room }, masked) {
     : sql`(lower(b.ref) like ${like} or lower(b.first_name || ' ' || b.last_name) like ${like}
            or lower(b.email) like ${like} or b.phone like ${like})`;
   const roomFilter = room ? sql`exists (select 1 from booking_rooms br where br.booking_id = b.id and br.room_type_id = ${room})` : sql`true`;
-  const order = status === 'upcoming' || status === 'held' || status === 'inhouse' ? sql`b.check_in asc, b.created_at` : sql`b.check_in desc, b.created_at desc`;
+  const order = status === 'upcoming' || status === 'held' || status === 'inhouse' || status === 'refunds' ? sql`b.check_in asc, b.created_at` : sql`b.check_in desc, b.created_at desc`;
   const { rows } = await db.execute(sql`
     select ${LIST_COLUMNS} from bookings b
      where ${where} and ${search} and ${roomFilter}
@@ -165,15 +183,16 @@ export async function bookingDetail(ref, masked) {
   const history = [{ what: 'Booked online', at: ms(b.created_at) }];
   for (const p of pays) {
     if (p.status === 'PAID') history.push({ what: `Deposit paid · ${p.provider === 'DARAJA' ? 'M-Pesa' : 'Card'}`, at: ms(p.updatedAt) });
-    if (p.status === 'FLAGGED') history.push({ what: `Payment flagged for checking · ${p.provider === 'DARAJA' ? 'M-Pesa' : 'Card'}`, at: ms(p.updatedAt) });
+    if (p.status === 'FLAGGED' || p.status === 'REFUNDED') history.push({ what: `Payment of the wrong amount · ${p.provider === 'DARAJA' ? 'M-Pesa' : 'Card'}`, at: ms(p.createdAt) });
   }
-  const WORDS = { 'check-in': 'Checked in', 'check-out': 'Checked out', cancel: 'Cancelled' };
+  const WORDS = { 'check-in': 'Checked in', 'check-out': 'Checked out', cancel: 'Cancelled', 'refund-sent': 'Refund sent' };
   for (const e of events.rows) {
     history.push({ what: (WORDS[e.action] ?? e.action) + (e.action === 'cancel' && e.detail?.reason ? ` · ${e.detail.reason}` : ''), by: e.admin, at: ms(e.created_at) });
   }
   // What the guest (and the lodge) were emailed, and whether it actually went out
   const EMAILED = { confirmed: 'Confirmation emailed to the guest', cancelled: 'Cancellation emailed to the guest',
-    expired: '“Hold ended” emailed to the guest', lodge_booking: 'Lodge alerted by email' };
+    expired: '“Hold ended” emailed to the guest', lodge_booking: 'Lodge alerted by email',
+    lodge_refund: 'Lodge alerted: refund due', lodge_flagged: 'Lodge alerted: payment of the wrong amount' };
   const OUTCOME = { sent: '', held: ' · held: no email domain yet', logged: ' · not sent: email isn’t set up', failed: ' · failed to send', queued: ' · sending' };
   for (const m of emails) history.push({ what: (EMAILED[m.kind] ?? m.kind) + (OUTCOME[m.status] ?? ` · ${m.status}`), at: ms(m.createdAt) });
   if (summary.status === 'HELD') history.push({ what: 'Hold runs out', at: summary.holdExpiresAt });
@@ -187,8 +206,9 @@ export async function bookingDetail(ref, masked) {
       return { ...r, nightly: n, totalKes: r.units * n.reduce((s, x) => s + x.rateKes, 0) };
     }),
     activities: trips.map((x) => ({ ...x, totalKes: x.people * x.priceKes })),
-    payments: pays.filter((p) => p.status === 'PAID' || p.status === 'FLAGGED').map((p) => ({
-      provider: p.provider === 'DARAJA' ? 'M-Pesa' : 'Card', status: p.status, receipt: p.receipt, amountKes: p.amountKes, at: ms(p.updatedAt),
+    payments: pays.filter((p) => ['PAID', 'FLAGGED', 'REFUNDED'].includes(p.status)).map((p) => ({
+      provider: p.provider === 'DARAJA' ? 'M-Pesa' : 'Card', status: p.status, receipt: p.receipt, amountKes: p.amountKes,
+      receivedKes: p.receivedKes, at: ms(p.updatedAt),
     })),
     history,
     cancelReason: b.cancel_reason, refundDue: b.refund_due,
@@ -196,6 +216,7 @@ export async function bookingDetail(ref, masked) {
     canCheckIn: summary.status === 'CONFIRMED' && summary.checkIn <= todayInNairobi() && summary.checkOut > todayInNairobi(),
     canCheckOut: summary.status === 'INHOUSE',
     canCancel: summary.status === 'CONFIRMED' || summary.status === 'HELD',
+    refundOwed: summary.refundOwed,
   };
 }
 
@@ -248,30 +269,50 @@ export async function cancel(ref, adminId, reason) {
   return ref;
 }
 
+/**
+ * "Mark refund sent": the lodge has sent back money it owed on this booking (from M-Pesa or
+ * Paystack, outside this system). Clears refund_due and marks wrong-amount payments REFUNDED,
+ * so the booking leaves Today's notice and the Refunds tab. Logged with who did it.
+ */
+export async function refundSent(ref, adminId) {
+  return db.transaction(async (tx) => {
+    const [x] = await tx.select({ id: bookings.id }).from(bookings).where(eq(bookings.ref, ref));
+    if (!x) throw httpError(404, 'Booking not found.');
+    // Lock order: payment → booking (as markPaid does), so the two can never deadlock
+    const flagged = await tx.select({ id: payments.id }).from(payments)
+      .where(and(eq(payments.bookingId, x.id), eq(payments.status, 'FLAGGED'))).for('update');
+    const [b] = await tx.select({ id: bookings.id, refundDue: bookings.refundDue }).from(bookings).where(eq(bookings.id, x.id)).for('update');
+    if (!b.refundDue && !flagged.length) throw httpError(409, 'Nothing is owed on this booking.');
+    await tx.update(bookings).set({ refundDue: false }).where(eq(bookings.id, b.id));
+    if (flagged.length) {
+      await tx.update(payments).set({ status: 'REFUNDED', updatedAt: new Date() })
+        .where(and(eq(payments.bookingId, b.id), eq(payments.status, 'FLAGGED')));
+    }
+    await log(tx, adminId, 'refund-sent', b.id, { lateDeposit: b.refundDue, wrongAmountPayments: flagged.length });
+    return ref;
+  });
+}
+
 /* ── Calendar ────────────────────────────────────────────────────────────────────────── */
 
 /**
- * Per active room type, per night in [from, to): units open (not closed), taken and free.
+ * Per active room type, per night in [from, to): units, taken and free.
  * The same counting as availability.js, per night instead of the minimum over a stay.
  */
 export async function occupancy(from, to) {
   const { rows } = await db.execute(sql`
     with nights as (select generate_series(${from}::date, ${to}::date - 1, interval '1 day')::date as night)
-    select rt.id, rt.name, rt.units, rt.sort, nights.night::text as night, taken.n as taken, least(rt.units, closed.n) as closed
+    select rt.id, rt.name, rt.units, rt.sort, nights.night::text as night, taken.n as taken
       from room_types rt cross join nights
      cross join lateral (
        select coalesce(sum(br.units), 0)::int as n from booking_rooms br join bookings b on b.id = br.booking_id
         where br.room_type_id = rt.id and b.check_in <= nights.night and b.check_out > nights.night and ${occupiedOn(sql`nights.night`)}) taken
-     cross join lateral (
-       select coalesce(sum(coalesce(c.units, rt.units)), 0)::int as n from closures c
-        where (c.room_type_id = rt.id or c.room_type_id is null) and c.starts_on <= nights.night and c.ends_on > nights.night) closed
      where rt.active
      order by rt.sort, rt.id, nights.night`);
   const types = new Map();
   for (const r of rows) {
     const t = types.get(r.id) ?? types.set(r.id, { id: r.id, name: r.name, units: r.units, nights: [] }).get(r.id);
-    const open = r.units - r.closed;
-    t.nights.push({ night: r.night, taken: r.taken, closed: r.closed, open, free: Math.max(0, open - r.taken) });
+    t.nights.push({ night: r.night, taken: r.taken, open: r.units, free: Math.max(0, r.units - r.taken) });
   }
   return [...types.values()];
 }
@@ -290,12 +331,9 @@ export async function night(date, roomTypeId, masked) {
      where br.room_type_id = ${roomTypeId} and b.check_in <= ${date}::date and b.check_out > ${date}::date and ${occupiedOn(sql`${date}::date`)}
      order by b.check_in`);
   const list = await summarise(rows, masked);
-  const closed = await db.select({ reason: closures.reason, units: closures.units, startsOn: closures.startsOn, endsOn: closures.endsOn })
-    .from(closures).where(sql`(${closures.roomTypeId} = ${roomTypeId} or ${closures.roomTypeId} is null)
-      and ${closures.startsOn} <= ${date}::date and ${closures.endsOn} > ${date}::date`);
   const [occ] = (await occupancy(date, addDays(date, 1))).filter((r) => r.id === roomTypeId);
   return { date, room: { id: rt.id, name: rt.name, units: rt.units }, free: occ?.nights[0].free ?? 0,
-    bookings: list.map((b, i) => ({ ...b, unitsHere: rows[i].units_here })), closures: closed };
+    bookings: list.map((b, i) => ({ ...b, unitsHere: rows[i].units_here })) };
 }
 
 /* ── Rooms & rates ───────────────────────────────────────────────────────────────────── */
@@ -378,8 +416,7 @@ export async function listTrips() {
 
 /**
  * Changes a trip. Price changes apply to new bookings only (each booking froze its price).
- * Every trip runs daily (the lodge's choice, Oct 2026), so the admin never edits weekdays; the
- * column stays for the guest side and the check below. Removing a departure time doesn't touch existing bookings: they keep their slot and
+ * Every trip runs daily (the lodge's choice, Oct 2026). Removing a departure time doesn't touch existing bookings: they keep their slot and
  * still show in the departures list. The answer says how many are on a slot that no longer
  * runs, so staff can contact those guests.
  */
@@ -393,7 +430,6 @@ export async function updateTrip(id, change, adminId) {
        where ba.activity_id = ${id} and ba.day >= ${todayInNairobi()}::date and ${HOLDS_ROOM}
          -- Arrays go in as text: Drizzle would expand a JS array into separate values
          and (not (ba.departs = any(string_to_array(${after.departureTimes.join(',')}, ',')))
-              or not (extract(isodow from ba.day)::int = any(string_to_array(${after.weekdays.join(',')}, ',')::int[]))
               or not ${after.active})`);
     await log(tx, adminId, 'activity.update', null, { activityId: id, before: tripShape(a), after: tripShape(after) });
     return { trip: tripShape(after), offSchedule: n };
