@@ -1,0 +1,25 @@
+# How long browsers may keep each kind of file before asking Netlify again (Nov 2026).
+# Netlify reads this file from the folder it publishes (frontend/). Pages themselves (.html)
+# aren't listed: Netlify's default makes browsers check them every visit, so edits show at once.
+
+# Fonts: a file's name says exactly what's in it (family, style, weight), so it never changes.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Photos, logos and the hero films: kept for a week, and reused for a day while a fresh copy is
+# fetched in the background. Replacing one with a NEW name shows at once; replacing a file under
+# the SAME name can take up to a week to reach someone who visited recently.
+/*.webp
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.svg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.mp4
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.webm
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# The legal pages' stylesheet: a day
+/legal.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400

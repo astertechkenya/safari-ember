@@ -9,9 +9,24 @@
        to other sites (images, fonts) with the full URL. -->
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="icon" href="mark.webp" type="image/webp" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Cormorant+Garamond:wght@400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Fonts from this site's /fonts folder (Nov 2026): faster than Google's (no extra
+       connections), and a guest's booking page never contacts another company at all. -->
+  <link rel="preload" as="font" type="font/woff2" href="/fonts/playfair-display-latin-400-normal.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="/fonts/jost-latin-400-normal.woff2" crossorigin />
+  <style>
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-ext-400-italic.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-400-italic.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-ext-300-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-300-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-latin-ext-500-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  </style>
 
   <style>
     /* ==========================================================================
@@ -429,11 +444,18 @@
       'coalbed-suite': 'coalbed-suite-1200.webp',
       'ember-penthouse': 'ember-penthouse.webp',
     };
+    // Smaller copies of each, so a phone downloads a photo the size it shows (the browser picks)
+    var ROOM_SRCSET = {
+      'hearthside-room': 'Hearthside_room-600.webp 600w, Hearthside_room-960.webp 960w, Hearthside_room.webp 1600w',
+      'coalbed-suite': 'coalbed-suite-600.webp 600w, coalbed-suite-960.webp 960w, coalbed-suite-1200.webp 1200w',
+      'ember-penthouse': 'ember-penthouse-600.webp 600w, ember-penthouse-960.webp 960w, ember-penthouse.webp 1020w',
+    };
     // Trip photos by slug. object-position keeps each photo's subject in frame when it's cropped.
     var XP_PHOTOS = {
-      'nairobi-national-park': { src: 'xp-natpark.webp', pos: '50% 70%' },   // the zebras sit low
-      'giraffe-centre': { src: 'xp-gcentre.webp', pos: '50% 45%' },
-      'nairobi-safari-walk': { src: 'xp-safwalk.webp', pos: '50% 50%' },
+      // 320px copies (Nov 2026): the photos show at most 150px wide (300 on a sharp screen)
+      'nairobi-national-park': { src: 'xp-natpark-320.webp', pos: '50% 70%' },   // the zebras sit low
+      'giraffe-centre': { src: 'xp-gcentre-320.webp', pos: '50% 45%' },
+      'nairobi-safari-walk': { src: 'xp-safwalk-320.webp', pos: '50% 50%' },
     };
     var HOLD_MINUTES = 15;        // matches the API's HOLD_MINUTES (the hold's real end comes from the API)
 
@@ -569,7 +591,9 @@
       return '<div class="rooms">' + data.rooms.map(function (r) {
         var n = S.picks[r.slug] || 0;
         return '<article class="room' + (r.available ? '' : ' is-off') + (n ? ' is-picked' : '') + '" data-card="' + esc(r.slug) + '">' +
-          '<div class="room__img"><img src="' + esc(ROOM_PHOTOS[r.slug] || '') + '" alt="" loading="lazy" /></div>' +
+          '<div class="room__img"><img src="' + esc(ROOM_PHOTOS[r.slug] || '') + '"' +
+            (ROOM_SRCSET[r.slug] ? ' srcset="' + ROOM_SRCSET[r.slug] + '" sizes="(max-width: 700px) calc(100vw - 78px), (max-width: 900px) 430px, 300px"' : '') +
+            ' alt="" loading="lazy" /></div>' +
           '<div class="room__body">' +
             '<span class="label">' + esc(r.kind) + '</span><div class="rule" role="presentation"></div>' +
             '<h2>' + esc(r.name) + '</h2>' +

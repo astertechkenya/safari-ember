@@ -6,15 +6,35 @@
 
   <!-- SEO: descriptive title and meta description help search engines understand the page -->
   <title>Safari Ember — Candlelit Luxury Hotel</title>
+  <link rel="icon" href="mark.webp" type="image/webp" />
   <meta name="description" content="Safari Ember is an intimate luxury hotel offering candlelit suites, fire-kissed dining, and bespoke experiences in the heart of the city." />
 
-  <!-- Google Fonts: Playfair Display for headings (editorial serif), Cormorant Garamond for accents -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- The hero video's first frame: shown at once, while the video itself loads. -->
+  <!-- The hero video's first frame and the logo: shown at once, while the video itself loads. -->
   <link rel="preload" as="image" href="compound-poster.webp" fetchpriority="high" />
-  <link rel="preload" as="image" href="Elper.svg" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:wght@400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="Elper.webp" fetchpriority="high" />
+  <!-- Fonts (Playfair Display for headings, Cormorant Garamond for accents, Jost for text) are
+       served from this site's /fonts folder (Nov 2026), not Google: no extra connections to other
+       servers and no outside stylesheet holding up the first paint. The two the first screen
+       needs are fetched straight away; the rest as they're used. "latin-ext" files load only
+       when a page shows a letter outside basic Latin (Wanjirū, Ngũgĩ). -->
+  <link rel="preload" as="font" type="font/woff2" href="/fonts/playfair-display-latin-400-normal.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="/fonts/jost-latin-400-normal.woff2" crossorigin />
+  <style>
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-ext-400-italic.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:swap;src:url(/fonts/playfair-display-latin-400-italic.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/playfair-display-latin-ext-600-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/playfair-display-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-ext-300-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-300-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-latin-ext-500-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  </style>
 
   <style>
     /* ============================================================
@@ -1396,6 +1416,26 @@
     html { scrollbar-gutter: stable; }
 
     /* ============================================================
+       RENDERING ONLY WHAT'S NEAR THE SCREEN (Nov 2026)
+       Every section below the hero is skipped (no layout, no painting) until it comes close
+       to the screen: on a phone that took most of the 0.7 s the page was frozen on load. While
+       skipped, a section holds a stand-in height (its typical real height) so the scrollbar and
+       links land roughly right; "auto" then remembers the real height once it has been shown.
+       "Roughly" isn't good enough for a jump to a section (#booking from the hero's button), so
+       the first such jump, or arriving at an address with a #section, adds .cv-all to <html>:
+       every section is laid out at its true size before the browser works out where to scroll.
+       The saving on the first load is kept; jumps land exactly. (Script at the end of <body>.)
+    ============================================================ */
+    html:not(.cv-all) main > section:not(.hero) { content-visibility: auto; contain-intrinsic-size: auto 1000px; }
+    #explore      { contain-intrinsic-size: auto 3800px; }
+    #dining       { contain-intrinsic-size: auto 1900px; }
+    #rooms        { contain-intrinsic-size: auto 1500px; }
+    #testimonials { contain-intrinsic-size: auto 620px; }
+    #booking      { contain-intrinsic-size: auto 680px; }
+    #contact      { contain-intrinsic-size: auto 1000px; }
+    #inquiry      { contain-intrinsic-size: auto 850px; }
+
+    /* ============================================================
        MOBILE NAVIGATION MENU (off-canvas)
     ============================================================ */
     /* Menu (Oct 2026): a small card that rolls down out of the menu button, so it reads as that
@@ -1685,9 +1725,11 @@
         box-sizing: border-box !important;
         grid-template-columns: 1fr !important;
       }
-      .carousel-dots { display: flex; justify-content: center; gap: 8px; padding: 0 0 22px; }
-      .carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); border: none; cursor: pointer; padding: 0; transition: background 0.3s ease; }
-      .carousel-dot.active { background: var(--ember); }
+      .carousel-dots { display: flex; justify-content: center; gap: 0; padding: 0 0 13px; }   /* the 24px buttons now space the dots: same look, padding 9px less */
+      /* A 6px dot to look at, inside a 24px button to tap (a 6px target is too small for a thumb) */
+      .carousel-dot { position: relative; width: 24px; height: 24px; border-radius: 50%; background: none; border: none; cursor: pointer; padding: 0; }
+      .carousel-dot::before { content: ''; position: absolute; left: 9px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: rgba(200,120,42,0.3); transition: background 0.3s ease; }
+      .carousel-dot.active::before { background: var(--ember); }
     }
     @media (min-width: 769px) {
       .carousel-dots { display: none; }
@@ -1974,7 +2016,7 @@
   ============================================================ -->
   <nav class="nav" role="navigation" aria-label="Main navigation">
     <a href="#" class="nav__logo" aria-label="Safari Ember — home" style="display:flex;align-items:center;gap:10px;">
-      <img src="sember.png" alt="Safari Ember logo" style="height:46px;width:auto;object-fit:contain;" />
+      <img src="sember-160.webp" alt="" width="46" height="46" style="height:46px;width:auto;object-fit:contain;" />
     </a>
 
     <ul class="nav__links">
@@ -2032,7 +2074,9 @@
         <svg class="hero__play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
       </button>
       <div class="hero__logo-lockup">
-        <img src="Elper.svg" alt="Safari Ember" fetchpriority="high" decoding="async" />
+        <!-- Elper.webp: the same lockup rendered once at 640px (sharp on a 3× phone) and 30 KB;
+             the SVG it came from is 468 KB, almost all of it a 5,741px picture hidden inside. -->
+        <img src="Elper.webp" alt="Safari Ember" width="640" height="640" fetchpriority="high" decoding="async" />
 
       </div>
       <!-- Content under the logo once it settles (see .hero__stage). Add things here. -->
@@ -2072,7 +2116,7 @@
 
       <ol class="story__chapters">
         <li class="chapter">
-          <figure class="chapter__img"><span class="chapter__window"><img src="The_Cinder_restaurant.webp" alt="The Cinder Café's open terrace under a leafy timber roof, set for breakfast" loading="lazy" decoding="async" /></span></figure>
+          <figure class="chapter__img"><span class="chapter__window"><img src="The_Cinder_restaurant.webp" srcset="The_Cinder_restaurant-600.webp 600w, The_Cinder_restaurant-1000.webp 1000w, The_Cinder_restaurant-1200.webp 1200w, The_Cinder_restaurant.webp 1800w" sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1180px) 47vw, 550px" alt="The Cinder Café's open terrace under a leafy timber roof, set for breakfast" loading="lazy" decoding="async" /></span></figure>
           <div class="chapter__text">
             <p class="chapter__label">Dining</p>
             <div class="chapter__rule" role="presentation"></div>
@@ -2081,7 +2125,7 @@
           </div>
         </li>
         <li class="chapter">
-          <figure class="chapter__img"><span class="chapter__window"><img src="gamedrive.webp" alt="A lion resting in the grass beside an open safari vehicle full of guests" loading="lazy" decoding="async" /></span></figure>
+          <figure class="chapter__img"><span class="chapter__window"><img src="gamedrive.webp" srcset="gamedrive-600.webp 600w, gamedrive-1000.webp 1000w, gamedrive-1200.webp 1200w, gamedrive.webp 1600w" sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1180px) 47vw, 550px" alt="A lion resting in the grass beside an open safari vehicle full of guests" loading="lazy" decoding="async" /></span></figure>
           <div class="chapter__text">
             <p class="chapter__label">Game drive</p>
             <div class="chapter__rule" role="presentation"></div>
@@ -2090,7 +2134,7 @@
           </div>
         </li>
         <li class="chapter">
-          <figure class="chapter__img"><span class="chapter__window"><img src="giraffecent.webp" alt="A guest hand-feeding a Rothschild's giraffe from the raised platform at the Giraffe Centre" loading="lazy" decoding="async" /></span></figure>
+          <figure class="chapter__img"><span class="chapter__window"><img src="giraffecent.webp" srcset="giraffecent-600.webp 600w, giraffecent-1000.webp 1000w, giraffecent-1200.webp 1200w, giraffecent.webp 1500w" sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1180px) 47vw, 550px" alt="A guest hand-feeding a Rothschild's giraffe from the raised platform at the Giraffe Centre" loading="lazy" decoding="async" /></span></figure>
           <div class="chapter__text">
             <p class="chapter__label">Conservation</p>
             <div class="chapter__rule" role="presentation"></div>
@@ -2099,7 +2143,7 @@
           </div>
         </li>
         <li class="chapter">
-          <figure class="chapter__img"><span class="chapter__window"><img src="Spa_and_wellness.webp" alt="Two guests on massage tables on an open-air spa deck overlooking the plains" loading="lazy" decoding="async" /></span></figure>
+          <figure class="chapter__img"><span class="chapter__window"><img src="Spa_and_wellness.webp" srcset="Spa_and_wellness-600.webp 600w, Spa_and_wellness-1000.webp 1000w, Spa_and_wellness-1200.webp 1200w, Spa_and_wellness.webp 1600w" sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1180px) 47vw, 550px" alt="Two guests on massage tables on an open-air spa deck overlooking the plains" loading="lazy" decoding="async" /></span></figure>
           <div class="chapter__text">
             <p class="chapter__label">Wellness</p>
             <div class="chapter__rule" role="presentation"></div>
@@ -2108,7 +2152,7 @@
           </div>
         </li>
         <li class="chapter">
-          <figure class="chapter__img"><span class="chapter__window"><img src="ash-rooftop.webp" alt="The Ash Bar's rooftop terrace at sunset, string lights above and the hills beyond" loading="lazy" decoding="async" /></span></figure>
+          <figure class="chapter__img"><span class="chapter__window"><img src="ash-rooftop.webp" srcset="ash-rooftop-600.webp 600w, ash-rooftop-1000.webp 1000w, ash-rooftop-1200.webp 1200w, ash-rooftop.webp 1600w" sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1180px) 47vw, 550px" alt="The Ash Bar's rooftop terrace at sunset, string lights above and the hills beyond" loading="lazy" decoding="async" /></span></figure>
           <div class="chapter__text">
             <p class="chapter__label">Rooftop</p>
             <div class="chapter__rule" role="presentation"></div>
@@ -2150,7 +2194,7 @@
       <div class="cul-dishes__grid mobile-carousel-track" id="dishTrack">
         <div class="cul-dish" data-dish>
           <div class="cul-dish__image">
-            <img src="dish1.webp" alt="The Heritage Plate" loading="lazy" />
+            <img src="dish1.webp" srcset="dish1-600.webp 600w, dish1-960.webp 960w, dish1.webp 1164w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="The Heritage Plate" loading="lazy" />
           </div>
           <div class="cul-dish__body">
             <p class="card__label">Kenyan heritage</p>
@@ -2164,7 +2208,7 @@
         </div>
         <div class="cul-dish" data-dish>
           <div class="cul-dish__image">
-            <img src="dish2.webp" alt="The Safari Spread" loading="lazy" />
+            <img src="dish2.webp" srcset="dish2-600.webp 600w, dish2-960.webp 960w, dish2.webp 1200w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="The Safari Spread" loading="lazy" />
           </div>
           <div class="cul-dish__body">
             <p class="card__label">Sharing platter</p>
@@ -2178,7 +2222,7 @@
         </div>
         <div class="cul-dish" data-dish>
           <div class="cul-dish__image">
-            <img src="dish3.webp" alt="The Northern Classic" loading="lazy" />
+            <img src="dish3.webp" srcset="dish3-600.webp 600w, dish3-960.webp 960w, dish3.webp 1600w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="The Northern Classic" loading="lazy" />
           </div>
           <div class="cul-dish__body">
             <p class="card__label">Continental</p>
@@ -2240,7 +2284,7 @@
         <!-- Room 1 -->
         <article class="room-card">
           <div class="room-card__image">
-            <img src="Hearthside_room.webp" alt="Hearthside Room interior with king bed, safari wall art and warm candlelit sconces" loading="lazy" />
+            <img src="Hearthside_room.webp" srcset="Hearthside_room-600.webp 600w, Hearthside_room-960.webp 960w, Hearthside_room.webp 1600w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="Hearthside Room interior with king bed, safari wall art and warm candlelit sconces" loading="lazy" />
           </div>
           <div class="room-card__body">
             <p class="card__label">Deluxe</p>
@@ -2259,7 +2303,7 @@
         <!-- Room 2 -->
         <article class="room-card">
           <div class="room-card__image">
-            <img src="coalbed-suite-1200.webp" alt="The Coalbed Suite: a king bed with a carved wooden headboard beneath exposed timber beams, a writing desk by the windows" loading="lazy" decoding="async" />
+            <img src="coalbed-suite-1200.webp" srcset="coalbed-suite-600.webp 600w, coalbed-suite-960.webp 960w, coalbed-suite-1200.webp 1200w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="The Coalbed Suite: a king bed with a carved wooden headboard beneath exposed timber beams, a writing desk by the windows" loading="lazy" decoding="async" />
           </div>
           <div class="room-card__body">
             <p class="card__label">Junior suite</p>
@@ -2278,7 +2322,7 @@
         <!-- Room 3 -->
         <article class="room-card">
           <div class="room-card__image">
-            <img src="ember-penthouse.webp" alt="The Ember Penthouse: a split-level living space with a spiral staircase, a long walnut dining table for ten under a carved lattice ceiling, and a lounge by the windows" loading="lazy" />
+            <img src="ember-penthouse.webp" srcset="ember-penthouse-600.webp 600w, ember-penthouse-960.webp 960w, ember-penthouse.webp 1020w" sizes="(max-width: 900px) calc(100vw - 88px), (max-width: 1180px) 26vw, 300px" alt="The Ember Penthouse: a split-level living space with a spiral staircase, a long walnut dining table for ten under a carved lattice ceiling, and a lounge by the windows" loading="lazy" />
           </div>
           <div class="room-card__body">
             <p class="card__label">Penthouse</p>
@@ -2309,7 +2353,7 @@
       </div>
 
       <div class="testimonial-slider">
-        <div class="carousel-dots" id="tDots" style="padding: 0 0 22px;"></div>
+        <div class="carousel-dots" id="tDots" style="padding: 0 0 13px;"></div>
         <div class="testimonial-slider__track" id="testimonialTrack">
 
           <blockquote class="testimonial">
@@ -2795,6 +2839,20 @@
   </script>
 
   <script>
+    // Sections are laid out only near the screen (see "RENDERING ONLY WHAT'S NEAR THE SCREEN" in
+    // the CSS). Before any jump to a section, lay them all out so the jump lands exactly.
+    (function () {
+      var root = document.documentElement;
+      function all() { root.classList.add('cv-all'); }
+      if (location.hash.length > 1) all();                       // arrived on index.html#booking
+      document.addEventListener('click', function (e) {          // capture: before the browser scrolls
+        var a = e.target.closest && e.target.closest('a[href*="#"]');
+        if (a && a.pathname === location.pathname && a.hash.length > 1) all();
+      }, true);
+      window.addEventListener('hashchange', all);
+    })();
+  </script>
+  <script>
     /* Hero film: the six clips in order, looping, crossfading between two video layers.
        It doesn't play (the poster frame stays) when the visitor has asked for less motion or for
        less data (Data Saver / Lite mode). The button pauses and resumes it. It also pauses while
@@ -2857,6 +2915,10 @@
 
       function start() {
         if (started) return;
+        // Not before the page itself has loaded (Nov 2026): on a slow phone connection the first
+        // clip (1.7 MB) would otherwise compete with the fonts, logo and photos. The poster frame
+        // shows meanwhile, so nothing looks different.
+        if (document.readyState !== 'complete') { window.addEventListener('load', function () { sync(); }, { once: true }); return; }
         started = true;
         load(a, 0);
         // The second clip starts loading once the first is playing, not alongside it.
