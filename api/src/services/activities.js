@@ -10,6 +10,9 @@
 //
 // Which days: from check-in to check-out INCLUSIVE. Unlike a room night, a trip can be on the
 // day you leave (a morning game drive before check-out at 11:00).
+// And which times on the first and last day (found Nov 2026: a 06:30 drive was offered on the
+// arrival day, before the guest could check in): on the check-in day only departures from
+// check-in time, and on the check-out day only departures before check-out time.
 //
 // Cut-off: a departure can be added until ACTIVITY_CUTOFF_MINUTES before it leaves, so the lodge
 // has time to arrange the vehicle and guide.
@@ -18,6 +21,22 @@ import { db } from '../db/client.js';
 import { activities } from '../db/schema.js';
 import { config } from '../config.js';
 import { addDays } from '../lib/dates.js';
+
+/** The lodge's hours, Nairobi time: what the emails and the booking page tell guests. */
+export const CHECK_IN_TIME = '14:00';
+export const CHECK_OUT_TIME = '11:00';
+
+/**
+ * Is a departure during this stay? Any time on the days in between; on the check-in day from
+ * check-in time; on the check-out day before check-out time. Times compare as text: they're
+ * always HH:MM.
+ */
+export function duringStay(day, time, checkIn, checkOut) {
+  if (day < checkIn || day > checkOut) return false;
+  if (day === checkIn && time < CHECK_IN_TIME) return false;
+  if (day === checkOut && time >= CHECK_OUT_TIME) return false;
+  return true;
+}
 
 /** The moment a departure leaves. Nairobi is UTC+3 all year (no daylight saving). */
 export const departsAt = (day, time) => new Date(`${day}T${time}:00+03:00`);
@@ -43,6 +62,6 @@ export async function activitiesFor({ checkIn, checkOut, now = new Date() }) {
   return list.map((a) => ({
     ...card(a),
     departures: days.flatMap((day) =>
-      [...a.departureTimes].sort().filter((time) => bookable(day, time, now)).map((time) => ({ day, time }))),
+      [...a.departureTimes].sort().filter((time) => duringStay(day, time, checkIn, checkOut) && bookable(day, time, now)).map((time) => ({ day, time }))),
   }));
 }

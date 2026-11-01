@@ -38,11 +38,16 @@ describe('listing activities for a stay', () => {
     expect(res.body.activities[0].summary).toMatch(/paid at the gate/);
   });
 
-  it('offers every departure from check-in to check-out inclusive, with no seat counts', async () => {
+  it('offers departures from check-in (14:00) to check-out (11:00), with no seat counts', async () => {
     const res = await listFor(inDays(60), inDays(62));
     const t = res.body.activities.find((a) => a.slug === 'test-trip');
     expect(t).toMatchObject({ name: 'Test Trip', priceKes: 2_000, durationMinutes: 120 });
-    expect(t.departures).toEqual([60, 61, 62].flatMap((n) => ['10:00', '15:00'].map((time) => ({ day: inDays(n), time }))));
+    // Arrival day: only after check-in. Last day: only before check-out. Days between: all.
+    expect(t.departures).toEqual([
+      { day: inDays(60), time: '15:00' },
+      { day: inDays(61), time: '10:00' }, { day: inDays(61), time: '15:00' },
+      { day: inDays(62), time: '10:00' },
+    ]);
   });
 
   it('stops offering a departure ACTIVITY_CUTOFF_MINUTES before it leaves', () => {
@@ -82,6 +87,11 @@ describe('adding activities to a booking', () => {
       [[{ activity: 'test-trip', day: inDays(61), time: '10:00', people: 1 }, { activity: 'test-trip', day: inDays(61), time: '10:00', people: 1 }], 400,
         'activities: list each departure once, with how many people'],
       [[{ activity: 'test-trip', day: inDays(61), time: '25:00', people: 1 }], 400, 'activities.0.time: must be a time written as HH:MM'],
+      // The stay is inDays(60) → inDays(62): no trip before check-in, none after check-out
+      [[{ activity: 'test-trip', day: inDays(60), time: '10:00', people: 1 }], 400,
+        'Test Trip at 10:00 leaves before check-in (from 14:00) on your arrival day. Please choose a later departure.'],
+      [[{ activity: 'test-trip', day: inDays(62), time: '15:00', people: 1 }], 400,
+        'Test Trip at 15:00 leaves after check-out (by 11:00) on your last day. Please choose an earlier departure.'],
     ];
     for (const [trips, status, error] of cases) {
       const res = await book(trips);

@@ -98,8 +98,9 @@
     .btn[disabled] { opacity: .45; cursor: not-allowed; }
     .note { text-align: center; color: var(--warm-mid); margin: 16px 0 0; min-height: 1.6em; }
     .note.is-error, .error { color: var(--bad); }
+    #xpNote { max-width: 640px; margin: 34px auto 40px; line-height: 1.75; }   /* room above and below: it read squeezed */
 
-    /* Messages: loading, problems */
+    /* Messages: problems */
     .notice { max-width: 760px; margin: 32px auto 0; border: 1px solid var(--line-soft); padding: 22px 26px; text-align: center; color: var(--warm-mid); }
     .notice h2 { font-family: var(--serif); font-size: 22px; color: var(--cream); margin-bottom: 12px; }
     .notice--error { border-color: rgba(240, 160, 144, .4); }
@@ -147,12 +148,13 @@
                                                       [people][Add]        */
     .xp { border: 1px solid var(--line); padding: 12px; margin-bottom: 16px;
       display: grid; grid-template-columns: 150px minmax(0, 1fr); column-gap: 20px; align-items: start; }
-    .xp__img { grid-row: 1 / 3; aspect-ratio: 1; overflow: hidden; background: var(--black-light); }
+    .xp__img { grid-row: 1; aspect-ratio: 1; overflow: hidden; background: var(--black-light); }
     .xp__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .xp__head { padding-top: 4px; }
     .xp h2 { font-family: var(--serif); font-size: 22px; line-height: 1.25; margin-bottom: 8px; }
     /* The price per person, set like the room cards' price per night */
-    .xp__price { font-family: var(--serif); font-size: 22px; color: var(--cream); margin: 0 0 8px; }
+    .xp__body { min-width: 0; }
+    .xp__price { font-family: var(--serif); font-size: 22px; color: var(--cream); margin: 12px 0 0; }   /* right under the description */
     .xp__price small { font-family: var(--sans); font-size: 14px; color: var(--warm-mid); }
     .xp__sum { color: var(--warm-mid); font-size: 14px; line-height: 1.7; margin: 0; }
     .xp__add, .xp > .error, .xp__none { grid-column: 1 / -1; }
@@ -258,16 +260,18 @@
     .pay__way--mpesa { --accent: var(--mpesa); }
     .pay__way h3 { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 20px; line-height: 1.25; color: var(--cream); }
     .pay__way h3 svg { width: 24px; height: 24px; flex: none; color: var(--accent); }
-    .pay__chips { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
-    .pay__chips li { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--line); color: var(--warm-mid); }
-    .pay__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: step; }
-    .pay__steps li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 400; color: var(--cream); line-height: 1.35; }
-    .pay__steps li::before { counter-increment: step; content: counter(step); flex: none; width: 24px; height: 24px; border-radius: 50%;
-      border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-size: 12px; }
+    /* The card brands' marks (frontend/visa.png, frontend/mastercard.png), each on a white tile
+       as card schemes show them,
+       centred in the tile's spare space. Without the files, the names show as small labels. */
+    .pay__brands { display: flex; justify-content: center; align-items: center; gap: 14px; margin: auto 0; padding: 10px 0; list-style: none; }
+    .pay__brands li { display: grid; place-items: center; height: 56px; min-width: 88px; padding: 0 14px; background: #fff; }
+    .pay__brands img { display: block; height: 30px; width: auto; max-width: 96px; }
+    .pay__brands .mc img { height: 42px; }   /* a squarer badge than Visa's wide wordmark: taller, so they weigh the same */
+    .pay__brands li.is-text { height: auto; min-width: 0; padding: 3px 8px; background: none; border: 1px solid var(--line);
+      font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--warm-mid); }
     .pay__way .hint { margin: 0; font-size: 13px; color: var(--warm-mid); }
-    .pay__chips { margin-top: auto; }   /* sits on the button, filling the tile's spare height */
     .pay__way .btn { margin-top: auto; width: 100%; padding: 0 16px; }
-    .pay__chips + .btn { margin-top: 0; }
+    .pay__brands + .btn { margin-top: 0; }
     .btn--mpesa { background: var(--mpesa); border-color: var(--mpesa); color: #08140a; }
     .btn--mpesa:hover { background: #26b462; border-color: #26b462; }
     .pay__problem { margin: 0 0 18px; padding: 14px 18px; border-left: 2px solid var(--bad); background: rgba(240, 160, 144, .06); color: var(--cream); font-size: 15px; }
@@ -284,7 +288,6 @@
     .paid b { color: var(--cream); font-weight: 500; }
     .next--bad { border-left-color: var(--bad); }
 
-    .loading { text-align: center; color: var(--warm-mid); margin-top: 40px; }
 
     /* ── Phones ──────────────────────────────────────────────────────────── */
     @media (max-width: 900px) {
@@ -315,7 +318,8 @@
       .xp { grid-template-columns: 96px minmax(0, 1fr); column-gap: 14px; }
       .xp__img { grid-row: 1; }
       .xp h2 { font-size: 20px; }
-      .xp__price { margin: 0; font-size: 20px; }
+      .xp__body { display: contents; }   /* phones: title beside the photo, description and price full width below */
+      .xp__price { grid-column: 1 / -1; font-size: 20px; }
       .xp__sum { grid-column: 1 / -1; margin-top: 12px; }
       /* Departure gets the full width (its text is the longest); people + Add share the next row */
       .xp__add { grid-template-columns: 1fr 1fr; }
@@ -390,7 +394,7 @@
           <div class="field"><label for="requests">Special requests <span>(optional)</span></label><textarea class="input" id="requests" name="requests" maxlength="1000" aria-describedby="requests-err"></textarea><p class="error" id="requests-err" hidden></p></div>
           <p class="error" id="formError" role="alert" hidden></p>
           <div class="form__foot">
-            <button class="btn" type="submit" id="holdBtn">Hold my booking</button>
+            <button class="btn" type="submit" id="holdBtn">Book</button>
             <button class="btn btn--ghost" type="button" id="backToRooms">Back</button>
           </div>
           <p class="fine">We hold your rooms for 15 minutes while you pay the deposit. Your details are used only for this booking.</p>
@@ -510,8 +514,16 @@
       if (f.in.value) { f.out.min = addDays(f.in.value, 1); if (f.out.value && f.out.value <= f.in.value) f.out.value = addDays(f.in.value, 1); }
     });
 
+    /** True for a real calendar date written YYYY-MM-DD (2027-02-30 is not one). */
+    function realDate(s) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+      var d = new Date(s + 'T12:00:00Z');
+      return !isNaN(d) && d.toISOString().slice(0, 10) === s;   // month 13 is NaN; 30 Feb rolls to March
+    }
     function stayProblem(st) {
       if (!st.checkIn || !st.checkOut) return 'Choose your check-in and check-out dates.';
+      // A date typed into the address that doesn't exist (30 February) or isn't a date at all
+      if (!realDate(st.checkIn) || !realDate(st.checkOut)) return 'Those dates aren\'t valid. Please choose them again.';
       if (st.checkIn < TODAY) return 'Check-in can\'t be in the past.';
       if (st.checkIn > HORIZON) return 'We take bookings up to 18 months ahead.';
       var n = nightsBetween(st.checkIn, st.checkOut);
@@ -534,7 +546,7 @@
       if (pushHistory) history.pushState({ step: 1 }, '', url); else history.replaceState({ step: 1 }, '', url);
       var box = $('results');
       box.setAttribute('aria-busy', 'true');
-      box.innerHTML = '<p class="loading">Checking availability…</p>';
+      box.innerHTML = '<p class="sr-only" role="status">Checking availability</p>';   // screen readers only
       $('pick').hidden = true;
       api('/availability?' + new URLSearchParams({ checkIn: st.checkIn, checkOut: st.checkOut, guests: st.guests }))
         .then(function (data) {
@@ -665,7 +677,7 @@
       if (S.acts) { drawExperiences(); return; }
       var box = $('xpList');
       box.setAttribute('aria-busy', 'true');
-      box.innerHTML = '<p class="loading">Finding experiences for your dates…</p>';
+      box.innerHTML = '<p class="sr-only" role="status">Finding experiences for your dates</p>';
       api('/activities?' + new URLSearchParams({ checkIn: S.stay.checkIn, checkOut: S.stay.checkOut }))
         .then(function (data) { S.acts = data.activities; drawExperiences(); })
         .catch(function (e) { box.innerHTML = '<div class="notice notice--error" role="alert"><h2>We couldn\'t load the experiences</h2><p>' + esc(e.message) + '</p></div>'; })
@@ -699,9 +711,11 @@
         return '<article class="xp" data-xp="' + i + '">' +
           // alt="": the heading right below names the trip, so a description adds nothing for a screen reader
           (photo ? '<div class="xp__img"><img src="' + photo.src + '" alt="" loading="lazy" style="object-position:' + photo.pos + '" /></div>' : '') +
-          '<div class="xp__head"><h2>' + esc(a.name) + '</h2>' +
-          '<p class="xp__price num">' + money(a.priceKes) + ' <small>per person</small></p></div>' +
+          // Title, description and price in one column beside the photo, so the price follows the
+          // text directly instead of waiting below the (taller) photo
+          '<div class="xp__body"><div class="xp__head"><h2>' + esc(a.name) + '</h2></div>' +
           '<p class="xp__sum">' + esc(a.summary) + '</p>' +
+          '<p class="xp__price num">' + money(a.priceKes) + ' <small>per person</small></p></div>' +
           (a.departures.length
             ? '<div class="xp__add">' +
                 '<div class="field"><label for="dep-' + i + '">Departure</label><select class="input" id="dep-' + i + '"><option value="">Choose a day and time</option>' + options + '</select></div>' +
@@ -781,7 +795,8 @@
       if (first) { $(first).focus(); return; }
 
       sending = true;
-      var btn = $('holdBtn'); btn.disabled = true; btn.textContent = 'Holding your booking…';
+      // The label stays "Book"; disabled + aria-busy say "working" (screen readers announce it)
+      var btn = $('holdBtn'); btn.disabled = true; btn.setAttribute('aria-busy', 'true');
       var body = {
         rooms: chosenRooms().map(function (x) { return { room: x.room.slug, units: x.units }; }),
         activities: S.trips.map(function (t) { return { activity: t.activity, day: t.day, time: t.time, people: t.people }; }),
@@ -811,7 +826,7 @@
           }
           else { $('formError').textContent = err.message; $('formError').hidden = false; }
         })
-        .then(function () { sending = false; btn.disabled = false; btn.textContent = 'Hold my booking'; });
+        .then(function () { sending = false; btn.disabled = false; btn.removeAttribute('aria-busy'); });
     });
 
     /* ── STEP 3: the hold, also the guest's private link ─────────────────────────────────── */
@@ -868,20 +883,18 @@
           (ways.indexOf('mpesa') > -1 ?
             '<form class="pay__way pay__way--mpesa" id="mpesaForm" novalidate aria-labelledby="mpesaTitle">' +
               '<h3 id="mpesaTitle">' + ICON.phone + 'Pay with M-Pesa</h3>' +
-              '<ol class="pay__steps"><li>Get a prompt on your phone</li><li>Enter your M-Pesa PIN</li><li>Your booking is confirmed here</li></ol>' +
               '<div class="field"><label for="mpesaPhone">M-Pesa number</label>' +
                 '<input class="input" id="mpesaPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="0712 345 678" aria-describedby="mpesaPhone-hint mpesaPhone-err" />' +
                 '<p class="hint" id="mpesaPhone-hint">Leave empty to use your booking’s number.</p>' +
                 '<p class="error" id="mpesaPhone-err" hidden></p></div>' +
-              '<button class="btn btn--mpesa" type="submit" data-label="Send prompt">Send prompt</button>' +
+              '<button class="btn btn--mpesa" type="submit">Send prompt</button>' +
             '</form>' : '') +
           (ways.indexOf('card') > -1 ?
             '<div class="pay__way" role="group" aria-labelledby="cardTitle">' +
               '<h3 id="cardTitle">' + ICON.card + 'Pay by card</h3>' +
-              '<ol class="pay__steps"><li>Go to Paystack\'s secure page</li><li>Enter your card details</li><li>Come straight back here</li></ol>' +
-              // Below the steps, so both tiles' titles and steps line up side by side
-              '<ul class="pay__chips" aria-label="Cards accepted"><li>Visa</li><li>Mastercard</li></ul>' +
-              '<button class="btn" type="button" data-pay="card" data-label="Pay by card">Pay by card</button>' +
+              '<ul class="pay__brands" aria-label="Cards accepted">' +
+                '<li><img src="visa.png" alt="Visa" /></li><li class="mc"><img src="mastercard.png" alt="Mastercard" /></li></ul>' +
+              '<button class="btn" type="button" data-pay="card">Pay by card</button>' +
             '</div>' : '') +
         '</div>' +
         '<p class="error" id="payError" role="alert" hidden></p>' +
@@ -938,6 +951,7 @@
           '<a class="btn btn--ghost" href="index.html">Back to Safari Ember</a></div>' +
       '</div>';
       showStep(4);
+      brandFallback();
       if (!quiet) focusMain();
       if (held && b.holdExpiresAt) {
         var end = new Date(b.holdExpiresAt).getTime();
@@ -982,6 +996,14 @@
         .catch(function () { poll = setTimeout(refresh, 15000); });   // a blip: try again, quietly
     }
 
+    /** A card logo file that's missing or broken shows its name as a small label instead. */
+    function brandFallback() {
+      document.querySelectorAll('.pay__brands img').forEach(function (img) {
+        function asText() { var li = img.parentNode; li.classList.add('is-text'); li.textContent = img.alt; }
+        if (img.complete && !img.naturalWidth) asText(); else img.addEventListener('error', asText);
+      });
+    }
+
     function payError(msg) { var el = $('payError'); if (el) { el.textContent = msg; el.hidden = false; } }
 
     // One way to start paying. method: 'mpesa' (phone optional) or 'card'.
@@ -989,7 +1011,7 @@
     function startPay(method, phone, btn) {
       if (paying || !LINK) return;
       paying = true;
-      if (btn) { btn.disabled = true; btn.textContent = method === 'card' ? 'Opening the card page…' : 'Sending the prompt…'; }
+      if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }      // the label stays as it is
       var body = { method: method }; if (phone) body.phone = phone;
       api('/bookings/' + LINK.ref + '/pay', {
         method: 'POST',
@@ -1003,7 +1025,7 @@
         })
         .catch(function (e) {
           paying = false;
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Try again'; }
+          if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
           var m = /^phone: (.+)$/.exec(e.message);
           if (m && $('mpesaPhone')) { var el = $('mpesaPhone-err'); el.textContent = m[1].charAt(0).toUpperCase() + m[1].slice(1) + '.'; el.hidden = false; $('mpesaPhone').setAttribute('aria-invalid', 'true'); $('mpesaPhone').focus(); return; }
           // 409: the booking moved on (paid meanwhile, room taken, a prompt already out). Show the
@@ -1040,12 +1062,21 @@
     // stuck on the end; those are ignored (the API asks Paystack itself) and tidied away.
     function loadFromLink() {
       var m = /^#(SE-[A-Z0-9]{6})\.(\d{10}\.[A-Za-z0-9_-]{43})(?:[?&].*)?$/.exec(location.hash);
+      if (!m && /^#SE-/i.test(location.hash)) {
+        // A booking link that arrived incomplete (some chat apps cut long links, or a copy missed
+        // the end). Say so, rather than quietly showing an empty search.
+        showStep(4);
+        $('step-hold').innerHTML = '<div class="notice notice--error" role="alert"><h2>This booking link is incomplete</h2>' +
+          '<p>Part of it seems to be missing. Open the link from your confirmation email again, or copy the whole of it into the address bar.</p>' +
+          '<p><a class="btn btn--ghost" href="booking.html">Make a new booking</a></p></div>';
+        return true;
+      }
       if (!m) return false;
       var clean = '#' + m[1] + '.' + m[2];
       if (location.hash !== clean) history.replaceState({ step: 4 }, '', location.pathname + clean);
       LINK = { ref: m[1], token: m[2] };
       showStep(4);
-      $('step-hold').innerHTML = '<p class="loading">Opening your booking…</p>';
+      $('step-hold').innerHTML = '<p class="sr-only" role="status">Opening your booking</p>';
       api('/bookings/' + m[1], { headers: { Accept: 'application/json', 'X-Booking-Token': m[2] } })
         .then(function (res) { viewBooking(res.booking); })     // the API answers { booking }
         .catch(function (e) {
@@ -1058,7 +1089,10 @@
     /* ── Start: a booking link, or a search from the address ─────────────────────────────── */
     function fromAddress() {
       var q = new URLSearchParams(location.search);
-      var st = { checkIn: q.get('checkIn') || '', checkOut: q.get('checkOut') || '', guests: Math.min(12, Math.max(1, Number(q.get('guests')) || 2)) };
+      // checkin/checkout too: the names the home page's form fields carry, should it ever submit
+      // on its own (its script normally builds this address with checkIn/checkOut)
+      var st = { checkIn: q.get('checkIn') || q.get('checkin') || '', checkOut: q.get('checkOut') || q.get('checkout') || '',
+                 guests: Math.min(12, Math.max(1, Number(q.get('guests')) || 2)) };
       f.in.value = st.checkIn; f.out.value = st.checkOut; f.guests.value = String(st.guests);
       if (st.checkIn) f.out.min = addDays(st.checkIn, 1);
       showStep(1);

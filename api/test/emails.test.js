@@ -11,6 +11,7 @@ import { roomTypes, bookings, payments, bookingEmails } from '../src/db/schema.j
 import { outbox, mailSettled, deliver } from '../src/services/mail.js';
 import { expireHolds } from '../src/services/bookings.js';
 import { cancel, bookingDetail } from '../src/services/admin.js';
+import { layout } from '../src/services/emails.js';
 import { resetTokenCache } from '../src/services/daraja.js';
 import { as, inDays } from './helpers.js';
 import { startFakeDaraja, callbackBody } from './fakeDaraja.js';
@@ -208,6 +209,18 @@ describe('sending through Resend', () => {
   it('passes the lodge as reply-to', async () => {
     expect(await deliver({ to: 'amina@example.com', subject: 's', text: 't', replyTo: LODGE }, cfg)).toBe('sent');
     expect(got[0]).toMatchObject({ auth: 'Bearer re_test_0123456789', body: { to: ['amina@example.com'], reply_to: LODGE, from: 'Safari Ember <onboarding@resend.dev>' } });
+  });
+
+  it('carries the logo inside the email, where the HTML points at it', async () => {
+    const html = layout({ heading: 'h', intro: 'i' });
+    expect(html).toContain('src="cid:safari-ember-logo"');
+    expect(await deliver({ to: 'amina@example.com', subject: 's', text: 't', html }, cfg)).toBe('sent');
+    const [att] = got[0].body.attachments;
+    expect(att).toMatchObject({ content_id: 'safari-ember-logo', content_type: 'image/png', filename: 'safari-ember.png' });
+    expect(Buffer.from(att.content, 'base64').subarray(1, 4).toString()).toBe('PNG');   // a real PNG
+    // No HTML (or HTML without the logo): nothing attached
+    await deliver({ to: 'amina@example.com', subject: 's', text: 't' }, cfg);
+    expect(got[1].body.attachments).toBeUndefined();
   });
 
   it('holds a guest\'s email while only the owner\'s address may receive (no domain yet)', async () => {

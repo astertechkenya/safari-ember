@@ -26,7 +26,7 @@ import { freeUnits } from './availability.js';
 import { checkBookingPayment, paymentSummary, paymentMethods } from './payments.js';
 import { quote, priceNights, quoteBooking } from './pricing.js';
 import { lockRoomTypes, shortfall, withHoldRunning } from './capacity.js';
-import { tripDays, bookable } from './activities.js';
+import { tripDays, bookable, duringStay, CHECK_IN_TIME, CHECK_OUT_TIME } from './activities.js';
 import { newRef } from '../lib/ref.js';
 import { bookingToken, bookingUrl } from '../lib/bookingLink.js';
 import { daysBetween } from '../lib/dates.js';
@@ -123,6 +123,11 @@ export async function createHold({ rooms, activities: trips = [], checkIn, check
         if (!days.includes(t.day)) throw httpError(400, `${a.name} must be on a day of your stay`);
         if (!a.departureTimes.includes(t.time)) {
           throw httpError(400, `${a.name} doesn’t leave at ${t.time} on ${t.day}`);
+        }
+        if (!duringStay(t.day, t.time, checkIn, checkOut)) {
+          throw httpError(400, t.day === checkIn
+            ? `${a.name} at ${t.time} leaves before check-in (from ${CHECK_IN_TIME}) on your arrival day. Please choose a later departure.`
+            : `${a.name} at ${t.time} leaves after check-out (by ${CHECK_OUT_TIME}) on your last day. Please choose an earlier departure.`);
         }
         if (!bookable(t.day, t.time)) throw httpError(400, `${a.name} at ${t.time} on ${t.day} is too soon to book. Please choose a later departure.`);
         if (t.people > guests) throw httpError(400, `${a.name}: at most ${plural(guests, 'guest')}, the size of your party`);

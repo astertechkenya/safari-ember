@@ -10,8 +10,9 @@
   <link rel="icon" href="mark.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Same fonts as the public site: Playfair for headings, Jost for everything you read and click -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Playfair for headings (as on the site), Source Sans 3 for everything you read (names, emails,
+       dates, notes), Jost for figures, capital labels and buttons (as on the site) -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Jost:wght@400;500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
     /* ==========================================================================
@@ -32,10 +33,12 @@
       --line:      rgba(200, 120, 42, .16);
       --line-2:    rgba(200, 120, 42, .32);
 
-      /* Text: all at least 4.5:1 on --panel */
+      /* Text. Secondary text is a light sand, not brown (Oct 2026 readability pass): the old
+         tones passed the 4.5:1 minimum but tired the eyes over a day at the desk.
+         On --panel: text 15:1, muted 11.9:1, dim 9.7:1. */
       --text:      #f5e8d0;
-      --muted:     #c4a882;
-      --dim:       #a99379;
+      --muted:     #dccbaf;
+      --dim:       #cbb79b;
 
       /* Brand */
       --ember:     #c8782a;
@@ -49,6 +52,12 @@
          today's calendar column. Alerts (holds, enquiries, a guest's request) are
          NOT sand: they're dark with an ember edge and an ember headline label. */
       --sand-ember: #8a3f0e;   /* ember text on sand: 5.0:1 (AA) */
+      --sand-muted: #47372a;   /* secondary text on sand: 7.6:1 */
+
+      /* Places you type: near-white with a visible edge, so they can never be mistaken for the
+         sand sheets of read-only data around them */
+      --input:      #fbf7f0;
+      --input-edge: #8c7a63;
 
       /* Status colours. Never colour alone: every status also has a word. */
       --st-held:      #f0b070;  --st-held-bg:      rgba(232, 149, 74, .14);
@@ -58,7 +67,14 @@
       --st-bad:       #f0a090;  --st-bad-bg:       rgba(220, 90, 70, .14);
 
       --serif: 'Playfair Display', Georgia, serif;
-      --sans:  'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      /* Three faces, three jobs (Oct 2026):
+           --serif   Playfair Display: page titles and headings, the brand's flair
+           --sans    Source Sans 3: all data you read (names, emails, dates, notes, fields). Its
+                     open, distinct letters read faster than Jost's geometric ones at 13–15px
+           --figure  Jost: numbers that stand on their own, the small capital labels and buttons,
+                     tying the admin to the site's headline tags (see the end of this stylesheet) */
+      --sans:   'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --figure: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
       --radius: 0;   /* square corners throughout, like the public site */
       --side-w: 232px;
@@ -87,7 +103,7 @@
       font-weight: 500; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
     }
     .btn:hover { border-color: var(--ember); background: var(--panel-2); }
-    .btn--primary { background: var(--ember); border-color: var(--ember); color: #120c06; }
+    .btn--primary { background: var(--ember); border-color: var(--ember); color: #120c06; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; padding: 0 22px; }
     .btn--primary:hover { background: var(--ember-hi); border-color: var(--ember-hi); }
     .btn--danger { border-color: rgba(240, 160, 144, .45); color: var(--st-bad); }
     .btn--danger:hover { background: var(--st-bad-bg); border-color: var(--st-bad); }
@@ -97,6 +113,10 @@
     .btn--caps { text-transform: uppercase; letter-spacing: .14em; font-size: 13px; font-weight: 600; padding: 0 20px; }
     .btn--ghost:hover { color: var(--text); }
     .btn[disabled] { opacity: .45; cursor: not-allowed; }
+    /* The sign-in buttons: capitals like the other main buttons, but Jost Medium, not semibold */
+    .btn--primary.btn--plain { font-weight: 500; }
+    /* A Save with nothing to save: an outline, not a faded orange block */
+    .btn--primary[disabled] { opacity: 1; background: transparent; border-color: var(--line-2); color: var(--dim); }
 
     /* ── Status chips ─────────────────────────────────────────────────────── */
     .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 0;
@@ -119,13 +139,16 @@
        dropdowns their light versions to match. */
     .input, select.input, textarea.input {
       width: 100%; min-height: 42px; padding: 9px 12px; border-radius: 0;
-      background: var(--field); border: 1px solid var(--field); color: var(--field-ink); color-scheme: light;
+      background: var(--input); border: 1px solid var(--input-edge); color: var(--field-ink); color-scheme: light;
+      transition: border-color .15s, box-shadow .15s;
     }
+    .input:hover:not([readonly]) { border-color: var(--field-ink); }
     .input::placeholder { color: #5e4a38; opacity: 1; }            /* 5.6:1 on the sand */
-    .input:focus { border-color: #080705; outline: none; box-shadow: inset 0 0 0 1px #080705; }
+    .input:focus { border-color: var(--ember); outline: none; box-shadow: 0 0 0 3px rgba(200, 120, 42, .45); }   /* an ember ring: where you're typing */
+    .input[readonly] { background: transparent; border-style: dashed; color: inherit; }   /* read-only (the demo account): clearly not a field */
     select.input option { background: #fffaf2; color: var(--field-ink); }
     /* Browser autofill paints its own colour: keep the sand and the dark text */
-    .input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px var(--field) inset; -webkit-text-fill-color: var(--field-ink); caret-color: var(--field-ink); }
+    .input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px var(--input) inset; -webkit-text-fill-color: var(--field-ink); caret-color: var(--field-ink); }
     .hint { font-size: 13px; color: var(--dim); }
 
     /* ==========================================================================
@@ -171,6 +194,11 @@
                    color: var(--ember-hi); font-weight: 600; font-size: 13px; }
     .who b { display: block; font-weight: 500; font-size: 14px; }
     .who small { color: var(--dim); font-size: 12.5px; }
+    /* Sign out: the site's ghost button (Explore Resort), small: ember capitals in a thin ember
+       outline across the sidebar foot, kept low (32px); the outline and text brighten on hover */
+    .side__signout { width: 100%; min-height: 32px; padding: 0 12px; background: transparent; border: 1px solid rgba(200, 120, 42, .45); color: var(--ember-hi);
+      font-family: var(--figure); font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
+    .side__signout:hover { background: transparent; border-color: var(--ember); color: var(--text); }
     .proto-note { font-size: 12px; color: var(--dim); line-height: 1.4; }
     /* Live data (Phase 5): loading, a failed load, the demo account's note, sign-in errors */
     .loading { color: var(--muted); padding: 40px 0; }
@@ -203,38 +231,45 @@
     /* Today: big, readable from across the reception desk */
     .page__head--today .page__title { font-size: 46px; }
     .page__head--today .page__sub { font-size: 21px; color: var(--text); margin-top: 8px; }
-    .stats { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 44px; padding: 22px 0; margin-bottom: 22px;   /* labels share one baseline, whatever sits above */
-      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-    .stat { display: grid; gap: 6px; color: inherit; text-decoration: none; }
-    .stat__n { font-family: var(--serif); font-size: 46px; line-height: 1; color: var(--text); }
-    .stat__n small { font-size: 22px; color: var(--muted); }
+    /* The day's numbers: four equal tiles in one band, split by thin rules, the same width as
+       the two lists below, so the page reads as one grid rather than big numbers floating over
+       empty space. */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;
+      background: var(--panel); border: 1px solid var(--line); }
+    .stat { display: grid; gap: 8px; align-content: end; padding: 20px 22px; color: inherit; text-decoration: none; }
+    .stat + .stat { border-left: 1px solid var(--line); }
+    a.stat:hover { background: var(--panel-2); }
+    /* Numbers (Oct 2026): every figure in the admin is Jost semibold, the face the Money tiles
+       introduced. Serif stays for page titles and names; a number is data, so it gets the data
+       face. Big standalone figures keep proportional digits (tabular only in columns). */
+    .stat__n { font-family: var(--sans); font-weight: 600; font-size: 40px; line-height: 1; color: var(--text); }
+    .stat__n small { font-size: 20px; font-weight: 500; color: var(--muted); }
+    .stat__n .stat__also { display: inline-block; white-space: nowrap; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line-2); }   /* a rule, not a dot, between rooms and guests */
     /* The site's headline tag: small capitals, wide letter-spacing, ember */
     .stat__k { font-size: 13px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
     a.stat:hover .stat__k { color: var(--ember-hi); }
     /* Notifications (holds, enquiries): an ember circle with the count and the site's headline
        tag beside it. Not sand: sand is for sheets of information; these are alerts. The circle is
        the one round shape on purpose, because a round count reads as "new" everywhere. */
-    .notes { display: flex; flex-wrap: wrap; gap: 16px 48px; margin-bottom: 28px; }
-    .notice { display: flex; align-items: center; gap: 16px; color: inherit; text-decoration: none; }
-    .notice__n { display: grid; place-items: center; flex: none; width: 60px; height: 60px; border-radius: 50%;
-      background: var(--ember); color: #120c06; font-weight: 600; font-size: 28px; font-variant-numeric: tabular-nums; }
-    .notice__k { display: block; font-size: 15px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ember-hi); }
-    .notice__s { display: block; font-size: 15px; color: var(--muted); margin-top: 3px; }
-    .notice__s .timer { font-size: 15px; }
-    .notice:hover .notice__k { color: var(--text); }
-    .grid-2--wide { gap: 24px; align-items: start; }
+    .notes { display: flex; flex-wrap: wrap; gap: 12px 40px; margin-bottom: 24px; }
+    .notice { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+    .notice__n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%;   /* half the old size (Oct 2026): a nudge, not a headline */
+      background: var(--ember); color: #120c06; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .notice__k { display: block; font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ember-hi); }
+        .notice:hover .notice__k { color: var(--text); }
+    .grid-2--wide { gap: 24px; align-items: stretch; }   /* Arriving and Leaving always the same height, side by side */
     /* Arriving and Leaving on sand, like paper on the desk: dark ink, maximum contrast (12:1) */
     .sheet { background: var(--field); color: var(--field-ink); padding: 18px 22px 8px; border-left: 3px solid var(--ember); }
     .list__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
     .list__head h2 { font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #522b0a; }
-    .sheet .hint { color: #5a4632; font-size: 14px; }
+    .sheet .hint { color: var(--sand-muted); font-size: 14px; }
     .sheet .rows { border: 0; }
     .sheet .row { padding: 14px 0; border-top: 1px solid rgba(28, 22, 16, .16); }
     .sheet .row__name { font-size: 17px; }
     .sheet .row__name a { color: var(--field-ink); }
     .sheet .row__name a:hover { color: var(--sand-ember); }
-    .sheet .row__meta { font-size: 15px; color: #5a4632; }
-    .sheet .empty { color: #5a4632; padding: 14px 0 18px; }
+    .sheet .row__meta { font-size: 15px; color: var(--sand-muted); }
+    .sheet .empty { color: var(--sand-muted); padding: 14px 0 18px; }
     .row__note { font-size: 14px; color: var(--sand-ember); margin-top: 3px; font-weight: 500; }
     .row.is-done .row__name a { color: #5c4c3d; text-decoration: line-through; text-decoration-color: rgba(28, 22, 16, .45); }
     .done-mark { color: #24592c; font-size: 15px; font-weight: 600; white-space: nowrap; }
@@ -254,8 +289,9 @@
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     caption { text-align: left; }
-    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-    th { font-size: 12.5px; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: 11.5px; font-weight: 600; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; padding-top: 16px; padding-bottom: 12px; }
+    td { font-size: 14.5px; }
     td.right, th.right { text-align: right; }
     tbody tr:last-child td { border-bottom: 0; }
     tbody tr.clickable { cursor: pointer; }
@@ -264,17 +300,24 @@
     td a.ref { color: var(--text); text-decoration: none; }
     td a.ref:hover { color: var(--ember-hi); text-decoration: underline; }
     .sub { display: block; font-size: 13px; color: var(--dim); }
+    /* Several room types in one booking: one per line, a hairline between, so they scan as a list */
+    .room-list { list-style: none; margin: 0; padding: 0; }
+    .room-list li { padding: 3px 0; }
+    .room-list li + li { border-top: 1px dashed rgba(28, 22, 16, .22); }
     .table-wrap--sand .sub.owed { color: var(--sand-ember); font-weight: 600; margin-top: 4px; }   /* "Refund due" under the status */
 
     /* The bookings list on sand, like the Today sheets: dark ink on paper for reading data.
        (The filters bar above stays on the dark panel: its fields are sand already.) */
     .table-wrap--sand { background: var(--field); color: var(--field-ink); }
     .table-wrap--sand th { color: #522b0a; font-weight: 600; border-bottom: 1px solid rgba(28, 22, 16, .28); }
-    .table-wrap--sand td { border-bottom: 1px solid rgba(28, 22, 16, .14); }
+    .table-wrap--sand td { border-bottom: 1px solid rgba(28, 22, 16, .2); }   /* a visible line under every row: the eye can follow it across */
+    /* What staff look for first, a little heavier: reference, guest, total */
+    .table-wrap--sand td.c-ref .ref, .table-wrap--sand td.c-guest, .table-wrap--sand td.c-money { font-weight: 600; }
+    .table-wrap--sand td .sub { font-weight: 400; margin-top: 2px; }
     .table-wrap--sand tbody tr.clickable:hover { background: rgba(28, 22, 16, .06); }
     .table-wrap--sand td a.ref { color: var(--field-ink); }
     .table-wrap--sand td a.ref:hover { color: var(--sand-ember); }
-    .table-wrap--sand .sub, .table-wrap--sand .empty { color: #5a4632; }
+    .table-wrap--sand .sub, .table-wrap--sand .empty { color: var(--sand-muted); }
     /* Status words on sand: no dot, darker colours made for the light background (all 4.6:1 or more) */
     .table-wrap--sand .chip, .panel--sand .chip, .sheet .chip { font-weight: 600; padding: 3px 10px; }
     .table-wrap--sand .chip::before, .panel--sand .chip::before, .sheet .chip::before { display: none; }
@@ -290,7 +333,7 @@
     /* .btn.btn--x matches the rule above's strength (0,3,0) and comes later, so it wins: no !important */
     .panel--sand .btn.btn--danger { color: #8a2418; border-color: rgba(138, 36, 24, .5); }
     .panel--sand .btn.btn--danger:hover { background: rgba(190, 60, 40, .12); border-color: #8a2418; }
-    .panel--sand .btn.btn--ghost { border-color: transparent; color: #5a4632; }
+    .panel--sand .btn.btn--ghost { border-color: transparent; color: var(--sand-muted); }
     .panel--sand .btn.btn--primary { color: #120c06; }   /* a link styled as a button (Reply) must not take the sand link colour */
     .table-wrap--sand .chip--CANCELLED, .panel--sand .chip--CANCELLED { color: #8a2418; background: rgba(190, 60, 40, .15); }
 
@@ -314,6 +357,9 @@
        tags; the guest's request as a notification; the balance due as the one thing that shouts. */
     .page__head--big .page__title { font-size: 46px; }
     .page__head--big .page__sub { display: flex; align-items: center; gap: 14px; font-size: 19px; color: var(--text); margin-top: 8px; }
+    /* The sentence under a title that explains the screen: helpful once, not data, so it steps
+       back — smaller and in the secondary colour, with room for the title above it */
+    .page__head--big .page__sub.page__note { display: block; font-size: 15px; color: var(--muted); margin-top: 10px; max-width: 760px; line-height: 1.5; }
     .page__head--big .chip { font-size: 14px; font-weight: 600; padding: 4px 12px; }
     .page__head--big .chip::before { display: none; }
     .request { background: var(--panel-2); border-left: 3px solid var(--ember); padding: 14px 18px; margin: 0 0 20px; }
@@ -324,11 +370,11 @@
     .panel--sand .panel__head { border-bottom: 1px solid rgba(28, 22, 16, .2); padding: 16px 20px 12px; }
     .panel--sand .panel__head h2 { font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #522b0a; }
     .panel--sand .panel__body { padding: 16px 20px 18px; }
-    .panel--sand .hint { color: #5a4632; }
-    .panel--sand .kv dt { color: #5a4632; }
+    .panel--sand .hint { color: var(--sand-muted); }
+    .panel--sand .kv dt { color: var(--sand-muted); }
     .panel--sand .kv dd { font-size: 16px; }
     .panel--sand a { color: var(--sand-ember); }
-    .panel--sand .timeline small { color: #5a4632; }
+    .panel--sand .timeline small { color: var(--sand-muted); }
     .panel--sand .table-wrap--sand { border-left: 0; }
     .panel--sand .money .total { background: var(--field-ink); color: var(--field); padding: 14px 14px; margin: 8px -6px 0; }
     .panel--sand .money .due { color: var(--ember-hi); font-size: 22px; }
@@ -352,7 +398,7 @@
     .cal { border-collapse: separate; border-spacing: 0; min-width: 100%; }
     .cal th, .cal td { border-bottom: 1px solid var(--line); padding: 0; text-align: center; }
     .cal thead th { padding: 10px 4px; font-size: 12px; text-transform: none; letter-spacing: 0; }
-    .cal thead th b { display: block; font-size: 15px; color: var(--text); font-weight: 500; }
+    .cal thead th b { display: block; font-size: 15px; color: var(--text); font-weight: 600; }
     .cal thead th.weekend { background: rgba(255, 255, 255, .02); }
     /* After .weekend on purpose: today can be a Saturday or Sunday, and sand must win */
     .cal thead th.today { background: var(--field); color: var(--field-ink); }
@@ -360,68 +406,66 @@
     .cal .room { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 12px 16px; min-width: 190px; border-right: 1px solid var(--line); }
     .cal .room b { display: block; font-weight: 500; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 14px; }
     .cal .room span { color: var(--dim); font-size: 12.5px; text-transform: none; letter-spacing: 0; font-weight: 400; }
-    .cell { display: grid; place-items: center; min-width: 52px; height: 58px; margin: 3px; border-radius: 0; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: pointer; border: 1px solid transparent; background: none; width: calc(100% - 6px); color: var(--text); }
+    .cell { display: grid; place-items: center; min-width: 44px; height: 48px; margin: 3px; border-radius: 0; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; border: 1px solid transparent; background: none; width: calc(100% - 6px); color: var(--text); }
     .cell:hover { border-color: var(--line-2); }
-    .cell small { display: block; font-size: 11px; color: var(--dim); }
-    /* fullness: more booked = more ember */
+        /* fullness: more booked = more ember */
     .cell[data-level="0"] { background: rgba(255, 255, 255, .025); }
     .cell[data-level="1"] { background: rgba(200, 120, 42, .12); }
     .cell[data-level="2"] { background: rgba(200, 120, 42, .26); }
     .cell[data-level="3"] { background: rgba(200, 120, 42, .45); }
     .cell[data-level="full"] { background: var(--ember); color: #120c06; }
-    .cell[data-level="full"] small { color: #3a2410; }
     .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 14px 18px; border-top: 1px solid var(--line); }
+    .legend__key { font-weight: 600; margin-right: 6px; }
     .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 0; vertical-align: -2px; margin-right: 6px; }
 
     /* Calendar on sand: the same meaning, re-coloured for paper. Free = lighter paper; more
        booked = more ember; full = solid ember. Today, highlighted in sand on the dark page,
        inverts to a dark column here (sand on sand would vanish). */
     .panel--sand .cal th, .panel--sand .cal td { border-bottom-color: rgba(28, 22, 16, .14); }
-    .panel--sand .cal thead th { color: #5a4632; }
+    .panel--sand .cal thead th { color: var(--sand-muted); }
     .panel--sand .cal thead th b { color: var(--field-ink); font-size: 16px; }
     .panel--sand .cal thead th.weekend { background: rgba(28, 22, 16, .05); }
     .panel--sand .cal thead th.today { background: var(--field-ink); color: var(--field); }
     .panel--sand .cal thead th.today b { color: var(--ember-hi); }
     .panel--sand .cal .room { background: var(--field); border-right-color: rgba(28, 22, 16, .16); }
     .panel--sand .cal .room b { color: var(--field-ink); font-size: 15px; }
-    .panel--sand .cal .room span { color: #5a4632; }
+    .panel--sand .cal .room span { color: var(--sand-muted); }
     .panel--sand .cell { color: var(--field-ink); font-weight: 500; }
-    .panel--sand .cell small { color: #5a4632; font-weight: 400; }
     .panel--sand .cell:hover { border-color: rgba(28, 22, 16, .45); }
     .panel--sand .cell[data-level="0"], .sw[data-level="0"] { background-color: rgba(255, 255, 255, .38); }
     .panel--sand .cell[data-level="1"], .sw[data-level="1"] { background-color: rgba(200, 120, 42, .16); }
     .panel--sand .cell[data-level="2"], .sw[data-level="2"] { background-color: rgba(200, 120, 42, .30); }
     .panel--sand .cell[data-level="3"], .sw[data-level="3"] { background-color: rgba(200, 120, 42, .50); }
     .panel--sand .cell[data-level="full"], .sw[data-level="full"] { background-color: var(--ember); color: #120c06; }
-    .panel--sand .cell[data-level="full"] small { color: #3a2410; }
     /* A night's guest list: how many rooms each has, as a number at the right end of the row */
     .row__rooms { text-align: right; line-height: 1.1; min-width: 56px; }
     .row__rooms b { display: block; font-size: 28px; font-weight: 600; color: var(--field-ink); font-variant-numeric: tabular-nums; }
-    .row__rooms span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #5a4632; }
+    .row__rooms span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--sand-muted); }
     .sw--today { background: var(--field-ink); }
-    .panel--sand .legend { color: #5a4632; border-top-color: rgba(28, 22, 16, .16); }
+    .panel--sand .legend { color: var(--sand-muted); border-top-color: rgba(28, 22, 16, .16); }
     .panel--sand .legend i { outline: 1px solid rgba(28, 22, 16, .2); outline-offset: -1px; }
     /* Who's staying (the night panel) */
     .panel--sand .row { border-top-color: rgba(28, 22, 16, .14); }
     .panel--sand .row__name a { color: var(--field-ink); }
     .panel--sand .row__name a:hover { color: var(--sand-ember); }
-    .panel--sand .row__meta, .panel--sand .empty { color: #5a4632; }
+    .panel--sand .row__meta, .panel--sand .empty { color: var(--sand-muted); }
 
-    /* ── Rooms & rates ────────────────────────────────────────────────────── */
+    /* ── Rates (rooms and experiences) ────────────────────────────────────────────────────── */
     /* Experiences: departures as day sheets (like Today's lists); trips as cards (like rooms) */
     .xp-days { display: grid; gap: 20px; }
+    .xp-title--first { margin-top: 8px !important; }
     .xp-title { margin: 40px 0 12px; font-size: 14px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ember-hi); }
     .dep { padding: 14px 0; border-top: 1px solid rgba(28, 22, 16, .16); }
     .dep__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .dep__what { font-size: 17px; font-weight: 500; }
     .dep__what b { font-variant-numeric: tabular-nums; margin-right: 6px; }
-    .dep__count { font-size: 15px; color: #5a4632; font-variant-numeric: tabular-nums; }
+    .dep__count { font-size: 15px; color: var(--sand-muted); font-variant-numeric: tabular-nums; }
     .dep__count strong { color: var(--sand-ember); font-weight: 600; }
     .dep__who { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
     .dep__who li { font-size: 15px; color: #3d3024; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
     .dep__who a { color: var(--field-ink); }
     .dep__who a:hover { color: var(--sand-ember); }
-    .room-card { display: grid; gap: 14px; }
+    .room-card { display: grid; gap: 18px; }
     .room-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
     .room-card h3 { font-family: var(--serif); font-size: 20px; }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -431,10 +475,32 @@
     .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
     .toggle input { width: 18px; height: 18px; accent-color: var(--ember); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; align-items: end; }
-    /* The room cards are forms, so they stay dark with sand fields; their figures are data, so sand */
-    .fact { background: var(--field); color: var(--field-ink); border-left: 3px solid var(--ember); }
-    .fact span { color: #5a4632; }
-    .fact b { font-weight: 600; }
+    /* The room and trip cards are forms. Their figures are read-only facts, so they're plain text
+       on the dark card, split by thin rules: nothing about them looks clickable. The only light
+       shapes on the card are the white fields you type in, and Save. */
+    .fact { background: none; padding: 2px 14px; border-left: 1px solid var(--line-2); }
+    .fact:first-child { padding-left: 0; border-left: 0; }
+    .fact span { font-size: 13px; color: var(--dim); white-space: nowrap; }   /* sentence case: "Trips a day" fits a third of a card without wrapping */
+    .fact b { font-weight: 600; font-size: 20px; color: var(--text); }
+    .room-card .facts { padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .room-card__save { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .room-card__save .hint { margin: 0; }
+    .room-card__save .hint.is-dirty { color: var(--ember-hi); font-weight: 500; }
+    .form-grid--3 { align-items: start; }   /* the times field has a hint under it: line the fields up by their tops */
+
+    /* Rates, rooms and experiences (Oct 2026): one card per row, read left to right — name, its
+       figures, the fields, Save — so every room or trip lines up with the one above it and the
+       prices can be compared straight down the page. Narrower screens fall back to the
+       stacked card. */
+    @media (min-width: 1100px) {
+      .card-rows .room-card { grid-template-columns: minmax(210px, 1fr) minmax(420px, 2.6fr) 150px;   /* name | fields | save: everything on the card can be edited */ align-items: center; gap: 0 32px; padding: 22px 24px; }
+      .card-rows .room-card__top { flex-direction: column; gap: 12px; }
+      .card-rows .room-card .facts { border: 0; padding: 0; grid-template-columns: 1fr; }
+      .card-rows .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .card-rows .field label { white-space: nowrap; }   /* one line each, so the fields line up across the row */
+      .card-rows .form-grid--3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr); }
+      .card-rows .room-card__save { flex-direction: column-reverse; align-items: stretch; text-align: center; gap: 8px; }
+    }
 
     /* ── Enquiries ────────────────────────────────────────────────────────── */
     .inbox { display: grid; grid-template-columns: 360px 1fr; min-height: 520px; }
@@ -452,17 +518,81 @@
     .inbox__read h2 { font-family: var(--serif); font-size: 22px; margin-bottom: 4px; }
     .inbox__from { margin: 0; color: var(--muted); }
     /* The inbox on sand */
-    .panel--sand .inbox__list { border-right-color: rgba(28, 22, 16, .16); }
-    .panel--sand .inbox__item { border-bottom-color: rgba(28, 22, 16, .14); }
+    /* Clear lines: a firm rule between the list and the open message, and a visible line under
+       every message in the list, so each one reads as its own item */
+    .panel--sand .inbox__list { border-right: 2px solid rgba(28, 22, 16, .38); }
+    .panel--sand .inbox__item { border-bottom: 1px solid rgba(28, 22, 16, .3); }
     .panel--sand .inbox__item:hover { background: rgba(28, 22, 16, .06); }
-    .panel--sand .inbox__item[aria-current="true"] { background: rgba(28, 22, 16, .11); box-shadow: inset 3px 0 0 var(--ember); }
+    .panel--sand .inbox__item[aria-current="true"] { background: rgba(28, 22, 16, .11); box-shadow: inset 0 0 0 2px var(--ember); }   /* the open one: framed in ember all round */
     .panel--sand .inbox__item b { color: var(--field-ink); }
     .panel--sand .inbox__item.unread b { font-weight: 700; }
     .panel--sand .inbox__item.unread b::before { background: var(--ember); }
-    .panel--sand .inbox__item small, .panel--sand .inbox__item p, .panel--sand .inbox__from { color: #5a4632; }
-    .panel--sand .inbox__read h2 { color: var(--field-ink); font-size: 26px; }
-    .panel--sand .message { color: var(--field-ink); font-size: 16px; }
-    .message { white-space: pre-wrap; line-height: 1.7; margin: 20px 0; max-width: 640px; }
+    .panel--sand .inbox__item small, .panel--sand .inbox__item p, .panel--sand .inbox__from { color: var(--sand-muted); }
+    /* The message's subject is data (a guest's words, or "Enquiry"), so it takes the reading face, not Playfair */
+    .panel--sand .inbox__read h2 { color: var(--field-ink); font-family: var(--sans); font-weight: 600; font-size: 20px; }
+    /* The open message: the guest's words are what staff read most carefully here. The body stands apart from the details above and the buttons
+       below, with room and a hairline on each side. */
+    .panel--sand.inbox { background: #f3ece0; }   /* the whole inbox on a light, warm sand: softer than white, lighter than the data sheets (Oct 2026) */
+    .panel--sand .message { color: var(--field-ink); font-size: 17px; }
+    .message { white-space: pre-wrap; line-height: 1.75; margin: 28px 0; padding: 26px 0; max-width: 640px;
+      border-top: 1px solid rgba(28, 22, 16, .14); border-bottom: 1px solid rgba(28, 22, 16, .14); }
+
+    /* ── Charts (Today: occupancy ahead, money) ───────────────────────────────
+       Built from plain HTML, so they reflow at any width with no SVG scaling of the text.
+       Thin columns (24px at most, 4px rounded top, square at the baseline), a 2px gap of the
+       panel's colour between neighbours and between stacked parts, hairline grid. Colours were
+       run through the palette checker against this dark panel (colour-blind safe, 3:1+):
+       ember for deposits and nights booked, blue for balances. Text never takes a series colour.
+       Every value is also in the table under each chart ("Show as a table"). */
+    :root { --viz-1: #c8782a; --viz-1-hi: #e8954a; --viz-2: #4a86c8; --viz-2-hi: #6a9fd8; }
+    .viz-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 44px 0 14px; }
+    .viz-head .xp-title { margin: 0; }
+    .viz-head p { margin: 0; color: var(--muted); font-size: 14px; }
+    .viz-head strong { color: var(--text); font-weight: 600; }
+    .money-tiles { grid-template-columns: repeat(3, 1fr); margin-bottom: 20px; }
+    .stat__n--sans { font-family: var(--sans); font-weight: 600; font-size: 30px; }
+    .stat__n--sans small { font-size: 15px; font-weight: 500; }
+    .stat__s { font-size: 13px; color: var(--dim); }
+    .viz { padding: 18px 20px 16px; }
+    .viz__legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 14px; font-size: 13px; color: var(--muted); list-style: none; padding: 0; }
+    .viz__legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; }
+    .chart { position: relative; display: grid; grid-template-columns: 52px 1fr; }
+    .chart__y { position: relative; }
+    .chart__y span { position: absolute; right: 10px; transform: translateY(50%); font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .chart__plot { position: relative; height: 190px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid var(--line-2); }
+    .chart__plot:focus-visible { outline-offset: 6px; }
+    .chart__grid { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); pointer-events: none; }
+    .chart__x { grid-column: 2; position: relative; height: 26px; }
+    .chart__x span { position: absolute; top: 7px; transform: translateX(-50%); font-size: 12px; color: var(--dim); white-space: nowrap; }
+    /* One column: the whole slot is the hover target, the painted bar sits centred in it */
+    .vbar { position: relative; flex: 1 1 0; height: 100%; display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; min-width: 0; }
+    .vbar__fill { width: 100%; max-width: 24px; flex: none; background: var(--viz-1); }
+    .vbar__fill:last-child { border-radius: 4px 4px 0 0; }   /* rounded at the data end only */
+    .vbar__fill--2 { background: var(--viz-2); }
+    .vbar.is-active .vbar__fill { background: var(--viz-1-hi); }
+    .vbar.is-active .vbar__fill--2 { background: var(--viz-2-hi); }
+    .vbar.is-active::before { content: ''; position: absolute; inset: 0; background: rgba(255, 255, 255, .04); }
+    .vbar__label { position: absolute; transform: translate(-50%, -6px); font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; pointer-events: none; }
+    .viz-tip { position: absolute; z-index: 5; pointer-events: none; min-width: 150px; padding: 9px 12px; background: var(--panel-3); border: 1px solid var(--line-2);
+      box-shadow: 0 8px 24px rgba(0,0,0,.45); font-size: 13px; line-height: 1.45; }
+    .viz-tip[hidden] { display: none; }
+    .viz-tip b { display: block; font-size: 15px; font-weight: 600; color: var(--text); }
+    .viz-tip span { display: block; color: var(--muted); }
+    .viz-tip i { display: inline-block; width: 10px; height: 2px; margin-right: 6px; vertical-align: 3px; }
+    .viz details { margin-top: 10px; font-size: 13.5px; }
+    .viz summary { cursor: pointer; color: var(--muted); width: max-content; }
+    .viz summary:hover { color: var(--text); }
+    .viz details table { margin-top: 10px; }
+    .viz details td, .viz details th { padding: 7px 12px; font-size: 13.5px; }
+    @media (max-width: 900px) {
+      /* .stats.money-tiles outranks the 2-by-2 rule for Today's first band further down */
+      .stats.money-tiles { grid-template-columns: 1fr; }
+      .stats.money-tiles .stat { border-left: 0; border-top: 1px solid var(--line); }
+      .stats.money-tiles .stat:first-child { border-top: 0; }
+      .stat__n--sans { font-size: 26px; }
+      .chart { grid-template-columns: 40px 1fr; }
+      .chart__plot { height: 160px; gap: 1px; }
+    }
 
     /* ── Dialog and toast ─────────────────────────────────────────────────── */
     dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 0; padding: 0; width: min(460px, calc(100vw - 32px)); }
@@ -498,10 +628,16 @@
       .page__head--today .page__sub { font-size: 18px; }
       .page__head--big .page__title { font-size: 34px; }
       .page__head--big .page__sub { font-size: 16px; }
-      .stats { gap: 16px 28px; }
-      .stat__n { font-size: 38px; }
-      .notice__n { width: 52px; height: 52px; font-size: 24px; }
-      .notice__k { font-size: 13px; }
+      .page__head--big .page__sub.page__note { font-size: 14px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat { padding: 16px 18px; }
+      .stat:nth-child(3) { border-left: 0; }
+      .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+      .stat__n { font-size: 32px; }
+      .stat__n small { font-size: 15px; }
+      .stat__n .stat__also { margin-left: 7px; padding-left: 7px; }
+      .notice__n { width: 30px; height: 30px; font-size: 15px; }
+      .notice__k { font-size: 12px; }
       .sheet { padding: 14px 16px 6px; }
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .inbox { grid-template-columns: 1fr; }
@@ -511,6 +647,9 @@
       .inbox__read { padding: 18px; }
     }
     @media (min-width: 901px) { .back-to-list { display: none; } }
+    @media (max-width: 380px) {   /* too narrow for "5 rooms | 6 guests" on one line: guests go underneath, no rule */
+      .stat__n .stat__also { display: block; margin: 6px 0 0; padding: 0; border: 0; }
+    }
     @media (max-width: 640px) {
       .row { grid-template-columns: 1fr; }
       .kv { grid-template-columns: 1fr; gap: 2px 0; }
@@ -520,9 +659,9 @@
       .table--cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       .table--cards tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
       .table-wrap--sand .table--cards tbody tr { border-bottom-color: rgba(28, 22, 16, .14); }
-      .table-wrap--sand .table--cards td[data-label]::before { color: #5a4632; }
+      .table-wrap--sand .table--cards td[data-label]::before { color: var(--sand-muted); }
       .table--cards td { border: 0; padding: 0; }
-      .table--cards td[data-label]::before { content: attr(data-label) ' · '; color: var(--dim); font-size: 12.5px; }
+      .table--cards td[data-label]::before { content: attr(data-label) ' · '; color: var(--dim); font-size: 12.5px; font-weight: 400; }   /* the label stays light even where the value is bold */
       .table--cards td.c-ref { grid-column: 1; }
       .table--cards td.c-status { grid-column: 2; grid-row: 1; justify-self: end; }
       .table--cards td.c-guest, .table--cards td.c-stay, .table--cards td.c-money { grid-column: 1 / -1; }
@@ -530,6 +669,16 @@
       .table--cards td.c-hide, .table--cards .sub.c-hide { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
+
+    /* ── Jost where it's a figure or a label ─────────────────────────────────────────────
+       Last on purpose, so it wins over each component's own font. Numbers inside a sentence
+       ("Monday 26 October, from 14:00", "KES 273,350 to pay") stay in the reading face:
+       switching fonts mid-sentence looks broken. */
+    .stat__n, .stat__k, .notice__n, .notice__k, .nav .count, .who__avatar,
+    .cell, .cal thead th b, .fact b, .row__rooms, .dep__what b,
+    td.right.num, .ref, .money > div:not(.hint) > span:last-child, .money .due,
+    th, .tabs button, .btn, .chip, .panel__head h2, .list__head h2, .xp-title, .request__k,
+    .side__brand small, .vbar__label, .viz-tip b, .chart__y span { font-family: var(--figure); }
   </style>
 </head>
 <body>
@@ -666,25 +815,23 @@
               '<div class="field"><label for="code">6-digit code from your authenticator app</label>' +
               '<input class="input code-input" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required /></div>' +
               (error ? '<p class="auth__error" role="alert">' + esc(error) + '</p>' : '') +
-              '<button class="btn btn--primary">Verify and sign in</button>' +
+              '<button class="btn btn--primary btn--plain">Verify and sign in</button>' +
               '<p class="hint" style="margin:0">Codes change every 30 seconds.</p>' +
             '</form>' +
-            '<div class="auth__foot">Lost your phone? Ask the lodge manager to reset your two-factor.<br />' +
-              '<button type="button" id="restart">Back to email and password</button></div>'
+            '<div class="auth__foot"><button type="button" id="restart">Back to email and password</button></div>'
           : '<form id="f-login" novalidate>' +
               '<div class="field"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="username" required /></div>' +
               '<div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" required /></div>' +
               (error ? '<p class="auth__error" role="alert">' + esc(error) + '</p>' : '') +
-              '<button class="btn btn--primary">Continue</button>' +
-            '</form>' +
-            '<div class="auth__foot">Forgotten your password? Ask the lodge manager to reset it.</div>') +
+              '<button class="btn btn--primary btn--plain">Continue</button>' +
+            '</form>') +
         '</div></main>';
     }
 
     function shell(active, inner) {
       var newEnq = S.newEnq;
       var items = [['today', '#/today', 'Today'], ['bookings', '#/bookings', 'Bookings'], ['calendar', '#/calendar', 'Calendar'],
-                   ['experiences', '#/experiences', 'Experiences'], ['rooms', '#/rooms', 'Rooms & rates'], ['enquiries', '#/enquiries', 'Enquiries']];
+                   ['experiences', '#/experiences', 'Experiences'], ['rooms', '#/rooms', 'Rates'], ['enquiries', '#/enquiries', 'Enquiries']];
       var name = S.me ? S.me.name : '';
       var initials = name.split(/\s+/).map(function (w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
       return '<div class="shell" id="shell">' +
@@ -696,7 +843,7 @@
           }).join('') + '</nav>' +
           '<div class="side__foot">' +
             '<div class="who"><div class="who__avatar" aria-hidden="true">' + esc(initials) + '</div><div><b>' + esc(name) + '</b><small>' + (readOnly() ? 'Demo account' : 'Admin') + '</small></div></div>' +
-            '<button class="btn btn--small btn--ghost" id="signout" style="justify-content:flex-start;padding:0">Sign out</button>' +
+            '<button class="btn side__signout" id="signout" type="button">Sign out</button>' +
             (readOnly() ? '<p class="demo-note">Demo account: look around freely. Guests’ details are hidden and nothing can be changed.</p>' : '') +
           '</div>' +
         '</aside>' +
@@ -709,6 +856,8 @@
     }
 
     function problemHtml(e) {
+      // A booking that doesn't exist won't appear by trying again: offer the way back instead
+      if (e.status === 404) return '<div class="problem" role="alert"><p>' + esc(e.message) + '</p><a class="btn" href="#/bookings">Back to bookings</a></div>';
       return '<div class="problem" role="alert"><p>' + esc(e.message) + '</p><button class="btn" type="button" id="retry">Try again</button></div>';
     }
 
@@ -743,18 +892,18 @@
           (rows.length ? '<ul class="rows rows--plain">' + rows.join('') + '</ul>' : '<p class="empty">' + empty + '</p>') + '</section>';
       }
 
-      // Notifications: only when there's something waiting. Read aloud as "2 Holds waiting for a deposit · 5:57 left".
-      function notice(n, label, sub, href, extra) {
+      // Notifications: only when there's something waiting. Just the count and the word (Oct 2026):
+      // read aloud as "2 Holds". The link goes to the list that explains them.
+      function notice(n, label, href, extra) {
         return '<a class="notice" href="' + href + '"' + (extra || '') + '><span class="notice__n">' + n + '</span>' +
-          '<span><span class="notice__k">' + label + '</span><span class="notice__s">' + sub + '</span></span></a>';
+          '<span class="notice__k">' + label + '</span></a>';
       }
       var holds = t.holds, newEnq = t.newEnquiries, refunds = t.refunds;
       S.refunds = refunds;
       // Money owed back comes first: it's the one a guest is waiting on
-      var notes = (refunds ? notice(refunds, refunds === 1 ? 'Refund' : 'Refunds', 'to make: money owed back to a guest', '#/bookings', ' data-act="showrefunds"') : '') +
-                  (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', 'waiting for a deposit · ' +
-                       '<span class="timer" data-expires="' + holds[0].holdExpiresAt + '">–:–</span>', '#/bookings', ' data-act="showheld"') : '') +
-                  (newEnq ? notice(newEnq, newEnq === 1 ? 'Enquiry' : 'Enquiries', 'new, to answer', '#/enquiries') : '');
+      var notes = (refunds ? notice(refunds, refunds === 1 ? 'Refund' : 'Refunds', '#/bookings', ' data-act="showrefunds"') : '') +
+                  (holds.length ? notice(holds.length, holds.length === 1 ? 'Hold' : 'Holds', '#/bookings', ' data-act="showheld"') : '') +
+                  (newEnq ? notice(newEnq, newEnq === 1 ? 'Enquiry' : 'Enquiries', '#/enquiries') : '');
       var guests = t.inHouse.guests;
       function stat(n, label, href, extra) {
         var inner = '<span class="stat__n">' + n + '</span><span class="stat__k">' + label + '</span>';
@@ -762,17 +911,139 @@
       }
 
       return '<div class="page__head page__head--today"><div><h1 class="page__title">Today</h1><p class="page__sub">' + fmtLong(t.date) + '</p></div></div>' +
-        '<div class="stats num">' +
+        '<div class="stats">' +
           stat(t.arrivals.filter(function (b) { return b.status !== 'INHOUSE'; }).length, 'Arriving') +
           stat(t.departures.filter(function (b) { return b.status !== 'COMPLETED'; }).length, 'Leaving') +
-          stat(t.inHouse.rooms + ' <small>· ' + guests + ' ' + (guests === 1 ? 'guest' : 'guests') + '</small>', 'In house') +
+          // "2 rooms | 3 guests": both units written out (a dot between two numbers read as "2.3")
+          stat(t.inHouse.rooms + ' <small>' + (t.inHouse.rooms === 1 ? 'room' : 'rooms') + '</small>' +
+               '<small class="stat__also">' + plural(guests, 'guest') + '</small>', 'In house') +
           stat(pct + '%', 'Full tonight · ' + t.tonight.taken + ' of ' + t.tonight.open, '#/calendar') +
         '</div>' +
         (notes ? '<div class="notes">' + notes + '</div>' : '') +
         '<div class="grid-2 grid-2--wide">' +
           list('h-arr', 'Arriving', 'check-in from 14:00', t.arrivals.map(arrivalRow), 'No arrivals today.') +
           list('h-dep', 'Leaving', 'check-out by 11:00', t.departures.map(departureRow), 'No departures today.') +
-        '</div>';
+        '</div>' +
+        (t.stats ? statsHtml(t.stats) : '');
+    }
+
+
+    /* ── Today's charts ──────────────────────────────────────────────────────────────────────
+       Two charts, each a row of columns in plain HTML (see the CSS), each with a table twin.
+       Values for the hover box live in data attributes and are written with textContent. */
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function compact(n) {                                    // 1,250,000 → 1.25M, 340,000 → 340K
+      return n >= 1e6 ? (Math.round(n / 1e4) / 100) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(n);
+    }
+    function niceMax(v) {                                    // a clean top for the y axis
+      if (v <= 0) return 1;
+      var p = Math.pow(10, Math.floor(Math.log10(v))), steps = [1, 2, 2.5, 5, 10];
+      for (var i = 0; i < steps.length; i++) if (steps[i] * p >= v) return steps[i] * p;
+      return 10 * p;
+    }
+    function monthName(ym, long) { var m = MONTHS[Number(ym.slice(5)) - 1]; return long ? m + ' ' + ym.slice(0, 4) : m; }
+
+    function statsHtml(st) {
+      // ── Occupancy, next 30 nights ──
+      var n = st.occupancy.nights;
+      var pcts = n.map(function (x) { return x.open ? Math.round(x.taken / x.open * 100) : 0; });
+      var avg = pcts.length ? Math.round(pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length) : 0;
+      var peak = 0; pcts.forEach(function (p, i) { if (p > pcts[peak]) peak = i; });
+      var occBars = n.map(function (x, i) {
+        var label = fmtLong(x.night);
+        return '<div class="vbar" data-i="' + i + '" data-t1="' + esc(label) + '" data-v1="' + pcts[i] + '% booked" data-s1="' + x.taken + ' of ' + x.open + ' rooms">' +
+          '<span class="vbar__fill" style="height:' + pcts[i] + '%"></span>' +
+          (i === peak && pcts[i] > 0 ? '<span class="vbar__label" style="bottom:' + pcts[i] + '%;left:50%">' + pcts[i] + '%</span>' : '') + '</div>';
+      }).join('');
+      var occX = n.map(function (x, i) {                    // a date under today and every 7th night after it
+        return i % 7 === 0 ? '<span style="left:' + ((i + 0.5) / n.length * 100) + '%">' + (i === 0 ? 'Today' : fmtDate(x.night)) + '</span>' : '';
+      }).join('');
+      var occTable = '<table><thead><tr><th scope="col">Night</th><th scope="col" class="right">Rooms booked</th><th scope="col" class="right">Full</th></tr></thead><tbody>' +
+        n.map(function (x, i) { return '<tr><td>' + fmtLong(x.night) + '</td><td class="right num">' + x.taken + ' of ' + x.open + '</td><td class="right num">' + pcts[i] + '%</td></tr>'; }).join('') + '</tbody></table>';
+
+      // ── Money ──
+      var months = st.months, thisMonth = st.date.slice(0, 7);
+      var top = niceMax(Math.max.apply(null, months.map(function (m) { return m.depositsKes + m.balancesKes; }).concat([0])));
+      var revBars = months.map(function (m, i) {
+        var tot = m.depositsKes + m.balancesKes;
+        return '<div class="vbar" data-i="' + i + '" data-t1="' + esc(monthName(m.month, true)) + '" data-v1="' + esc(money(tot)) + ' booked"' +
+            ' data-s1="Deposits ' + esc(money(m.depositsKes)) + '" data-s2="Balances ' + esc(money(m.balancesKes)) + '">' +
+          '<span class="vbar__fill" style="height:' + (m.depositsKes / top * 100) + '%"></span>' +
+          (m.balancesKes ? '<span class="vbar__fill vbar__fill--2" style="height:calc(' + (m.balancesKes / top * 100) + '% - 2px)"></span>' : '') +
+          (m.month === thisMonth && tot ? '<span class="vbar__label" style="bottom:' + (tot / top * 100) + '%;left:50%">' + compact(tot) + '</span>' : '') + '</div>';
+      }).join('');
+      var revX = months.map(function (m, i) {
+        return '<span style="left:' + ((i + 0.5) / months.length * 100) + '%">' + (m.month === thisMonth ? 'This month' : monthName(m.month)) + '</span>';
+      }).join('');
+      var revTable = '<table><thead><tr><th scope="col">Check-in month</th><th scope="col" class="right">Deposits</th><th scope="col" class="right">Balances</th><th scope="col" class="right">Total</th></tr></thead><tbody>' +
+        months.map(function (m) { return '<tr><td>' + monthName(m.month, true) + '</td><td class="right num">' + money(m.depositsKes) + '</td><td class="right num">' + money(m.balancesKes) + '</td><td class="right num">' + money(m.depositsKes + m.balancesKes) + '</td></tr>'; }).join('') + '</tbody></table>';
+
+      function yAxis(labels) { return '<div class="chart__y" aria-hidden="true">' + labels.map(function (l) { return '<span style="bottom:' + l[0] + '%">' + l[1] + '</span>'; }).join('') + '</div>'; }
+      function grid(levels) { return levels.map(function (l) { return '<span class="chart__grid" style="bottom:' + l + '%"></span>'; }).join(''); }
+      function chart(name, bars, x, y, levels) {
+        return '<div class="chart">' + yAxis(y) +
+          '<div class="chart__plot" tabindex="0" role="group" aria-label="' + esc(name) + '. Use the left and right arrow keys to read each column; the table below has every value.">' +
+            grid(levels) + bars + '</div><div class="chart__x" aria-hidden="true">' + x + '</div>' +
+          '<div class="viz-tip" hidden></div></div>';
+      }
+      var tile = function (n, label, sub) {
+        return '<div class="stat"><span class="stat__n stat__n--sans">' + n + '</span><span class="stat__k">' + label + '</span><span class="stat__s">' + sub + '</span></div>';
+      };
+      var bk = function (k) { return plural(k, 'booking'); };
+
+      return '<div class="viz-head"><h2 class="xp-title">Next 30 nights</h2><p>Average <strong>' + avg + '% full</strong>' +
+          (pcts[peak] > 0 ? ' · busiest ' + fmtDate(n[peak].night, { weekday: 'short' }) + ' (' + pcts[peak] + '%)' : '') + '</p></div>' +
+        '<section class="panel viz" aria-label="Rooms booked, next 30 nights">' +
+          chart('Rooms booked each night, next 30 nights', occBars, occX, [[0, '0%'], [50, '50%'], [100, '100%']], [50, 100]) +
+          '<details><summary>Show as a table</summary><div class="table-wrap">' + occTable + '</div></details></section>' +
+
+        '<div class="viz-head"><h2 class="xp-title">Money</h2><p>Deposits by the day the booking was confirmed</p></div>' +
+        '<div class="stats money-tiles">' +
+          tile(money(st.deposits.week.kes), 'Deposits this week', bk(st.deposits.week.bookings) + ', from Monday') +
+          tile(money(st.deposits.month.kes), 'Deposits this month', bk(st.deposits.month.bookings)) +
+          tile(money(st.toCollect.kes), 'To collect at the lodge', 'balances of ' + bk(st.toCollect.bookings) + ' in house or arriving in 7 days') +
+        '</div>' +
+        '<section class="panel viz" aria-label="Booked revenue by check-in month">' +
+          '<ul class="viz__legend"><li><i style="background:var(--viz-1)"></i>Deposits (paid online)</li><li><i style="background:var(--viz-2)"></i>Balances (paid at the lodge)</li></ul>' +
+          chart('Booked revenue by check-in month', revBars, revX, [[0, '0'], [50, compact(top / 2)], [100, compact(top)]], [50, 100]) +
+          '<details><summary>Show as a table</summary><div class="table-wrap">' + revTable + '</div></details></section>';
+    }
+
+    /* Hover, touch and arrow keys show the same box: the column's date or month, then its values */
+    function bindCharts() {
+      document.querySelectorAll('.chart').forEach(function (c) {
+        var plot = c.querySelector('.chart__plot'), tip = c.querySelector('.viz-tip');
+        var bars = Array.prototype.slice.call(plot.querySelectorAll('.vbar')), cur = -1;
+        function show(i) {
+          bars.forEach(function (b, k) { b.classList.toggle('is-active', k === i); });
+          if (i < 0) { tip.hidden = true; cur = -1; return; }
+          cur = i; var b = bars[i], d = b.dataset;
+          tip.textContent = '';
+          var t = document.createElement('span'); t.textContent = d.t1; tip.appendChild(t);
+          var v = document.createElement('b'); v.textContent = d.v1; tip.appendChild(v);
+          [['s1', 'var(--viz-1)'], ['s2', 'var(--viz-2)']].forEach(function (k) {
+            if (!d[k[0]]) return;
+            var row = document.createElement('span');
+            if (d.s2) { var key = document.createElement('i'); key.style.background = k[1]; row.appendChild(key); }   // a line key only when there are two parts
+            row.appendChild(document.createTextNode(d[k[0]])); tip.appendChild(row);
+          });
+          tip.hidden = false;
+          // Place it beside the column, kept inside the chart
+          var pr = plot.getBoundingClientRect(), cr = c.getBoundingClientRect(), br = b.getBoundingClientRect();
+          var x = br.left - cr.left + br.width / 2 + 12;
+          if (x + tip.offsetWidth > cr.width) x = br.left - cr.left + br.width / 2 - tip.offsetWidth - 12;
+          tip.style.left = Math.max(0, x) + 'px'; tip.style.top = (pr.top - cr.top + 8) + 'px';
+        }
+        bars.forEach(function (b, i) { b.addEventListener('pointerenter', function () { show(i); }); });
+        plot.addEventListener('pointerleave', function () { if (document.activeElement !== plot) show(-1); });
+        plot.addEventListener('focus', function () { show(cur < 0 ? 0 : cur); });
+        plot.addEventListener('blur', function () { show(-1); });
+        plot.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault(); show(Math.min(bars.length - 1, Math.max(0, cur + (e.key === 'ArrowRight' ? 1 : -1))));
+          } else if (e.key === 'Escape') show(-1);
+        });
+      });
     }
 
     /* Bookings: everything, searchable. Default view = what's coming up. */
@@ -784,7 +1055,7 @@
           '<td class="c-ref"><a class="ref" href="#/booking/' + b.ref + '">' + b.ref + '</a></td>' +
           '<td class="c-guest" data-label="Guest">' + guestName(b) + '<span class="sub c-hide">' + esc(b.email) + '</span></td>' +
           // Rooms (the types), how many rooms, and guests: three columns, so each can be scanned down
-          '<td class="c-hide">' + b.rooms.map(function (r) { return esc(r.name); }).join('<br>') + '</td>' +
+          '<td class="c-hide c-rooms"><ul class="room-list">' + b.rooms.map(function (r) { return '<li>' + esc(r.name) + '</li>'; }).join('') + '</ul></td>' +
           '<td class="right num c-count" data-label="Rooms">' + roomCount(b) + '</td>' +
           '<td class="right num c-count" data-label="Guests">' + b.guests + '</td>' +
           '<td class="c-stay num" data-label="Stay">' + stayLabel(b) + '<span class="sub c-hide">' + plural(b.nights, 'night') + '</span></td>' +
@@ -796,7 +1067,7 @@
       return '/bookings?' + qs({ status: S.bookingsFilter, room: S.bookingsRoom === 'all' ? '' : S.bookingsRoom, q: S.bookingsQ.trim() });
     }
     function viewBookings(d) {
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub">Search by name, reference, email or phone. "Cancelled" includes holds that ran out.</p></div></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Bookings</h1><p class="page__sub page__note">Search by name, reference, email or phone. "Cancelled" includes holds that ran out.</p></div></div>' +
         '<section class="panel">' +
           '<div class="tabs" role="group" aria-label="Show">' + FILTERS.filter(function (f) { return f[0] !== 'refunds' || d.refundsOwed || S.bookingsFilter === 'refunds'; }).map(function (f) { return '<button type="button" data-filter="' + f[0] + '" aria-pressed="' + (S.bookingsFilter === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
           '<div class="filters">' +
@@ -893,7 +1164,7 @@
         if (o.free === 0) return 'full';
         var r = 1 - o.free / Math.max(1, o.open); return r < .25 ? 0 : r < .5 ? 1 : r < .8 ? 2 : 3;
       }
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Calendar</h1><p class="page__sub">Rooms free each night. Select a night to see who is staying.</p></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Calendar</h1><p class="page__sub page__note">Rooms free each night. Select a night to see who is staying.</p></div>' +
           '<div style="display:flex;gap:8px"><button class="btn" data-cal="-21" aria-label="Previous three weeks">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="21" aria-label="Next three weeks">→</button></div></div>' +
         '<section class="panel panel--sand"><div class="cal-wrap"><table class="cal"><caption class="sr-only">Rooms free per night, ' + fmtDate(nights[0]) + ' to ' + fmtDate(nights[c.days - 1]) + '</caption><thead>' +
           '<tr><th class="room" scope="col">Room type</th>' + nights.map(function (n) {
@@ -904,12 +1175,12 @@
             return '<tr><th class="room" scope="row"><b>' + esc(rt.name) + '</b><span>' + plural(rt.units, 'unit') + '</span></th>' + rt.nights.map(function (o) {
               var label = rt.name + ', ' + fmtLong(o.night) + ': ' + o.free + ' of ' + rt.units + ' free';
               return '<td><button class="cell" data-level="' + level(o) + '" data-night="' + o.night + '" data-room="' + rt.id + '" aria-label="' + esc(label) + '">' +
-                o.free + '<small>free</small></button></td>';
+                o.free + '</button></td>';   // just the number: the page says once that it counts free rooms
             }).join('') + '</tr>';
           }).join('') +
         '</tbody></table></div>' +
         // Legend swatches use the same classes as the cells, so they can never drift apart
-        '<div class="legend"><span><i class="sw" data-level="0"></i>Mostly free</span><span><i class="sw" data-level="2"></i>Filling up</span>' +
+        '<div class="legend"><span class="legend__key">Numbers are rooms still free</span><span><i class="sw" data-level="0"></i>Mostly free</span><span><i class="sw" data-level="2"></i>Filling up</span>' +
           '<span><i class="sw" data-level="3"></i>Nearly full</span><span><i class="sw" data-level="full"></i>Full</span>' +
           '<span><i class="sw sw--today"></i>Today</span></div></section>' +
         '<section class="panel panel--sand" style="margin-top:20px" id="night-panel" aria-live="polite"><div class="panel__head"><h2>Select a night above</h2></div><p class="empty">The guests staying that night will show here.</p></section>';
@@ -924,24 +1195,53 @@
         }).join('') + '</ul>' : '<p class="empty">' + (n.date < TODAY ? 'Nobody stayed' : 'Nobody is staying') + ' in this room type that night.</p>');
     }
 
-    /* Rooms & rates: the nightly price, units and on/off per room type (one price all year) */
+    /* Save, at the foot of a room or trip card. Disabled ("No changes") until a field changes:
+       then it turns solid ember, so there's no doubt which card has unsaved edits. */
+    function saveRow() {
+      return '<div class="room-card__save"><p class="hint" data-save-note>No changes</p><button class="btn btn--primary" disabled>Save changes</button></div>';
+    }
+
+    /* Rates: everything that has a price, in one place (Oct 2026). Rooms first (price per night,
+       units, bookable), then experiences (price per person, seats, departure times, offered).
+       Experiences itself is now only who's going on each trip. */
     function viewRooms(d) {
       var ro = readOnly();
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Rooms &amp; rates</h1><p class="page__sub">One price per night, all year. Changes apply to new bookings straight away; guests who have already booked keep the price they were shown.</p></div></div>' +
-        '<div class="grid-3">' + d.rooms.map(function (rt) {
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Rates</h1><p class="page__sub page__note">Prices and settings for rooms and experiences. Changes apply to new bookings straight away; guests who have already booked keep the price they were shown.</p></div></div>' +
+        '<h2 class="xp-title xp-title--first">Rooms</h2>' +
+        '<p class="hint" style="margin:-6px 0 16px">One price per night, all year.</p>' +
+        '<div class="stack card-rows">' + d.rooms.map(function (rt) {
           return '<section class="panel"><form class="panel__body room-card" data-room-form="' + rt.id + '" novalidate>' +
             '<div class="room-card__top"><div><h3>' + esc(rt.name) + '</h3><span class="hint">' + esc(rt.kind) + '</span></div>' +
               '<label class="toggle"><input type="checkbox" name="active"' + (rt.active ? ' checked' : '') + (ro ? ' disabled' : '') + ' /> Bookable</label></div>' +
-            '<div class="facts"><div class="fact"><span>Sleeps</span><b class="num">' + rt.sleeps + '</b></div><div class="fact"><span>Units</span><b class="num">' + rt.units + '</b></div>' +
-              '<div class="fact"><span>Tonight</span><b class="num">' + (rt.freeTonight == null ? '—' : rt.freeTonight + ' free') + '</b></div></div>' +
             '<div class="form-grid">' +
               '<div class="field"><label for="base-' + rt.id + '">Price per night (KES)</label><input class="input num" id="base-' + rt.id + '" name="base" inputmode="numeric" value="' + rt.baseRateKes + '"' + (ro ? ' readonly' : '') + ' /></div>' +
               '<div class="field"><label for="units-' + rt.id + '">Units</label><input class="input num" id="units-' + rt.id + '" name="units" type="number" min="0" max="99" value="' + rt.units + '"' + (ro ? ' readonly' : '') + ' /></div>' +
-            '</div>' + (ro ? '' : '<button class="btn btn--primary">Save changes</button>') + '</form></section>';
+              // Sleeps: guests per room. Changing it only shapes new bookings (how many rooms a party needs)
+              '<div class="field"><label for="sleeps-' + rt.id + '">Sleeps (guests per room)</label><input class="input num" id="sleeps-' + rt.id + '" name="sleeps" type="number" min="1" max="20" value="' + rt.sleeps + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+            '</div>' + (ro ? '' : saveRow()) + '</form></section>';
+        }).join('') + '</div>' +
+        '<h2 class="xp-title">Experiences</h2>' +
+        '<p class="hint" style="margin:-6px 0 16px">Price per person. Guests already booked keep their departure and price.</p>' +
+        tripCards(d.trips, ro);
+    }
+
+    /* One card per trip: price, seats per vehicle, departure times, offered or not */
+    function tripCards(trips, ro) {
+      return '<div class="stack card-rows">' + trips.map(function (t) {
+          var hours = t.durationMinutes / 60;
+          return '<section class="panel"><form class="panel__body room-card" data-trip-form="' + t.id + '" novalidate>' +
+            '<div class="room-card__top"><div><h3>' + esc(t.name) + '</h3><span class="hint">' + (hours % 1 ? t.durationMinutes + ' min' : plural(hours, 'hour')) + '</span></div>' +
+              '<label class="toggle"><input type="checkbox" name="active"' + (t.active ? ' checked' : '') + (ro ? ' disabled' : '') + ' /> Offered</label></div>' +
+            '<div class="form-grid form-grid--3">' +
+              '<div class="field"><label for="tp-' + t.id + '">Per person (KES)</label><input class="input num" id="tp-' + t.id + '" name="price" inputmode="numeric" value="' + t.priceKes + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+              '<div class="field"><label for="ts-' + t.id + '">Seats per vehicle</label><input class="input num" id="ts-' + t.id + '" name="seats" type="number" min="1" max="100" value="' + t.seats + '"' + (ro ? ' readonly' : '') + ' /></div>' +
+              '<div class="field"><label for="tt-' + t.id + '">Departure times</label><input class="input num" id="tt-' + t.id + '" name="times" value="' + esc(t.departureTimes.join(', ')) + '" aria-describedby="tth-' + t.id + '"' + (ro ? ' readonly' : '') + ' />' +
+              '<p class="hint" id="tth-' + t.id + '" style="margin:4px 0 0">24-hour, e.g. 06:30, 14:30</p></div>' +
+            '</div>' + (ro ? '' : saveRow()) + '</form></section>';
         }).join('') + '</div>';
     }
 
-    /* Experiences: two weeks of departures (who's going, how many vehicles), then each trip's settings */
+    /* Experiences: two weeks of departures (who's going, how many vehicles). Trip prices and times live under Rates. */
     function viewExperiences(d) {
       var ro = readOnly();
       var byDay = [];
@@ -965,28 +1265,10 @@
           }).join('') + '</section>';
       }).join('') : '<section class="sheet"><p class="empty">No experiences booked from ' + fmtDate(d.from) + ' to ' + fmtDate(end) + '.</p></section>';
 
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Experiences</h1><p class="page__sub">Who is going on each trip, two weeks at a time. Every trip runs daily. "Held" means the deposit isn\'t paid yet.</p></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Experiences</h1><p class="page__sub page__note">Who is going on each trip, two weeks at a time. "Held" means the deposit isn\'t paid yet. Prices and departure times are under Rates.</p></div>' +
           '<div style="display:flex;gap:8px"><button class="btn" data-xp="-14" aria-label="Previous two weeks">←</button><button class="btn" data-xp="0">Today</button><button class="btn" data-xp="14" aria-label="Next two weeks">→</button></div></div>' +
         '<p class="hint" style="margin:0 0 12px">' + fmtDate(d.from) + ' – ' + fmtDate(end, { year: 'numeric' }) + '</p>' +
-        '<div class="xp-days" aria-live="polite">' + list + '</div>' +
-        '<h2 class="xp-title">Trips</h2>' +
-        '<p class="hint" style="margin:-6px 0 16px">Price changes apply to new bookings only. Guests already booked keep their departure and price.</p>' +
-        '<div class="grid-3">' + d.trips.map(function (t) {
-          var hours = t.durationMinutes / 60;
-          return '<section class="panel"><form class="panel__body room-card" data-trip-form="' + t.id + '" novalidate>' +
-            '<div class="room-card__top"><div><h3>' + esc(t.name) + '</h3><span class="hint">' + (hours % 1 ? t.durationMinutes + ' min' : plural(hours, 'hour')) + '</span></div>' +
-              '<label class="toggle"><input type="checkbox" name="active"' + (t.active ? ' checked' : '') + (ro ? ' disabled' : '') + ' /> Offered</label></div>' +
-            '<div class="facts"><div class="fact"><span>Per person</span><b class="num">' + KES.format(t.priceKes) + '</b></div>' +
-              '<div class="fact"><span>Seats</span><b class="num">' + t.seats + '</b></div>' +
-              '<div class="fact"><span>Trips a day</span><b class="num">' + t.departureTimes.length + '</b></div></div>' +
-            '<div class="form-grid">' +
-              '<div class="field"><label for="tp-' + t.id + '">Price per person (KES)</label><input class="input num" id="tp-' + t.id + '" name="price" inputmode="numeric" value="' + t.priceKes + '"' + (ro ? ' readonly' : '') + ' /></div>' +
-              '<div class="field"><label for="ts-' + t.id + '">Seats per vehicle</label><input class="input num" id="ts-' + t.id + '" name="seats" type="number" min="1" max="100" value="' + t.seats + '"' + (ro ? ' readonly' : '') + ' /></div>' +
-            '</div>' +
-            '<div class="field"><label for="tt-' + t.id + '">Departure times</label><input class="input num" id="tt-' + t.id + '" name="times" value="' + esc(t.departureTimes.join(', ')) + '" aria-describedby="tth-' + t.id + '"' + (ro ? ' readonly' : '') + ' />' +
-              '<p class="hint" id="tth-' + t.id + '" style="margin:4px 0 0">24-hour, separated by commas, e.g. 06:30, 14:30</p></div>' +
-            (ro ? '' : '<button class="btn btn--primary">Save changes</button>') + '</form></section>';
-        }).join('') + '</div>';
+        '<div class="xp-days" aria-live="polite">' + list + '</div>';
     }
 
 
@@ -996,7 +1278,7 @@
       var cur = list.find(function (e) { return e.id === S.enquiry; }) || list[0];
       var ro = readOnly();
       function ago(ms) { var h = Math.round((Date.now() - ms) / 36e5); return h < 1 ? 'Just now' : h < 24 ? h + ' h ago' : fmtDateTime(ms).split(',')[0]; }
-      return '<div class="page__head page__head--big"><div><h1 class="page__title">Enquiries</h1><p class="page__sub">Messages from the website\'s "Get in touch" form.</p></div></div>' +
+      return '<div class="page__head page__head--big"><div><h1 class="page__title">Enquiries</h1><p class="page__sub page__note">Messages from the website\'s "Get in touch" form.</p></div></div>' +
         (list.length ? '<section class="panel panel--sand inbox' + (S.reading ? ' reading' : '') + '" id="inbox"><ul class="inbox__list" aria-label="Enquiries">' + list.map(function (e) {
           return '<li><button class="inbox__item' + (e.status === 'NEW' ? ' unread' : '') + '" data-enq="' + e.id + '" aria-current="' + (cur && e.id === cur.id) + '">' +
             '<div class="inbox__top"><b>' + esc(e.firstName + ' ' + e.lastName) + '</b><small>' + ago(e.createdAt) + '</small></div>' +
@@ -1027,7 +1309,11 @@
 
     // What each screen needs from the API, then how to draw it
     var SCREENS = {
-      today: { title: 'Today', load: function () { return api('/today'); }, view: viewToday },
+      // The charts come from their own endpoint; if it fails, Today still shows (without them)
+      today: { title: 'Today', view: viewToday, load: function () {
+        return Promise.all([api('/today'), api('/stats').catch(function () { return null; })])
+          .then(function (r) { r[0].stats = r[1]; return r[0]; });
+      } },
       bookings: { title: 'Bookings', view: viewBookings, load: function () {
         return Promise.all([api(bookingsQuery()), S.rooms ? Promise.resolve({ rooms: S.rooms }) : api('/rooms')])
           .then(function (r) { S.rooms = r[1].rooms; return { bookings: r[0].bookings, refundsOwed: r[0].refundsOwed, rooms: S.rooms }; });
@@ -1037,8 +1323,12 @@
       } },
       calendar: { title: 'Calendar', load: function () { return api('/calendar?' + qs({ from: S.calStart })); }, view: viewCalendar },
       experiences: { title: 'Experiences', load: function () { return api('/experiences?' + qs({ from: S.xpStart })).then(function (d) { S.trips = d.trips; return d; }); }, view: viewExperiences },
-      rooms: { title: 'Rooms & rates', view: viewRooms, load: function () {
-        return api('/rooms').then(function (r) { S.rooms = r.rooms; return { rooms: r.rooms }; });
+      rooms: { title: 'Rates', view: viewRooms, load: function () {
+        // The trips come with the departures list; the departures are simply not shown here
+        return Promise.all([api('/rooms'), api('/experiences')]).then(function (r) {
+          S.rooms = r[0].rooms; S.trips = r[1].trips;
+          return { rooms: r[0].rooms, trips: r[1].trips };
+        });
       } },
       enquiries: { title: 'Enquiries', load: function () { return api('/enquiries').then(function (r) { return r.enquiries; }); }, view: viewEnquiries },
     };
@@ -1078,7 +1368,7 @@
         if (seq !== renderSeq) return;                          // the user moved on meanwhile
         if (parts[0] === 'booking' && !data) throw Object.assign(new Error('Booking not found.'), { status: 404 });
         app.innerHTML = shell(active, screen.view(data));
-        bindShell();
+        bindShell(); bindCharts();
         // Move focus to the new page for keyboard and screen-reader users, like a page load would
         if (routeChanged && window.__routed) document.getElementById('main').focus({ preventScroll: true });
         window.__routed = true;
@@ -1233,16 +1523,28 @@
         };
       });
 
+      // Room and trip cards: Save wakes up when a field differs from what was loaded
+      document.querySelectorAll('[data-room-form], [data-trip-form]').forEach(function (f) {
+        var btn = f.querySelector('.room-card__save button'), note = f.querySelector('[data-save-note]');
+        if (!btn) return;
+        function snap() { return Array.prototype.map.call(f.elements, function (el) { return el.type === 'checkbox' ? el.checked : el.value; }).join('|'); }
+        var start = snap();
+        function check() { var dirty = snap() !== start; btn.disabled = !dirty; note.textContent = dirty ? 'Unsaved changes' : 'No changes'; note.classList.toggle('is-dirty', dirty); }
+        f.addEventListener('input', check); f.addEventListener('change', check);
+      });
+
       // Rooms: send only what changed
       document.querySelectorAll('[data-room-form]').forEach(function (f) {
         f.onsubmit = function (e) {
           e.preventDefault();
           var rt = S.rooms.find(function (r) { return r.id === Number(f.dataset.roomForm); });
-          var base = Number(String(f.base.value).replace(/[^\d]/g, '')), units = Number(f.units.value), change = {};
+          var base = Number(String(f.base.value).replace(/[^\d]/g, '')), units = Number(f.units.value), sleeps = Number(f.sleeps.value), change = {};
           if (!(base >= 1000)) { toast('The price per night should be at least KES 1,000.'); f.base.focus(); return; }
           if (!(units >= 0 && units <= 99 && Math.floor(units) === units)) { toast('Units must be a whole number from 0 to 99.'); f.units.focus(); return; }
+          if (!(sleeps >= 1 && sleeps <= 20 && Math.floor(sleeps) === sleeps)) { toast('Sleeps must be a whole number from 1 to 20.'); f.sleeps.focus(); return; }
           if (base !== rt.baseRateKes) change.baseRateKes = base;
           if (units !== rt.units) change.units = units;
+          if (sleeps !== rt.sleeps) change.sleeps = sleeps;
           if (f.active.checked !== rt.active) change.active = f.active.checked;
           if (!Object.keys(change).length) { toast('Nothing to save.'); return; }
           var btn = f.querySelector('button'); busy(btn, true, 'Saving…');

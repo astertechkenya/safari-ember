@@ -1390,72 +1390,91 @@
       color: var(--ember);
     }
 
+    /* Always keep room for the scrollbar. When a popup locks the page (overflow: hidden), the
+       scrollbar would otherwise vanish and everything would jump sideways by its width.
+       Phones and Mac trackpads draw scrollbars over the page, so there it changes nothing. */
+    html { scrollbar-gutter: stable; }
+
     /* ============================================================
        MOBILE NAVIGATION MENU (off-canvas)
     ============================================================ */
-    /* Menu (Oct 2026): a full-screen panel that slides in from the right. It's a dialog: opening it moves focus inside
-       and keeps it there, Escape or × shuts it, and focus returns to the menu button.
-       visibility (not display) hides it, so the slide can play both ways; hidden, it's also out
-       of the keyboard's reach. */
+    /* Menu (Oct 2026): a small card that rolls down out of the menu button, so it reads as that
+       button's menu rather than a new screen. The button itself turns into the ×. It's a disclosure (a button that shows and hides a panel), not a dialog: the
+       button stays in the header, outside the panel. Escape, the × or a tap anywhere else closes
+       it, and so does Tabbing out of it.
+       visibility (not display) hides it, so the fade can play both ways; hidden, it's also out
+       of the keyboard's and screen readers' reach. */
     .mobile-menu {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 200;            /* a clear layer over the page: taps on it close the menu */
       visibility: hidden; pointer-events: none;
-      transition: visibility 0s linear .45s;              /* stay visible until the slide-out ends */
+      transition: visibility 0s linear .35s;              /* stay visible until the roll-up ends */
     }
     .mobile-menu.is-open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+    /* A faint shade over the page: enough to lift the card, not enough to hide the lodge */
+    .mobile-menu::before {
+      content: ""; position: absolute; inset: 0;
+      background: rgba(8, 7, 5, .18);
+      opacity: 0; transition: opacity .25s ease;
+    }
+    .mobile-menu.is-open::before { opacity: 1; }
+    /* The header (and so the ×) sits above that layer while the menu is open */
+    body.menu-open .nav { z-index: 210; }
+
+    /* --menu-top / --menu-right are set by the script from where the button actually is, so the
+       card hangs just under it on every screen size. */
     .mobile-menu__panel {
-      position: absolute; inset: 0;
-      background: var(--black);
-      display: flex; flex-direction: column;
-      padding: 14px 24px 28px;
-      overflow-y: auto;                                   /* short screens: scroll rather than clip */
-      transform: translateX(100%);                       /* waits off the right edge */
-      transition: transform .45s cubic-bezier(.22, .61, .36, 1);
+      position: absolute;
+      top: var(--menu-top, 50px); right: var(--menu-right, 12px);
+      width: 272px; max-width: calc(100% - 24px);
+      max-height: calc(100% - var(--menu-top, 50px) - 12px); overflow-y: auto;   /* landscape: scroll rather than clip */
+      /* Smoked glass: see-through black, with whatever is behind it blurred so the links stay
+         easy to read over the busy photo. Same recipe as the header bar, a little darker. */
+      background: rgba(8, 7, 5, .57);
+      -webkit-backdrop-filter: blur(16px) saturate(120%); backdrop-filter: blur(16px) saturate(120%);
+      border: 1px solid rgba(200,120,42,.45);
+      padding: 6px 22px 22px;
+      /* The roll-out: the card is uncovered from its top edge downwards, like a blind being let
+         down from under the button. clip-path hides the part not yet rolled out; the text
+         doesn't move, which keeps it calm to watch. */
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path .35s cubic-bezier(.22, .61, .36, 1);
     }
-    .mobile-menu.is-open .mobile-menu__panel { transform: none; }
+    .mobile-menu.is-open .mobile-menu__panel { clip-path: inset(0); }
+    /* Browsers without blur get a solid card instead, so the text never sits on a sharp photo */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .mobile-menu__panel { background: #0f0c09; }
+    }
     @media (prefers-reduced-motion: reduce) {
-      .mobile-menu, .mobile-menu__panel { transition: none; }
+      .mobile-menu, .mobile-menu::before, .mobile-menu__panel, .nav__toggle span { transition: none; }
     }
-    /* Wider screens: the links, button and icons sit in a centred 640px column */
-    @media (min-width: 701px) {
-      .mobile-menu__panel { padding: 18px 40px 32px; }
-      .mobile-menu__links, .mobile-menu__foot { max-width: 640px; margin-left: auto; margin-right: auto; }
-    }
-    .mobile-menu__top { display: flex; justify-content: flex-end; align-items: center; }   /* just the ×, on the right */
-    .mobile-menu__close {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 44px; height: 44px; margin-right: -10px;     /* a full-size tap target, lined up with the edge */
-      background: none; border: 0; cursor: pointer;
-      font-size: 32px; line-height: 1; color: var(--warm-mid);
-    }
-    .mobile-menu__close:hover { color: var(--cream); }
-    .mobile-menu__links {
-      flex: 1; display: flex; flex-direction: column; justify-content: center;
-      gap: 14px; width: 100%; padding: 28px 0;
-    }
+    .mobile-menu__links { display: flex; flex-direction: column; padding: 6px 0 20px; }
     .mobile-menu__links a {
-      display: flex; align-items: baseline; gap: 16px;
-      font-family: var(--font-serif); font-size: 28px; line-height: 1.15; color: var(--cream);
+      display: flex; align-items: baseline; gap: 14px;
+      font-family: var(--font-serif); font-size: 22px; line-height: 1.15; color: var(--cream);
       border-bottom: 1px solid rgba(200,120,42,.18);
-      padding-bottom: 14px;
+      padding: 13px 0;                                    /* about 52px tall: a comfortable tap */
       transition: color var(--transition);
     }
-    @media (min-width: 701px) { .mobile-menu__links a { font-size: 32px; } }
-    .mobile-menu__links a small { min-width: 24px; font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 3px; color: var(--ember); }
+    .mobile-menu__links a small { min-width: 22px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: 3px; color: var(--ember); }
     .mobile-menu__links a:hover { color: var(--ember-glow); }
-    .mobile-menu__foot { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    /* Reserve: solid ember, the one thing in the menu that should stand out; brightens on hover */
     .mobile-menu__reserve {
-      display: flex; justify-content: center; align-items: center; height: 56px;
+      display: flex; justify-content: center; align-items: center; height: 50px;
       background: var(--ember); color: var(--black);
       font-family: var(--font-sans); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase;
       transition: background var(--transition);
     }
     .mobile-menu__reserve:hover { background: var(--ember-glow); }
-    /* The contact icons, spread evenly across the width under the button */
-    .mobile-menu__icons { display: flex; justify-content: space-around; list-style: none; margin: 0; padding: 0; }
-    .mobile-menu__icons a { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; color: var(--ember-glow); }
-    .mobile-menu__icons svg { width: 24px; height: 24px; }
-    .mobile-menu a:focus-visible, .mobile-menu button:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 4px; }
+    .mobile-menu a:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 4px; }
+
+    /* The menu button: three lines that fold into an × while the menu is open. The lines stay
+       22px wide, but the button around them is 44 × 44, a full-size tap target. */
+    .nav__toggle { width: 44px; height: 44px; align-items: center; justify-content: center; margin-right: -8px; }
+    .nav__toggle span { transition: transform .3s ease, opacity .2s ease; }
+    .nav__toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .nav__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .nav__toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+    .nav__toggle:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
 
     /* ============================================================
        RESPONSIVE BREAKPOINTS
@@ -1966,7 +1985,7 @@
     </ul>
 
     <div style="display:flex;align-items:center;gap:16px;">
-      <button class="nav__toggle" aria-label="Open menu" aria-expanded="false" id="menuToggle">
+      <button class="nav__toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" id="menuToggle">
         <span></span>
         <span></span>
         <span></span>
@@ -1974,27 +1993,16 @@
     </div>
   </nav>
 
-  <!-- Full-screen menu: a dialog. Links close it as they're followed (see the script). -->
-  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Menu">
-    <!-- The sliding panel -->
+  <!-- Menu: a card that drops from the menu button (see the CSS and the script). -->
+  <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu__panel">
-      <div class="mobile-menu__top">
-        <button class="mobile-menu__close" id="menuClose" type="button" aria-label="Close menu"><span aria-hidden="true">&times;</span></button>
-      </div>
       <nav class="mobile-menu__links" aria-label="Sections">
         <a href="#explore"><small aria-hidden="true">01</small>Experiences</a>
         <a href="#rooms-suites"><small aria-hidden="true">02</small>Rooms</a>
         <a href="#signature-dishes"><small aria-hidden="true">03</small>Dining</a>
         <a href="#contact"><small aria-hidden="true">04</small>Contact</a>
       </nav>
-      <div class="mobile-menu__foot">
-        <a class="mobile-menu__reserve" href="booking.html">Reserve</a>
-        <ul class="mobile-menu__icons" aria-label="Contact">
-          <li><a href="tel:+254705439631" aria-label="Call us"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a></li>
-          <li><a href="https://wa.me/254705439631" rel="noopener" aria-label="Message us on WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a></li>
-          <li><a href="mailto:stay@safariember.com" aria-label="Email us"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="m3 6 9 7 9-7"/></svg></a></li>
-        </ul>
-      </div>
+      <a class="mobile-menu__reserve" href="booking.html">Reserve</a>
     </div>
   </div>
 
@@ -2039,7 +2047,7 @@
           beauty of the African wildlands.
         </p>
         <div class="hero-intro__ctas hero__stage-ctas">
-          <a href="booking.html" class="btn-primary">Reserve Stay</a>
+          <a href="#booking" class="btn-primary">Reserve Stay</a>   <!-- down to the date picker below; the cards and menu go straight to booking.html -->
           <a href="#explore" class="btn-ghost">Explore Resort</a>
         </div>
       </div>
@@ -2535,7 +2543,9 @@
   <!-- ============================================================
        FOOTER
   ============================================================ -->
-  <footer class="footer" role="contentinfo">
+  <!-- One footer landmark for the whole bottom of the page, the credit line included -->
+  <footer>
+  <div class="footer">
     <p class="footer__copy">&copy; 2026 Safari Ember. All rights reserved.</p>
     <a class="footer__logo" href="#" aria-label="Safari Ember, back to top">
       <img src="sember-108.webp" alt="" width="36" height="36" />
@@ -2545,52 +2555,71 @@
       <li><a href="terms.html">Terms of Use</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
-  </footer>
+  </div>
   <p class="footer__credit" style="text-align:center;font-family:var(--font-sans);font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:#fff;padding:16px 0 20px;background:var(--black);margin:0;">Designed &amp; Developed by <span style="color:var(--ember);">ETHAN</span></p>
+  </footer>
 
   <!-- ============================================================
        JAVASCRIPT
        Kept minimal and vanilla — no frameworks needed for this.
   ============================================================ -->
   <script>
-    // ---- Mobile menu toggle ----------------------------------------
+    // ---- Mobile menu -----------------------------------------------
+    // A disclosure: the button opens and closes the card below it and says which it will do
+    // (aria-expanded + its label). The card closes on Escape, on a tap anywhere outside it, when
+    // a link in it is followed, when keyboard focus leaves it (Tab past Reserve), and when the
+    // page is scrolled. The page is NOT locked while it's open: locking (overflow: hidden) removes
+    // the scrollbar, and the whole page jumps sideways by its width.
     const menuToggle = document.getElementById('menuToggle');
     const mobileMenu = document.getElementById('mobileMenu');
-    const menuClose  = document.getElementById('menuClose');
 
-    // The menu is a dialog: on open, focus moves inside it and Tab cycles within it (the page
-    // behind can't be reached); Escape or Close shuts it, and focus returns to the menu button.
-    function menuFocusables() {
-      return Array.prototype.slice.call(mobileMenu.querySelectorAll('a[href], button'));
+    // Hang the card just under the button, its right edge in line with the button's
+    var openedAtY = 0;
+    function placeMenu() {
+      var r = menuToggle.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+      mobileMenu.style.setProperty('--menu-top', Math.round(r.bottom + 4) + 'px');
+      mobileMenu.style.setProperty('--menu-right', Math.round(Math.max(12, vw - r.right)) + 'px');
     }
     function openMobileMenu() {
+      placeMenu();
       mobileMenu.classList.add('is-open');
-      document.body.style.overflow = 'hidden';            // no page scrolling behind the menu
+      document.body.classList.add('menu-open');
+      openedAtY = window.scrollY;
       menuToggle.setAttribute('aria-expanded', 'true');
-      menuClose.focus();
+      menuToggle.setAttribute('aria-label', 'Close menu');
     }
     function closeMobileMenu(returnFocus) {
       if (!mobileMenu.classList.contains('is-open')) return;
       mobileMenu.classList.remove('is-open');
-      document.body.style.overflow = '';
+      document.body.classList.remove('menu-open');
       menuToggle.setAttribute('aria-expanded', 'false');
+      menuToggle.setAttribute('aria-label', 'Open menu');
       if (returnFocus) menuToggle.focus();
     }
 
-    menuToggle.addEventListener('click', openMobileMenu);
-    menuClose.addEventListener('click', function () { closeMobileMenu(true); });
-    // Following any link in the menu closes it (the page then scrolls to that section)
+    menuToggle.addEventListener('click', function () {
+      if (mobileMenu.classList.contains('is-open')) closeMobileMenu(true); else openMobileMenu();
+    });
+    // A tap on the clear layer around the card lands on #mobileMenu itself: close.
+    // Following a section link closes it too (the page then scrolls to that section).
     mobileMenu.addEventListener('click', function (e) {
-      if (e.target.closest('a[href^="#"]')) closeMobileMenu(false);
+      if (e.target === mobileMenu) closeMobileMenu(true);
+      else if (e.target.closest('a[href^="#"]')) closeMobileMenu(false);
+    });
+    // Focus moving somewhere other than the card or its button (Tab past Reserve): close
+    mobileMenu.addEventListener('focusout', function (e) {
+      var to = e.relatedTarget;
+      if (to && !mobileMenu.contains(to) && to !== menuToggle) closeMobileMenu(false);
     });
     document.addEventListener('keydown', function (e) {
-      if (!mobileMenu.classList.contains('is-open')) return;
-      if (e.key === 'Escape') { closeMobileMenu(true); return; }
-      if (e.key !== 'Tab') return;
-      var f = menuFocusables(), first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      if (e.key === 'Escape' && mobileMenu.classList.contains('is-open')) closeMobileMenu(true);
     });
+    window.addEventListener('resize', function () { if (mobileMenu.classList.contains('is-open')) placeMenu(); });
+    // Scrolling the page means the visitor has moved on: roll the menu back up. (A few pixels of
+    // slack, because a phone's toolbar settling can nudge the page by itself.)
+    window.addEventListener('scroll', function () {
+      if (mobileMenu.classList.contains('is-open') && Math.abs(window.scrollY - openedAtY) > 24) closeMobileMenu(false);
+    }, { passive: true });
 
     // ---- Booking bar: check the dates here, then hand over to booking.html ----
     // The same rules as the API (api/src/lib/stay.js), so guests hear about a problem right away
@@ -3043,7 +3072,11 @@
         for (var i = 0; i < total; i++) {
           (function(idx) {
             var dot = document.createElement('button');
+            dot.type = 'button';
             dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+            // A screen reader hears "Show 2 of 3" (these dots had no name at all)
+            dot.setAttribute('aria-label', 'Show ' + (idx + 1) + ' of ' + total);
+            if (idx === 0) dot.setAttribute('aria-current', 'true');
             dot.addEventListener('click', function() {
               if (!locked) { current = idx; moveTo(current, true); }
             });
@@ -3055,6 +3088,7 @@
           var realIdx = current % total;
           dotsContainer.querySelectorAll('.carousel-dot').forEach(function(d, i) {
             d.classList.toggle('active', i === realIdx);
+            if (i === realIdx) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
           });
         }
 

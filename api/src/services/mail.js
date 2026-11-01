@@ -12,8 +12,20 @@
 //      returns at once: a guest's payment is confirmed whether or not Resend answers quickly.
 //   2. Sending never breaks the thing that caused it. A Resend outage must not fail a booking
 //      or a cancellation; the failure is logged (and, for booking emails, recorded) instead.
+import { readFileSync } from 'node:fs';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+
+/**
+ * The logo, carried inside each email rather than linked from the website. The HTML points at
+ * it with src="cid:safari-ember-logo"; Resend sends the file along as an inline attachment with
+ * that content_id, and the mail app shows it in place. Read once, at start-up.
+ */
+export const INLINE_LOGO = 'safari-ember-logo';
+const LOGO_BASE64 = readFileSync(new URL('../assets/email-logo.png', import.meta.url)).toString('base64');
+const inlineFor = (html) => (html && html.includes(`cid:${INLINE_LOGO}`)
+  ? [{ filename: 'safari-ember.png', content: LOGO_BASE64, content_type: 'image/png', content_id: INLINE_LOGO }]
+  : []);
 
 export const outbox = [];
 const inflight = new Set();
@@ -84,7 +96,12 @@ export async function deliver({ to, subject, text, html, replyTo }, cfg, { retry
         method: 'POST',
         headers: { Authorization: `Bearer ${cfg.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
         // reply_to: a guest who presses Reply writes to the lodge, not to onboarding@resend.dev
-        body: JSON.stringify({ from: cfg.MAIL_FROM, to: [to], subject, text, ...(html ? { html } : {}), ...(replyTo ? { reply_to: replyTo } : {}) }),
+        body: JSON.stringify({
+          from: cfg.MAIL_FROM, to: [to], subject, text,
+          ...(html ? { html } : {}),
+          ...(replyTo ? { reply_to: replyTo } : {}),
+          ...(inlineFor(html).length ? { attachments: inlineFor(html) } : {}),   // the logo, when the HTML uses it
+        }),
         signal: AbortSignal.timeout(10_000),
       });
     } catch (err) {

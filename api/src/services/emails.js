@@ -29,7 +29,8 @@ import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { bookingUrl } from '../lib/bookingLink.js';
 import { esc } from '../lib/html.js';
-import { inBackground, sendMail } from './mail.js';
+import { INLINE_LOGO, inBackground, sendMail } from './mail.js';
+import { CHECK_IN_TIME, CHECK_OUT_TIME } from './activities.js';
 
 export const kes = (n) => `KES ${Number(n).toLocaleString('en-KE')}`;
 const EMBER = '#c8782a';
@@ -41,19 +42,28 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * The email's frame: one centred column with inline styles, because email clients ignore
- * stylesheets and most modern CSS. Light, with the site's ember, so it reads in any inbox.
+ * stylesheets and most modern CSS.
+ *
+ * On top, a black letterhead with the logo, like the site's header. The logo is a picture
+ * (the elephant and the wordmark in Playfair Display Bold), because mail apps ignore web fonts:
+ * as text it would turn into Georgia or Times. It travels inside the email (cid:, see
+ * mail.js), so it shows even before the site is online, and Gmail can't fetch from localhost.
+ * Images switched off: the alt text shows instead, styled like the wordmark.
+ * Below it the details stay dark on white, the easiest to read and to print.
  */
 export function layout({ heading, intro, body = '', button }) {
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f3efe8;">
 <div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:Helvetica,Arial,sans-serif;color:#1c1610;">
-  <p style="margin:0 0 26px;font-family:Georgia,serif;font-size:18px;letter-spacing:5px;color:${EMBER};">SAFARI EMBER</p>
+  <div style="background:#0b0907;padding:30px 20px 28px;text-align:center;">
+    <img src="cid:${INLINE_LOGO}" width="200" height="116" alt="SAFARI EMBER" style="display:block;margin:0 auto;border:0;width:200px;max-width:100%;height:auto;font-family:Georgia,serif;font-size:18px;letter-spacing:5px;color:${EMBER};">
+  </div>
   <div style="background:#fff;padding:28px 24px;border-top:3px solid ${EMBER};">
     <h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:24px;font-weight:400;line-height:1.3;">${heading}</h1>
     <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">${intro}</p>
     ${body}
     ${button ? `<p style="margin:24px 0 0;"><a href="${esc(button.href)}" style="display:inline-block;background:${EMBER};color:#120c06;text-decoration:none;padding:13px 26px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">${esc(button.label)}</a></p>` : ''}
   </div>
-  <p style="margin:20px 0 0;font-size:12px;color:#6b5a48;line-height:1.6;">Safari Ember · Nairobi, Kenya · <a href="${esc(config.SITE_URL)}" style="color:#6b5a48;">${esc(config.SITE_URL.replace(/^https?:\/\//, ''))}</a></p>
+  <p style="margin:20px 0 0;text-align:center;font-size:12px;color:#6b5a48;line-height:1.6;">Safari Ember · Nairobi, Kenya · <a href="${esc(config.SITE_URL)}" style="color:#6b5a48;">${esc(config.SITE_URL.replace(/^https?:\/\//, ''))}</a></p>
 </div></body></html>`;
 }
 
@@ -95,8 +105,8 @@ function stay(b) {
   const rows = [
     ['Reference', b.ref],
     [b.rooms.reduce((n, r) => n + r.units, 0) > 1 ? 'Rooms' : 'Room', roomsText(b)],
-    ['Check in', `${day(b.checkIn)}, from 14:00`],
-    ['Check out', `${day(b.checkOut)}, by 11:00`],
+    ['Check in', `${day(b.checkIn)}, from ${CHECK_IN_TIME}`],
+    ['Check out', `${day(b.checkOut)}, by ${CHECK_OUT_TIME}`],
     ['Guests', String(b.guests)],
     ...b.trips.map((t) => ['Experience', `${t.name} · ${day(t.day, { year: undefined })}, ${t.time} · ${plural(t.people, 'person', 'people')}`]),
     ['Total', `${kes(b.totalKes)} · ${plural(b.nights, 'night')}`],

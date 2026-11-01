@@ -169,6 +169,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             outputfile.write(chunk)
             remaining -= len(chunk)
 
+    def send_error(self, code, message=None, explain=None):
+        # A missing page gets the site's own 404.html (as on Netlify), not Python's plain one
+        page = os.path.join(ROOT, "404.html")
+        if code == 404 and not self.path.startswith("/api/") and os.path.isfile(page):
+            with open(page, "rb") as f:
+                body = f.read()
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+            return
+        super().send_error(code, message, explain)
+
     def log_message(self, fmt, *args):
         pass                                         # quiet: phones fire many video requests
 

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found | Safari Ember</title>
+  <!-- A dead address shouldn't show up in search results -->
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@400;500&display=swap" rel="stylesheet" />
+  <!--
+    Netlify shows this page for any address that doesn't exist (and server.py does too, locally).
+    That address can be anything, like /rooms/old-page, so every link here starts with "/":
+    a relative "legal.css" would be looked for in /rooms/ and the page would lose its styles.
+  -->
+  <link rel="stylesheet" href="/legal.css" />
+  <style>
+    /* The legal pages' look, centred, with room to breathe */
+    .lost { text-align: center; padding-top: 12vh; padding-bottom: 12vh; }
+    .lost .legal__rule { margin-left: auto; margin-right: auto; }
+    .lost p { max-width: 460px; margin-left: auto; margin-right: auto; }
+    .lost__ways { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+    .lost__ways a {
+      display: inline-block; padding: 14px 28px; border: 1px solid rgba(200, 120, 42, .5);
+      font-family: 'Jost', system-ui, sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+      color: #c8782a; text-decoration: none;
+    }
+    .lost__ways a:first-child { background: #c8782a; border-color: #c8782a; color: #0b0907; }
+    .lost__ways a:hover { border-color: #e8954a; }
+    .lost__ways a:focus-visible { outline: 2px solid #e8954a; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <header class="legal-head">
+    <a class="legal-head__home" href="/index.html" aria-label="Safari Ember home">
+      <img src="/sember-108.webp" alt="" width="40" height="40" />
+    </a>
+  </header>
+
+  <main id="content" class="lost">
+    <p class="legal__label">Page not found</p>
+    <h1>This trail goes <em>nowhere</em></h1>
+    <div class="legal__rule" role="presentation"></div>
+    <p>The page you were looking for isn't here. It may have moved, or the address may have a typo.</p>
+    <div class="lost__ways">
+      <a href="/index.html">Back to the lodge</a>
+      <a href="/booking.html">Book a stay</a>
+    </div>
+  </main>
+
+  <footer class="legal-foot">
+    <span>&copy; 2026 Safari Ember</span>
+    <ul>
+      <li><a href="/privacy.html">Privacy Policy</a></li>
+      <li><a href="/terms.html">Terms of Use</a></li>
+      <li><a href="/index.html#contact">Contact</a></li>
+    </ul>
+  </footer>
+</body>
+</html>

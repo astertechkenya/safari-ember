@@ -79,7 +79,7 @@ at the last unit to prove only one wins.
 
 **Closures.** Handled physically by the lodge (decided Oct 2026). There is no closures table or
 screen (removed in migration 0006). To stop selling a room type, untick "Bookable" or lower its
-units in Rooms & rates.
+units in Rates.
 
 **Booking reference.** Guests see a short reference like `SE-7K3QXM` (no 0/O or 1/I to misread
 on the phone), never the database id. Their confirmation link is signed, like NURA's order
@@ -129,7 +129,7 @@ never changes what an existing guest owes.
 | `POST /api/payments/mpesa/callback/:secret` | Safaricom's result (a hint: we then ask Safaricom ourselves) |
 | `POST /api/payments/paystack/webhook` | Paystack's signed events (a hint: we then ask Paystack ourselves) |
 | `POST /api/enquiries` | The "Get in touch" form (`name` or `firstName` + `lastName`, `email`, `message`, optional extras), saved for the admin inbox and (Phase 4) emailed to the lodge |
-| `/api/admin/*` (Phase 5) | The admin: see "Launch scope" for the twenty routes |
+| `/api/admin/*` (Phase 5) | The admin: see "Launch scope" for the twenty-one routes |
 
 ## Deposits (Phase 3)
 
@@ -248,13 +248,14 @@ then widened the same week to include Calendar and Rooms & rates).
 Closures was later dropped from the admin altogether (handled physically), so the `LAUNCH` /
 `LATER` switch that hid it is gone too.
 
-**At launch (built Oct 2026).** Twenty admin routes. Login and logout are open; every other one
+**At launch (built Oct 2026).** Twenty-one admin routes. Login and logout are open; every other one
 requires a signed-in admin with two-factor done (`me` and `login/code` also answer mid-sign-in):
 
 | Route | For |
 |---|---|
 | `POST /api/admin/login`, `POST /api/admin/login/code`, `POST /api/admin/logout`, `GET /api/admin/me` | Sign-in with password then authenticator code (as NURA) |
 | `GET /api/admin/today` | Arrivals, departures, in house, tonight's occupancy, holds, new-enquiry count |
+| `GET /api/admin/stats` | Today's charts: rooms taken per night for 30 nights; deposits this week (from Monday) and month, by confirmation day, bookings that still stand; balances to collect from guests in house or arriving within 7 days; booked revenue by check-in month (two back, three ahead) split into deposit and balance. No guest details, so the demo account sees it too |
 | `GET /api/admin/bookings?q=&status=&room=` | Search and filter |
 | `GET /api/admin/bookings/:ref` | One booking: rooms, experiences, frozen prices, payments, history |
 | `POST /api/admin/bookings/:ref/check-in`, `/check-out`, `/cancel` | The daily actions (cancel takes a reason) |
@@ -262,17 +263,21 @@ requires a signed-in admin with two-factor done (`me` and `login/code` also answ
 | `GET /api/admin/bookings/:ref/link` | The guest's private booking link, to copy and send by hand (not for the demo account) |
 | `GET /api/admin/calendar?from=` | Three weeks: rooms free per type per night, closed units |
 | `GET /api/admin/calendar/night?date=&room=` | Who is staying in a room type that night |
-| `GET /api/admin/rooms`, `PATCH /api/admin/rooms/:id` | Room types: base rate, units, bookable |
+| `GET /api/admin/rooms`, `PATCH /api/admin/rooms/:id` | Room types: base rate, units, sleeps (guests per room, 1–20), bookable |
 | `GET /api/admin/experiences?from=`, `PATCH /api/admin/experiences/:id` | Two weeks of departures (who's going, people, vehicles) and each trip's price, seats, times, on/off (every trip runs daily) |
 | `GET /api/admin/enquiries`, `POST /api/admin/enquiries/:id/status` | Inbox; mark handled / new |
 
-**Rules for Experiences.** A price change applies to new bookings only (each booking froze its
+**Rules for Experiences.** A trip can be on any day from check-in to check-out, but on the
+check-in day only from check-in time (14:00) and on the check-out day only before check-out
+(11:00); one function (`duringStay`, services/activities.js) decides it for the booking page and
+the server alike (found in the Nov 2026 review: a 06:30 drive was offered on arrival day).
+A price change applies to new bookings only (each booking froze its
 price per person). Seats are one vehicle's seats, for staff planning: never a limit for guests.
 Every trip runs daily (decided Oct 2026), so days aren't editable. Removing a time, or switching a trip off, never touches existing bookings: they keep
 their slot and still show in the departures list, and the admin is told how many are affected
 so staff can contact those guests. Logged in `admin_events` as `activity.update`.
 
-**Rules for Rooms & rates.** A price change applies to new bookings at once, for every date
+**Rules for Rates (rooms).** A price change applies to new bookings at once, for every date
 (booked nights keep their frozen price). Units can't be lowered below the rooms already booked
 on any future night (the API refuses with the night and the count). Every change is logged in
 `admin_events`.
@@ -304,13 +309,13 @@ Not linked from the site and marked `noindex`.
 | Screen | At launch? | What it does |
 |---|---|---|
 | Sign-in | yes | Email + password, then a 6-digit authenticator code; a lost phone is reset by the manager (`create-admin --reset-2fa`) |
-| Today | yes | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries |
+| Today | yes | Arrivals (check in), departures (check out), in house, tonight's occupancy, holds with live countdown, new enquiries. Below them: occupancy for the next 30 nights (column chart) and Money (deposits this week and month, balances to collect, booked revenue by month as a stacked column chart). Every chart has a table twin and reads by hover, touch or arrow keys |
 | Bookings | yes | Search by name, reference, email or phone; filter by status and room type |
 | Booking | yes | Rooms, experiences, guest, frozen nightly prices, deposit and balance due, history, check in / out, cancel (with reason), copy guest link. ("Resend confirmation email" waits for guest emails.) |
 | Enquiries | yes | Inbox with unread marks, reply by email, mark as handled |
 | Calendar | yes | Rooms free per night, three weeks a page, any date back or forward (bookings are never deleted; guests book up to 18 months ahead). Past nights count completed stays up to the day the guest left. A night lists who stayed or is staying, with each guest's room count on the right |
-| Experiences | yes | Departures for two weeks by day: trip, time, who's going (held ones marked), people and vehicles needed (people ÷ a vehicle's seats). Each trip (all run daily): price per person, seats per vehicle, departure times, offered or not |
-| Rooms & rates | yes | Price per night, units and "bookable" per room type |
+| Experiences | yes | Departures for two weeks by day: trip, time, who's going (held ones marked), people and vehicles needed (people ÷ a vehicle's seats) |
+| Rates | yes | Everything priced, one row per item. Every figure on a card is an editable field. Rooms: price per night, units, sleeps (guests per room: shapes new bookings only), bookable. Experiences (all run daily): price per person, seats per vehicle, departure times, offered or not. Save lights up only when a row has changes |
 
 **As built (migration 0003).** `bookings` gained `checked_in_at`, `checked_out_at` and
 `cancel_reason` (up to 300 characters, shown on the guest's booking page); new tables `admins`,

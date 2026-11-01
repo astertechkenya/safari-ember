@@ -127,6 +127,61 @@ export async function today(masked) {
   };
 }
 
+/* ── Statistics (the charts on Today) ────────────────────────────────────────────────── */
+
+export const STATS_DAYS = 30;
+
+/**
+ * The numbers behind Today's charts. Read-only, no guest details, so the demo account sees the
+ * same as everyone.
+ *
+ *   occupancy   rooms taken each night for the next 30 nights, all room types together, counted
+ *               exactly like the calendar (occupancy() above).
+ *   deposits    deposits taken this week (from Monday) and this month, by the day the booking
+ *               was confirmed, in Nairobi. Only bookings that still stand (CONFIRMED or COMPLETED):
+ *               a cancelled booking's deposit is the lodge's to settle with the guest, so it isn't
+ *               counted as income here.
+ *   toCollect   balances still to be paid at the lodge by guests who are in house now or arrive in
+ *               the next 7 days (CONFIRMED: total − deposit).
+ *   months      booked revenue by check-in month, from two months back to three ahead, split into
+ *               the deposit (paid online) and the balance (paid at the lodge).
+ */
+export async function stats() {
+  const t = todayInNairobi();
+  const occ = await occupancy(t, addDays(t, STATS_DAYS));
+  const nights = (occ[0]?.nights ?? []).map((n, i) => occ.reduce(
+    (sum, rt) => ({ night: n.night, taken: sum.taken + rt.nights[i].taken, open: sum.open + rt.nights[i].open }),
+    { night: n.night, taken: 0, open: 0 }));
+
+  const [money] = (await db.execute(sql`
+    with d as (select deposit_kes, (confirmed_at at time zone 'Africa/Nairobi')::date as day
+                 from bookings where status in ('CONFIRMED', 'COMPLETED') and confirmed_at is not null)
+    select coalesce(sum(deposit_kes) filter (where day >= date_trunc('week', ${t}::date)::date), 0)::int as week_kes,
+           count(*) filter (where day >= date_trunc('week', ${t}::date)::date)::int as week_n,
+           coalesce(sum(deposit_kes) filter (where day >= date_trunc('month', ${t}::date)::date), 0)::int as month_kes,
+           count(*) filter (where day >= date_trunc('month', ${t}::date)::date)::int as month_n
+      from d`)).rows;
+  const [collect] = (await db.execute(sql`
+    select coalesce(sum(total_kes - deposit_kes), 0)::int as kes, count(*)::int as n
+      from bookings where status = 'CONFIRMED' and check_in <= ${addDays(t, 6)}::date`)).rows;
+  const { rows: months } = await db.execute(sql`
+    with m as (select generate_series(date_trunc('month', ${t}::date) - interval '2 months',
+                                      date_trunc('month', ${t}::date) + interval '3 months', interval '1 month')::date as month)
+    select to_char(m.month, 'YYYY-MM') as month,
+           coalesce(sum(b.deposit_kes), 0)::int as deposits_kes,
+           coalesce(sum(b.total_kes - b.deposit_kes), 0)::int as balances_kes
+      from m left join bookings b on date_trunc('month', b.check_in)::date = m.month and b.status in ('CONFIRMED', 'COMPLETED')
+     group by m.month order by m.month`);
+
+  return {
+    date: t,
+    occupancy: { days: STATS_DAYS, nights },
+    deposits: { week: { kes: money.week_kes, bookings: money.week_n }, month: { kes: money.month_kes, bookings: money.month_n } },
+    toCollect: { kes: collect.kes, bookings: collect.n, days: 7 },
+    months: months.map((r) => ({ month: r.month, depositsKes: r.deposits_kes, balancesKes: r.balances_kes })),
+  };
+}
+
 /* ── Bookings ────────────────────────────────────────────────────────────────────────── */
 
 export const LIST_FILTERS = ['upcoming', 'inhouse', 'held', 'past', 'cancelled', 'refunds', 'all'];
@@ -366,9 +421,12 @@ export async function updateRoom(id, change, adminId) {
         throw httpError(409, `${rt.name}: ${busiest.taken} rooms are booked on ${busiest.night}, so units can’t go below ${busiest.taken}.`);
       }
     }
-    const before = { baseRateKes: rt.baseRateKes, units: rt.units, active: rt.active };
+    // Sleeps (guests per room) only shapes NEW bookings: availability uses it to work out how many
+    // rooms a party needs. Existing bookings keep the rooms and guests they booked.
+    const before = { baseRateKes: rt.baseRateKes, units: rt.units, sleeps: rt.sleeps, active: rt.active };
     const [after] = await tx.update(roomTypes).set(change).where(eq(roomTypes.id, id)).returning();
-    await log(tx, adminId, 'room.update', null, { roomTypeId: id, before, after: { baseRateKes: after.baseRateKes, units: after.units, active: after.active } });
+    await log(tx, adminId, 'room.update', null, { roomTypeId: id, before,
+      after: { baseRateKes: after.baseRateKes, units: after.units, sleeps: after.sleeps, active: after.active } });
     return after;
   });
 }

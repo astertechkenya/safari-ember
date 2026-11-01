@@ -6,6 +6,7 @@
 //   GET  /api/admin/me                                  who am I, and do I still need my code?
 //
 //   GET   /api/admin/today                          arrivals, departures, in house, holds, tonight
+//   GET   /api/admin/stats                          Today's charts: occupancy ahead, deposits, balances, revenue by month
 //   GET   /api/admin/bookings?q=&status=&room=      search and filter (status: upcoming, inhouse, held, past, cancelled, refunds, all)
 //   GET   /api/admin/bookings/:ref                  one booking: rooms, trips, prices, payments, history
 //   GET   /api/admin/bookings/:ref/link            the guest's private link (the very one they were given)
@@ -16,7 +17,7 @@
 //   GET   /api/admin/calendar?from=                 three weeks of rooms free per night
 //   GET   /api/admin/calendar/night?date=&room=     who is staying in a room type that night
 //   GET   /api/admin/rooms
-//   PATCH /api/admin/rooms/:id                     { baseRateKes?, units?, active? }
+//   PATCH /api/admin/rooms/:id                     { baseRateKes?, units?, sleeps?, active? }
 //   GET   /api/admin/experiences?from=              two weeks of departures (who's going) + each trip's settings
 //   PATCH /api/admin/experiences/:id               { priceKes?, seats?, departureTimes?, active? }  (every trip runs daily)
 //   GET   /api/admin/enquiries
@@ -40,7 +41,7 @@ import { verifyCode } from '../lib/totp.js';
 import { isIsoDate, todayInNairobi } from '../lib/dates.js';
 import { bookingUrl } from '../lib/bookingLink.js';
 import {
-  today, listBookings, LIST_FILTERS, refundsOwed, refundSent, bookingDetail, checkIn, checkOut, cancel, calendar, night,
+  today, stats, listBookings, LIST_FILTERS, refundsOwed, refundSent, bookingDetail, checkIn, checkOut, cancel, calendar, night,
   listRooms, updateRoom, departures, listTrips, updateTrip, listEnquiries, setEnquiryStatus,
 } from '../services/admin.js';
 
@@ -118,6 +119,7 @@ const refParams = z.strictObject({ ref: z.string().trim().toUpperCase().regex(/^
 const idParams = z.strictObject({ id: z.coerce.number().int().positive() });
 
 adminRouter.get('/today', async (req, res) => res.json(await today(req.masked)));
+adminRouter.get('/stats', async (req, res) => res.json(await stats()));
 
 adminRouter.get('/bookings', validate(z.strictObject({
   q: z.string().trim().min(1).max(60).optional(),
@@ -180,6 +182,7 @@ adminRouter.get('/rooms', async (req, res) => res.json({ rooms: await listRooms(
 adminRouter.patch('/rooms/:id', validate(idParams, 'params'), validate(z.strictObject({
   baseRateKes: kes.optional(),
   units: z.coerce.number().int().min(0).max(99).optional(),
+  sleeps: z.coerce.number().int().min(1).max(20).optional(),   // guests per room; the database allows 1–20
   active: z.boolean().optional(),
 }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.')), async (req, res) => {
   await updateRoom(req.valid.params.id, req.valid.body, req.admin.id);

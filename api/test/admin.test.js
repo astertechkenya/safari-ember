@@ -191,6 +191,42 @@ describe('Today and the daily actions', () => {
   });
 });
 
+describe('Today’s statistics', () => {
+  it('counts rooms taken per night ahead, deposits in, balances to collect and revenue by month', async () => {
+    const b = await signedIn();
+    const before = (await b.get('/api/admin/stats')).body;
+    expect(before.occupancy.nights).toHaveLength(30);
+    expect(before.occupancy.nights[0].night).toBe(inDays(0));
+
+    const ref = await confirmed(inDays(2), inDays(4));          // 2 nights × 20,000: in the next 7 days
+    await confirmed(inDays(20), inDays(21));                       // 1 night: later
+    const held = await createHold({ rooms: [{ room: 'test-admin-room', units: 1 }], checkIn: inDays(2), checkOut: inDays(3), guests: 2, ...guest });
+    const cancelledRef = await confirmed(inDays(25), inDays(26));
+    await b.post(`/api/admin/bookings/${cancelledRef}/cancel`).send({ reason: 'Guest asked' });
+
+    const s = (await b.get('/api/admin/stats')).body;
+    const taken = (d) => s.occupancy.nights[d].taken - before.occupancy.nights[d].taken;
+    // Night +2: the confirmed stay and the running hold, exactly as the calendar counts them
+    expect([taken(1), taken(2), taken(3), taken(4), taken(20)]).toEqual([0, 2, 1, 0, 1]);
+
+    const [{ deposit_kes: dep1 }] = (await db.execute(sql`select deposit_kes from bookings where ref = ${ref}`)).rows;
+    const deposits = (await db.execute(sql`select coalesce(sum(deposit_kes), 0)::int as n from bookings where status = 'CONFIRMED'`)).rows[0].n;
+    // Confirmed just now, so in this week and this month; the cancelled one and the hold don't count
+    expect(s.deposits.week).toEqual({ kes: deposits, bookings: 2 });
+    expect(s.deposits.month).toEqual({ kes: deposits, bookings: 2 });
+    expect(s.toCollect).toEqual({ kes: 40_000 - dep1, bookings: 1, days: 7 });
+
+    expect(s.months).toHaveLength(6);
+    const total = s.months.reduce((n, m) => n + m.depositsKes + m.balancesKes, 0);
+    expect(total).toBe(40_000 + 20_000);                         // the two standing bookings, nothing else
+    expect(held.booking.ref).toMatch(/^SE-/);
+  });
+
+  it('is open to the demo account (no guest details in it)', async () => {
+    expect((await (await demo()).get('/api/admin/stats')).status).toBe(200);
+  });
+});
+
 describe('the guest’s link', () => {
   it('is the very link the guest was given, and it opens their booking', async () => {
     const { booking, url } = await createHold({ rooms: [{ room: 'test-admin-room', units: 1 }], checkIn: inDays(70), checkOut: inDays(71), guests: 2, ...guest });
@@ -258,6 +294,20 @@ describe('rooms and rates', () => {
     const [e] = await db.select().from(adminEvents);
     expect(e).toMatchObject({ action: 'room.update', detail: { before: { baseRateKes: 20_000 }, after: { baseRateKes: 22_000 } } });
     await db.update(roomTypes).set({ baseRateKes: 20_000 }).where(eq(roomTypes.id, room.id));
+  });
+
+  it('changes how many guests a room sleeps, for new bookings only, within 1 to 20', async () => {
+    const ref = await confirmed(inDays(80), inDays(81));                     // 2 guests in the 2-sleeper
+    const b = await signedIn();
+    expect((await b.patch(`/api/admin/rooms/${room.id}`).send({ sleeps: 0 })).status).toBe(400);
+    expect((await b.patch(`/api/admin/rooms/${room.id}`).send({ sleeps: 21 })).status).toBe(400);
+    const res = await b.patch(`/api/admin/rooms/${room.id}`).send({ sleeps: 1 });
+    expect(res.body.rooms.find((x) => x.id === room.id).sleeps).toBe(1);
+    const [e] = await db.select().from(adminEvents);
+    expect(e.detail).toMatchObject({ before: { sleeps: 2 }, after: { sleeps: 1 } });
+    // The booking made before the change is untouched
+    expect((await b.get(`/api/admin/bookings/${ref}`)).body.booking).toMatchObject({ guests: 2, status: 'CONFIRMED' });
+    await db.update(roomTypes).set({ sleeps: 2 }).where(eq(roomTypes.id, room.id));
   });
 
   it('never lowers units below the rooms already booked on a future night', async () => {
@@ -334,7 +384,8 @@ describe('experiences', () => {
       const offer = (await request(app).get(`/api/activities?checkIn=${inDays(20)}&checkOut=${inDays(21)}`).set('x-nf-sign', netlifyToken()))
         .body.activities.find((a) => a.slug === 'test-admin-trip');
       expect(offer.priceKes).toBe(3_500);
-      expect([...new Set(offer.departures.map((d) => d.time))]).toEqual(['10:00', '15:00']);
+      // (A one-night stay: 15:00 on the arrival day, 10:00 on the last, so compare as a set)
+      expect([...new Set(offer.departures.map((d) => d.time))].sort()).toEqual(['10:00', '15:00']);
       // The booked guest keeps their departure and their price
       const { booking } = (await b.get(`/api/admin/bookings/${ref}`)).body;
       expect(booking.activities[0]).toMatchObject({ time: '09:00', priceKes: 3_000 });
