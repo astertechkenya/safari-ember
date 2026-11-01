@@ -1,0 +1,22 @@
+# netlify.toml: how Netlify builds and serves Safari Ember (read from the repository root).
+#
+# The site is plain files: nothing to build. Netlify publishes the frontend/ folder as it is.
+[build]
+  publish = "frontend"
+  command = ""
+
+# The booking API runs on Render. The site calls it as /api/... on its own address, and Netlify
+# passes those calls on to Render, so the browser only ever talks to one site: no CORS, and the
+# admin's sign-in cookie belongs to the site's own domain.
+#
+# signed: Netlify adds an x-nf-sign header, signed with the NETLIFY_PROXY_SECRET environment
+# variable (set the SAME value on Netlify and on Render). The API believes the guest's real IP
+# address (for rate limits) only from requests carrying a valid signature.
+#
+# If Render gave your service a different address, change "safari-ember-api" below to match.
+[[redirects]]
+  from = "/api/*"
+  to = "https://safari-ember-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+  signed = "NETLIFY_PROXY_SECRET"
