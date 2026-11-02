@@ -30,6 +30,8 @@
 @font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-ext-300-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-latin-300-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/source-sans-3-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/source-sans-3-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-latin-ext-500-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -1298,7 +1300,30 @@
     .person__who { font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--ember-glow); }
     .person--enquire { margin-bottom: 34px; }
     .person--chef { padding: 60px 24px 0; }
-    .form { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+    .form { width: 100%; display: flex; flex-direction: column; gap: 14px; position: relative; }
+    /* Sent: the fields fade out and "Enquiry received / Thank you, Amara" fades in over the same
+       space, then the form returns (script below). Overlaid rather than swapped, so the page
+       never changes height and nothing below it jumps. */
+    .form__thanks {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      opacity: 0; visibility: hidden; outline: none;
+    }
+    .form__thanks .label { margin-bottom: 12px; }
+    .form__thanks-title { font-family: var(--font-serif); font-weight: 400; font-size: clamp(30px, 4vw, 40px);
+      line-height: 1.2; color: var(--cream); margin: 0; overflow-wrap: anywhere; }
+    .form__thanks-title em { font-style: italic; color: var(--ember); }
+    .form.is-sent > :not(.form__thanks) { opacity: 0; visibility: hidden; }
+    .form.is-sent .form__thanks { opacity: 1; visibility: visible; }
+    @media (prefers-reduced-motion: no-preference) {
+      /* Whatever is leaving fades first; what's arriving starts .15s later. "visibility" switches
+         at the END of a fade out (the .5s delay) and at the START of a fade in (0s), so nothing
+         vanishes before it has faded. The button keeps its own hover transition too. */
+      .form > :not(.form__thanks) { transition: opacity .5s ease .15s, visibility 0s, background var(--transition); }
+      .form__thanks { transition: opacity .5s ease, visibility 0s linear .5s; }
+      .form.is-sent > :not(.form__thanks) { transition: opacity .5s ease, visibility 0s linear .5s, background var(--transition); }
+      .form.is-sent .form__thanks { transition: opacity .5s ease .15s, visibility 0s; }
+    }
     .form__send { width: 100%; }
     .form__send[disabled] { opacity: .6; cursor: wait; }
     /* Why a message didn't go: under the button, read out by screen readers (role="alert") */
@@ -1331,9 +1356,10 @@
       background: #dcd2c3;
       border: 1px solid #dcd2c3;
       color: #1c1610;                   /* dark text on apricot */
-      /* Jost, the site's sans: open, even letters that stay clear at small sizes, unlike the
-         display serif. Regular weight (400): the light 300 is too thin for typing into. */
-      font-family: var(--font-sans);
+      /* Source Sans 3, the reading font from the admin: built for text you read word by word
+         (an email address, a long message), where Jost's geometric letters are for display.
+         16px or more, or iPhones zoom the page in when a field is tapped. */
+      font-family: 'Source Sans 3', system-ui, sans-serif;
       font-weight: 400;
       font-size: 16px;
       padding: 14px 16px;
@@ -1675,20 +1701,6 @@
     .rooms-subheader__tagline { font-family: var(--font-sans); font-size: 16px; font-weight: 300; color: var(--warm-mid); font-style: italic; }
     @media (max-width: 768px) {
         }
-
-    /* ── AVAILABILITY POPUP ─────────────────────────────────────── */
-    .avail-popup-overlay { position: fixed; inset: 0; background: rgba(8,7,5,0.85); z-index: 600; display: none; align-items: center; justify-content: center; padding: 24px; }
-    .avail-popup-overlay.open { display: flex; }
-    .avail-popup { background: #0c0a08; border: 1px solid rgba(200,120,42,0.8); max-width: 480px; width: 100%; padding: 56px 48px; text-align: center; position: relative; }
-    .avail-popup__close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: var(--warm-mid); font-size: 20px; cursor: pointer; line-height: 1; }
-    .avail-popup__close:hover { color: var(--cream); }
-    .avail-popup__icon { font-size: 32px; color: var(--ember); margin-bottom: 20px; opacity: 0.7; }
-    .avail-popup__rule { width: 36px; height: 1px; background: var(--ember); margin: 0 auto 24px; }
-    .avail-popup__title { font-family: var(--font-serif); font-size: clamp(22px, 3vw, 30px); font-weight: 400; color: var(--cream); margin-bottom: 16px; line-height: 1.3; }
-    .avail-popup__title em { font-style: italic; color: var(--ember); }
-    .avail-popup__text { font-family: var(--font-sans); font-size: 15px; font-weight: 300; color: var(--warm-mid); line-height: 1.9; margin-bottom: 32px; }
-    .avail-popup__btn { display: inline-block; font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--black); background: var(--ember); border: none; padding: 14px 32px; cursor: pointer; transition: background 0.3s ease; }
-    .avail-popup__btn:hover { background: #e8954a; }
 
     .nav__reserve {
       font-family: var(--font-sans);
@@ -2578,6 +2590,14 @@
 
           <button type="submit" class="btn-primary form__send">Send Enquiry</button>
           <p class="form__error" id="inquiryError" role="alert" hidden></p>
+
+          <!-- Shown for a few seconds once the API has saved the message. tabindex="-1" so focus
+               can rest here while the fields are hidden: a screen reader reads it out, and a
+               keyboard user isn't dropped back at the top of the page. -->
+          <div class="form__thanks" id="inquiryThanks" tabindex="-1">
+            <span class="label">Enquiry received</span>
+            <p class="form__thanks-title">Thank you, <em></em></p>
+          </div>
         </form>
       </div>
     </section>
@@ -2720,6 +2740,8 @@
       const form = document.getElementById('inquiryForm');
       const errorBox = document.getElementById('inquiryError');
       const button = form.querySelector('.form__send');
+      const thanks = document.getElementById('inquiryThanks');
+      let thanksTimer;
       function showError(msg, focusEl) {
         errorBox.textContent = msg; errorBox.hidden = false;
         if (focusEl) focusEl.focus();
@@ -2741,12 +2763,18 @@
           body: JSON.stringify({ name: name, email: email, message: message, website: form.elements.website.value }),
         }).then(function (res) {
           if (res.ok) {
-            // Only now is it really sent: clear the form and say thank you
+            // Only now is it really sent: thank them by first name, clear the form, and bring
+            // it back after a few seconds. textContent, never innerHTML: the name is what they typed.
+            thanks.querySelector('em').textContent = name.split(/\s+/)[0];
             form.reset();
-            button.disabled = false; button.textContent = 'Send Enquiry';
-            // Focus returns to the button on close (it lost focus while disabled, so say so explicitly)
-            openAvailPopup('Thank you for your <em>enquiry</em>',
-              'We’ve received your message. Ophelia or one of the team will reply by email within 24 hours.', button);
+            form.classList.add('is-sent');
+            thanks.focus({ preventScroll: true });
+            clearTimeout(thanksTimer);
+            thanksTimer = setTimeout(function () {
+              form.classList.remove('is-sent');
+              // Focus back to the first field (it was hidden), without scrolling them anywhere
+              if (form.contains(document.activeElement)) form.elements.name.focus({ preventScroll: true });
+            }, 5000);
             return;
           }
           return res.json().catch(function () { return {}; }).then(function (body) {
@@ -3059,43 +3087,6 @@
     })();
   </script>
 
-  <!-- Availability Confirmation Popup -->
-  <div class="avail-popup-overlay" id="availPopup" role="dialog" aria-modal="true" aria-labelledby="availPopupTitle">
-    <div class="avail-popup">
-      <div class="avail-popup__icon">&#10022;</div>
-      <div class="avail-popup__rule"></div>
-      <h2 class="avail-popup__title" id="availPopupTitle">We'll be in <em>touch</em></h2>
-      <p class="avail-popup__text">A member of our team will reply by email within 24 hours.</p>
-      <button class="avail-popup__btn" onclick="closeAvailPopup()">Close</button>
-    </div>
-  </div>
-  <script>
-    // The popup says whatever it's opened with (our own text only: the title takes <em>).
-    // Focus moves to its Close button, and back to where it was when it closes, so keyboard
-    // and screen-reader users aren't left behind the overlay.
-    var popupReturnFocus = null;
-    window.openAvailPopup = function(titleHtml, text, returnTo) {
-      if (titleHtml) document.querySelector('.avail-popup__title').innerHTML = titleHtml;
-      if (text) document.querySelector('.avail-popup__text').textContent = text;
-      popupReturnFocus = returnTo || document.activeElement;
-      document.getElementById('availPopup').classList.add('open');
-      document.body.style.overflow = 'hidden';
-      document.querySelector('.avail-popup__btn').focus();
-    };
-    window.closeAvailPopup = function() {
-      var popup = document.getElementById('availPopup');
-      if (!popup.classList.contains('open')) return;
-      popup.classList.remove('open');
-      document.body.style.overflow = '';
-      if (popupReturnFocus && popupReturnFocus.focus) popupReturnFocus.focus();
-    };
-    document.getElementById('availPopup').addEventListener('click', function(e) {
-      if (e.target === this) closeAvailPopup();
-    });
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeAvailPopup();
-    });
-  </script>
   <script>
     (function() {
       if (!window.matchMedia('(max-width: 768px)').matches) return;
