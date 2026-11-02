@@ -1307,22 +1307,26 @@
     .form__thanks {
       position: absolute; inset: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-      opacity: 0; visibility: hidden; outline: none;
+      opacity: 0; visibility: hidden;
+      transform: translateY(24px);                 /* waits a little low, then slides up into place */
+      outline: none; box-shadow: none;             /* it only holds focus for screen readers: no ring */
     }
     .form__thanks .label { margin-bottom: 12px; }
     .form__thanks-title { font-family: var(--font-serif); font-weight: 400; font-size: clamp(30px, 4vw, 40px);
       line-height: 1.2; color: var(--cream); margin: 0; overflow-wrap: anywhere; }
     .form__thanks-title em { font-style: italic; color: var(--ember); }
     .form.is-sent > :not(.form__thanks) { opacity: 0; visibility: hidden; }
-    .form.is-sent .form__thanks { opacity: 1; visibility: visible; }
+    .form.is-sent .form__thanks { opacity: 1; visibility: visible; transform: none; }
     @media (prefers-reduced-motion: no-preference) {
       /* Whatever is leaving fades first; what's arriving starts .15s later. "visibility" switches
          at the END of a fade out (the .5s delay) and at the START of a fade in (0s), so nothing
          vanishes before it has faded. The button keeps its own hover transition too. */
       .form > :not(.form__thanks) { transition: opacity .5s ease .15s, visibility 0s, background var(--transition); }
-      .form__thanks { transition: opacity .5s ease, visibility 0s linear .5s; }
+      /* Leaving: slides back down the way it came as it fades */
+      .form__thanks { transition: opacity .45s ease, transform .45s cubic-bezier(.55,0,.75,.2), visibility 0s linear .45s; }
       .form.is-sent > :not(.form__thanks) { transition: opacity .5s ease, visibility 0s linear .5s, background var(--transition); }
-      .form.is-sent .form__thanks { transition: opacity .5s ease .15s, visibility 0s; }
+      /* Arriving: rises 24px and settles, quick at first and soft at the end */
+      .form.is-sent .form__thanks { transition: opacity .6s ease .15s, transform .7s cubic-bezier(.22,1,.36,1) .15s, visibility 0s; }
     }
     .form__send { width: 100%; }
     .form__send[disabled] { opacity: .6; cursor: wait; }
@@ -2742,6 +2746,9 @@
       const button = form.querySelector('.form__send');
       const thanks = document.getElementById('inquiryThanks');
       let thanksTimer;
+      let sentByKeyboard = false;   // Enter in a field, or Enter/Space on the button
+      form.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') sentByKeyboard = true; });
+      form.addEventListener('pointerdown', function () { sentByKeyboard = false; });
       function showError(msg, focusEl) {
         errorBox.textContent = msg; errorBox.hidden = false;
         if (focusEl) focusEl.focus();
@@ -2772,9 +2779,13 @@
             clearTimeout(thanksTimer);
             thanksTimer = setTimeout(function () {
               form.classList.remove('is-sent');
-              // Focus back to the first field (it was hidden), without scrolling them anywhere
-              if (form.contains(document.activeElement)) form.elements.name.focus({ preventScroll: true });
-            }, 5000);
+              // Keyboard users go back to the first field (without scrolling); after a click,
+              // focus is simply released, so no field lights up that nobody chose.
+              if (document.activeElement === thanks) {
+                if (sentByKeyboard) form.elements.name.focus({ preventScroll: true });
+                else thanks.blur();
+              }
+            }, 5000);   // on screen ~5s, then slides away and the form fades back
             return;
           }
           return res.json().catch(function () { return {}; }).then(function (body) {
