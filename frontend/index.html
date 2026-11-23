@@ -1964,6 +1964,32 @@
       .mini-hero.is-in img { transform: none; }
     }
 
+    /* ============================================================
+       FADE IN FROM DARK
+       Fire & Flavour, A Place Like Home and Reserve Your Stay: as each comes into view, its photo
+       rises out of black (like a room's lights coming up) while the zoom above settles, then the
+       title fades up over it, and on the booking band the date bar after that. Only bands the
+       script has armed (.is-armed) start dark, so without the script everything simply shows.
+    ============================================================ */
+    @media (prefers-reduced-motion: no-preference) {
+      .mini-hero.is-armed img,
+      .booking--scenic.is-armed .booking__bg {
+        filter: brightness(0);
+        transition: transform 10s cubic-bezier(.25,.46,.45,.94), filter 2.4s cubic-bezier(.33,0,.2,1);
+      }
+      .mini-hero.is-armed .mini-hero__title,
+      .booking--scenic.is-armed > :not(.booking__bg) {
+        opacity: 0; transform: translateY(14px);
+        transition: opacity 1.4s ease, transform 1.6s cubic-bezier(.16,1,.3,1);
+      }
+      .mini-hero.is-armed.is-in img,
+      .booking--scenic.is-armed.is-in .booking__bg { filter: none; }
+      .mini-hero.is-armed.is-in .mini-hero__title,
+      .booking--scenic.is-armed.is-in > :not(.booking__bg) { opacity: 1; transform: none; transition-delay: .9s; }
+      .booking--scenic.is-armed.is-in > .booking__bar,
+      .booking--scenic.is-armed.is-in > .booking__note { transition-delay: 1.4s; }   /* the dates follow the title */
+    }
+
     /* Title on the photo: the section's label, heading and short line sit in the middle of the
        mini hero, over a soft darkening that's strongest behind the words. */
     .mini-hero__title {
@@ -2980,10 +3006,13 @@
 
   <script>
     (function() {
-      // The booking landscape: plays its arrival once when a quarter is on screen, then stays still.
+      // The booking landscape and the two mini heroes: each plays its arrival (out of the dark,
+      // then the slow zoom) once when a quarter is on screen, then stays still.
       var bands = document.querySelectorAll('[data-band]');
       if (!bands.length) return;
       if (!('IntersectionObserver' in window)) { bands.forEach(function(b) { b.classList.add('is-in'); }); return; }
+      // Armed: dark and waiting (the CSS only hides what the script has armed, so nothing stays hidden without it)
+      bands.forEach(function(b) { b.classList.add('is-armed'); });
       var bandObs = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) { entry.target.classList.add('is-in'); bandObs.unobserve(entry.target); }
